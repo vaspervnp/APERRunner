@@ -1,0 +1,56 @@
+{
+ "frames": [
+  {
+   "filename": "pine",
+   "frame": {
+    "x": 0,
+    "y": 0,
+    "w": 16,
+    "h": 24
+   }
+  },
+  {
+   "filename": "oak",
+   "frame": {
+    "x": 16,
+    "y": 0,
+    "w": 24,
+    "h": 24
+   }
+  },
+  {
+   "filename": "cypress",
+   "frame": {
+    "x": 40,
+    "y": 0,
+    "w": 8,
+    "h": 24
+   }
+  },
+  {
+   "filename": "bush",
+   "frame": {
+    "x": 48,
+    "y": 0,
+    "w": 8,
+    "h": 8
+   }
+  },
+  {
+   "filename": "rock",
+   "frame": {
+    "x": 56,
+    "y": 0,
+    "w": 8,
+    "h": 8
+   }
+  }
+ ],
+ "meta": {
+  "app": "tools/mkplaceholders.py",
+  "size": {
+   "w": 64,
+   "h": 24
+  }
+ }
+}

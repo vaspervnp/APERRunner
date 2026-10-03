@@ -1,0 +1,47 @@
+{
+ "frames": [
+  {
+   "filename": "sh1",
+   "frame": {
+    "x": 0,
+    "y": 0,
+    "w": 8,
+    "h": 4
+   }
+  },
+  {
+   "filename": "sh2",
+   "frame": {
+    "x": 8,
+    "y": 0,
+    "w": 10,
+    "h": 4
+   }
+  },
+  {
+   "filename": "sh3",
+   "frame": {
+    "x": 18,
+    "y": 0,
+    "w": 12,
+    "h": 6
+   }
+  },
+  {
+   "filename": "sh4",
+   "frame": {
+    "x": 30,
+    "y": 0,
+    "w": 14,
+    "h": 6
+   }
+  }
+ ],
+ "meta": {
+  "app": "tools/mkplaceholders.py",
+  "size": {
+   "w": 44,
+   "h": 6
+  }
+ }
+}

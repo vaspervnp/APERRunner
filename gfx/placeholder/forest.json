@@ -1,0 +1,83 @@
+{
+ "frames": [
+  {
+   "filename": "ground_a",
+   "frame": {
+    "x": 0,
+    "y": 0,
+    "w": 30,
+    "h": 8
+   }
+  },
+  {
+   "filename": "ground_b",
+   "frame": {
+    "x": 30,
+    "y": 0,
+    "w": 30,
+    "h": 8
+   }
+  },
+  {
+   "filename": "path",
+   "frame": {
+    "x": 60,
+    "y": 0,
+    "w": 30,
+    "h": 8
+   }
+  },
+  {
+   "filename": "fence",
+   "frame": {
+    "x": 90,
+    "y": 0,
+    "w": 30,
+    "h": 8
+   }
+  },
+  {
+   "filename": "trans_urban_forest_0",
+   "frame": {
+    "x": 120,
+    "y": 0,
+    "w": 30,
+    "h": 8
+   }
+  },
+  {
+   "filename": "trans_urban_forest_1",
+   "frame": {
+    "x": 150,
+    "y": 0,
+    "w": 30,
+    "h": 8
+   }
+  },
+  {
+   "filename": "trans_forest_urban_0",
+   "frame": {
+    "x": 180,
+    "y": 0,
+    "w": 30,
+    "h": 8
+   }
+  },
+  {
+   "filename": "trans_forest_urban_1",
+   "frame": {
+    "x": 210,
+    "y": 0,
+    "w": 30,
+    "h": 8
+   }
+  }
+ ],
+ "meta": {
+  "app": "tools/mkplaceholders.py",
+  "size": {
+   "w": 240,
+   "h": 8
+  }
+ }
+}

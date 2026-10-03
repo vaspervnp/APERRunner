@@ -1,0 +1,20 @@
+GIMP Palette
+Name: A.P.E.R. RUNNER game
+Columns: 8
+#
+  0   0   0	pen  0 fw  0 Black - outlines, shadows
+  0   0 128	pen  1 fw  1 Blue - deep shadows
+128 128 128	pen  2 fw 13 White - asphalt, rails, concrete
+255 255 255	pen  3 fw 26 Bright White - road marks, highlights
+128   0   0	pen  4 fw  3 Red - sleepers, roof tiles, brown
+255 128   0	pen  5 fw 15 Orange - train details, lights
+128 128   0	pen  6 fw 12 Yellow - coin shade, dry grass, ballast
+255 255   0	pen  7 fw 24 Bright Yellow - coins, yellow vehicles
+  0 128   0	pen  8 fw  9 Green - dark foliage
+128 255   0	pen  9 fw 21 Lime - light foliage
+  0 128 255	pen 10 fw 11 Sky Blue - glass, water
+  0   0 255	pen 11 fw  2 Bright Blue - buses, train liveries
+255 128 128	pen 12 fw 16 Pink - skin
+255   0   0	pen 13 fw  6 Bright Red - player clothes, signage
+255 255 128	pen 14 fw 25 Pastel Yellow - RESERVED: coin glint (cycles 25/26)
+254   0   0	pen 15 fw  6 Bright Red - RESERVED: signal lamp (cycles 6/18)

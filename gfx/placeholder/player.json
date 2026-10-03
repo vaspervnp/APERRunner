@@ -1,0 +1,218 @@
+{
+ "frames": [
+  {
+   "filename": "s1_run0",
+   "frame": {
+    "x": 0,
+    "y": 0,
+    "w": 10,
+    "h": 16
+   }
+  },
+  {
+   "filename": "s1_run1",
+   "frame": {
+    "x": 10,
+    "y": 0,
+    "w": 10,
+    "h": 16
+   }
+  },
+  {
+   "filename": "s1_run2",
+   "frame": {
+    "x": 20,
+    "y": 0,
+    "w": 10,
+    "h": 16
+   }
+  },
+  {
+   "filename": "s1_run3",
+   "frame": {
+    "x": 30,
+    "y": 0,
+    "w": 10,
+    "h": 16
+   }
+  },
+  {
+   "filename": "s1_lean_l",
+   "frame": {
+    "x": 40,
+    "y": 0,
+    "w": 10,
+    "h": 16
+   }
+  },
+  {
+   "filename": "s1_lean_r",
+   "frame": {
+    "x": 50,
+    "y": 0,
+    "w": 10,
+    "h": 16
+   }
+  },
+  {
+   "filename": "s1_crash0",
+   "frame": {
+    "x": 60,
+    "y": 0,
+    "w": 10,
+    "h": 16
+   }
+  },
+  {
+   "filename": "s1_crash1",
+   "frame": {
+    "x": 70,
+    "y": 0,
+    "w": 10,
+    "h": 16
+   }
+  },
+  {
+   "filename": "s2_jump_up",
+   "frame": {
+    "x": 80,
+    "y": 0,
+    "w": 12,
+    "h": 18
+   }
+  },
+  {
+   "filename": "s2_jump_down",
+   "frame": {
+    "x": 92,
+    "y": 0,
+    "w": 12,
+    "h": 18
+   }
+  },
+  {
+   "filename": "s3_run0",
+   "frame": {
+    "x": 104,
+    "y": 0,
+    "w": 14,
+    "h": 20
+   }
+  },
+  {
+   "filename": "s3_run1",
+   "frame": {
+    "x": 118,
+    "y": 0,
+    "w": 14,
+    "h": 20
+   }
+  },
+  {
+   "filename": "s3_run2",
+   "frame": {
+    "x": 132,
+    "y": 0,
+    "w": 14,
+    "h": 20
+   }
+  },
+  {
+   "filename": "s3_run3",
+   "frame": {
+    "x": 146,
+    "y": 0,
+    "w": 14,
+    "h": 20
+   }
+  },
+  {
+   "filename": "s3_lean_l",
+   "frame": {
+    "x": 160,
+    "y": 0,
+    "w": 14,
+    "h": 20
+   }
+  },
+  {
+   "filename": "s3_lean_r",
+   "frame": {
+    "x": 174,
+    "y": 0,
+    "w": 14,
+    "h": 20
+   }
+  },
+  {
+   "filename": "s3_crash0",
+   "frame": {
+    "x": 188,
+    "y": 0,
+    "w": 14,
+    "h": 20
+   }
+  },
+  {
+   "filename": "s3_crash1",
+   "frame": {
+    "x": 202,
+    "y": 0,
+    "w": 14,
+    "h": 20
+   }
+  },
+  {
+   "filename": "s3_jump_up",
+   "frame": {
+    "x": 216,
+    "y": 0,
+    "w": 14,
+    "h": 20
+   }
+  },
+  {
+   "filename": "s3_jump_down",
+   "frame": {
+    "x": 230,
+    "y": 0,
+    "w": 14,
+    "h": 20
+   }
+  },
+  {
+   "filename": "s4_jump_up",
+   "frame": {
+    "x": 244,
+    "y": 0,
+    "w": 16,
+    "h": 22
+   }
+  },
+  {
+   "filename": "s4_jump_down",
+   "frame": {
+    "x": 260,
+    "y": 0,
+    "w": 16,
+    "h": 22
+   }
+  },
+  {
+   "filename": "s5_jump",
+   "frame": {
+    "x": 276,
+    "y": 0,
+    "w": 18,
+    "h": 24
+   }
+  }
+ ],
+ "meta": {
+  "app": "tools/mkplaceholders.py",
+  "size": {
+   "w": 294,
+   "h": 24
+  }
+ }
+}

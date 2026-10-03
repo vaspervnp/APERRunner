@@ -1,0 +1,65 @@
+{
+ "frames": [
+  {
+   "filename": "road_a",
+   "frame": {
+    "x": 0,
+    "y": 0,
+    "w": 30,
+    "h": 8
+   }
+  },
+  {
+   "filename": "road_b",
+   "frame": {
+    "x": 30,
+    "y": 0,
+    "w": 30,
+    "h": 8
+   }
+  },
+  {
+   "filename": "road_cross_0",
+   "frame": {
+    "x": 60,
+    "y": 0,
+    "w": 30,
+    "h": 8
+   }
+  },
+  {
+   "filename": "road_cross_1",
+   "frame": {
+    "x": 90,
+    "y": 0,
+    "w": 30,
+    "h": 8
+   }
+  },
+  {
+   "filename": "road_kiosk_0",
+   "frame": {
+    "x": 120,
+    "y": 0,
+    "w": 30,
+    "h": 8
+   }
+  },
+  {
+   "filename": "road_kiosk_1",
+   "frame": {
+    "x": 150,
+    "y": 0,
+    "w": 30,
+    "h": 8
+   }
+  }
+ ],
+ "meta": {
+  "app": "tools/mkplaceholders.py",
+  "size": {
+   "w": 180,
+   "h": 8
+  }
+ }
+}

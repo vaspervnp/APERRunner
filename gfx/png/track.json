@@ -1,0 +1,378 @@
+{ "frames": [
+   {
+    "filename": "rail_a",
+    "frame": { "x": 0, "y": 0, "w": 28, "h": 8 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 28, "h": 8 },
+    "sourceSize": { "w": 28, "h": 8 },
+    "duration": 100
+   },
+   {
+    "filename": "rail_b",
+    "frame": { "x": 28, "y": 0, "w": 28, "h": 8 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 28, "h": 8 },
+    "sourceSize": { "w": 28, "h": 8 },
+    "duration": 100
+   },
+   {
+    "filename": "stop_0",
+    "frame": { "x": 56, "y": 0, "w": 28, "h": 8 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 28, "h": 8 },
+    "sourceSize": { "w": 28, "h": 8 },
+    "duration": 100
+   },
+   {
+    "filename": "stop_1",
+    "frame": { "x": 84, "y": 0, "w": 28, "h": 8 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 28, "h": 8 },
+    "sourceSize": { "w": 28, "h": 8 },
+    "duration": 100
+   },
+   {
+    "filename": "signal_0",
+    "frame": { "x": 112, "y": 0, "w": 28, "h": 8 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 28, "h": 8 },
+    "sourceSize": { "w": 28, "h": 8 },
+    "duration": 100
+   },
+   {
+    "filename": "signal_1",
+    "frame": { "x": 140, "y": 0, "w": 28, "h": 8 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 28, "h": 8 },
+    "sourceSize": { "w": 28, "h": 8 },
+    "duration": 100
+   },
+   {
+    "filename": "wagon1_end_bottom",
+    "frame": { "x": 168, "y": 0, "w": 28, "h": 8 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 28, "h": 8 },
+    "sourceSize": { "w": 28, "h": 8 },
+    "duration": 100
+   },
+   {
+    "filename": "wagon1_body_a",
+    "frame": { "x": 196, "y": 0, "w": 28, "h": 8 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 28, "h": 8 },
+    "sourceSize": { "w": 28, "h": 8 },
+    "duration": 100
+   },
+   {
+    "filename": "wagon1_body_b",
+    "frame": { "x": 224, "y": 0, "w": 28, "h": 8 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 28, "h": 8 },
+    "sourceSize": { "w": 28, "h": 8 },
+    "duration": 100
+   },
+   {
+    "filename": "wagon1_end_top",
+    "frame": { "x": 252, "y": 0, "w": 28, "h": 8 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 28, "h": 8 },
+    "sourceSize": { "w": 28, "h": 8 },
+    "duration": 100
+   },
+   {
+    "filename": "wagon1_coupler",
+    "frame": { "x": 280, "y": 0, "w": 28, "h": 8 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 28, "h": 8 },
+    "sourceSize": { "w": 28, "h": 8 },
+    "duration": 100
+   },
+   {
+    "filename": "wagon2_end_bottom",
+    "frame": { "x": 308, "y": 0, "w": 28, "h": 8 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 28, "h": 8 },
+    "sourceSize": { "w": 28, "h": 8 },
+    "duration": 100
+   },
+   {
+    "filename": "wagon2_body_a",
+    "frame": { "x": 336, "y": 0, "w": 28, "h": 8 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 28, "h": 8 },
+    "sourceSize": { "w": 28, "h": 8 },
+    "duration": 100
+   },
+   {
+    "filename": "wagon2_body_b",
+    "frame": { "x": 364, "y": 0, "w": 28, "h": 8 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 28, "h": 8 },
+    "sourceSize": { "w": 28, "h": 8 },
+    "duration": 100
+   },
+   {
+    "filename": "wagon2_end_top",
+    "frame": { "x": 392, "y": 0, "w": 28, "h": 8 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 28, "h": 8 },
+    "sourceSize": { "w": 28, "h": 8 },
+    "duration": 100
+   },
+   {
+    "filename": "wagon2_coupler",
+    "frame": { "x": 420, "y": 0, "w": 28, "h": 8 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 28, "h": 8 },
+    "sourceSize": { "w": 28, "h": 8 },
+    "duration": 100
+   },
+   {
+    "filename": "wagon3_end_bottom",
+    "frame": { "x": 448, "y": 0, "w": 28, "h": 8 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 28, "h": 8 },
+    "sourceSize": { "w": 28, "h": 8 },
+    "duration": 100
+   },
+   {
+    "filename": "wagon3_body_a",
+    "frame": { "x": 476, "y": 0, "w": 28, "h": 8 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 28, "h": 8 },
+    "sourceSize": { "w": 28, "h": 8 },
+    "duration": 100
+   },
+   {
+    "filename": "wagon3_body_b",
+    "frame": { "x": 504, "y": 0, "w": 28, "h": 8 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 28, "h": 8 },
+    "sourceSize": { "w": 28, "h": 8 },
+    "duration": 100
+   },
+   {
+    "filename": "wagon3_end_top",
+    "frame": { "x": 532, "y": 0, "w": 28, "h": 8 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 28, "h": 8 },
+    "sourceSize": { "w": 28, "h": 8 },
+    "duration": 100
+   },
+   {
+    "filename": "wagon3_coupler",
+    "frame": { "x": 560, "y": 0, "w": 28, "h": 8 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 28, "h": 8 },
+    "sourceSize": { "w": 28, "h": 8 },
+    "duration": 100
+   },
+   {
+    "filename": "loco1_nose",
+    "frame": { "x": 588, "y": 0, "w": 28, "h": 8 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 28, "h": 8 },
+    "sourceSize": { "w": 28, "h": 8 },
+    "duration": 100
+   },
+   {
+    "filename": "loco1_body",
+    "frame": { "x": 616, "y": 0, "w": 28, "h": 8 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 28, "h": 8 },
+    "sourceSize": { "w": 28, "h": 8 },
+    "duration": 100
+   },
+   {
+    "filename": "loco1_pantograph",
+    "frame": { "x": 644, "y": 0, "w": 28, "h": 8 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 28, "h": 8 },
+    "sourceSize": { "w": 28, "h": 8 },
+    "duration": 100
+   },
+   {
+    "filename": "loco2_nose",
+    "frame": { "x": 672, "y": 0, "w": 28, "h": 8 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 28, "h": 8 },
+    "sourceSize": { "w": 28, "h": 8 },
+    "duration": 100
+   },
+   {
+    "filename": "loco2_body",
+    "frame": { "x": 700, "y": 0, "w": 28, "h": 8 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 28, "h": 8 },
+    "sourceSize": { "w": 28, "h": 8 },
+    "duration": 100
+   },
+   {
+    "filename": "loco2_pantograph",
+    "frame": { "x": 728, "y": 0, "w": 28, "h": 8 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 28, "h": 8 },
+    "sourceSize": { "w": 28, "h": 8 },
+    "duration": 100
+   },
+   {
+    "filename": "loco3_nose",
+    "frame": { "x": 756, "y": 0, "w": 28, "h": 8 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 28, "h": 8 },
+    "sourceSize": { "w": 28, "h": 8 },
+    "duration": 100
+   },
+   {
+    "filename": "loco3_body",
+    "frame": { "x": 784, "y": 0, "w": 28, "h": 8 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 28, "h": 8 },
+    "sourceSize": { "w": 28, "h": 8 },
+    "duration": 100
+   },
+   {
+    "filename": "loco3_pantograph",
+    "frame": { "x": 812, "y": 0, "w": 28, "h": 8 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 28, "h": 8 },
+    "sourceSize": { "w": 28, "h": 8 },
+    "duration": 100
+   },
+   {
+    "filename": "ramp_up_0",
+    "frame": { "x": 840, "y": 0, "w": 28, "h": 8 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 28, "h": 8 },
+    "sourceSize": { "w": 28, "h": 8 },
+    "duration": 100
+   },
+   {
+    "filename": "ramp_up_1",
+    "frame": { "x": 868, "y": 0, "w": 28, "h": 8 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 28, "h": 8 },
+    "sourceSize": { "w": 28, "h": 8 },
+    "duration": 100
+   },
+   {
+    "filename": "ramp_up_2",
+    "frame": { "x": 896, "y": 0, "w": 28, "h": 8 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 28, "h": 8 },
+    "sourceSize": { "w": 28, "h": 8 },
+    "duration": 100
+   },
+   {
+    "filename": "ramp_down_0",
+    "frame": { "x": 924, "y": 0, "w": 28, "h": 8 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 28, "h": 8 },
+    "sourceSize": { "w": 28, "h": 8 },
+    "duration": 100
+   },
+   {
+    "filename": "ramp_down_1",
+    "frame": { "x": 952, "y": 0, "w": 28, "h": 8 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 28, "h": 8 },
+    "sourceSize": { "w": 28, "h": 8 },
+    "duration": 100
+   },
+   {
+    "filename": "ramp_down_2",
+    "frame": { "x": 980, "y": 0, "w": 28, "h": 8 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 28, "h": 8 },
+    "sourceSize": { "w": 28, "h": 8 },
+    "duration": 100
+   }
+ ],
+ "meta": {
+  "app": "https://www.aseprite.org/",
+  "version": "1.3.18.5-dev",
+  "image": "track.png",
+  "format": "I8",
+  "size": { "w": 1008, "h": 8 },
+  "scale": "1",
+  "frameTags": [
+   { "name": "rail_a", "from": 0, "to": 0, "direction": "forward", "color": "#000000ff" },
+   { "name": "rail_b", "from": 1, "to": 1, "direction": "forward", "color": "#000000ff" },
+   { "name": "stop_0", "from": 2, "to": 2, "direction": "forward", "color": "#000000ff" },
+   { "name": "stop_1", "from": 3, "to": 3, "direction": "forward", "color": "#000000ff" },
+   { "name": "signal_0", "from": 4, "to": 4, "direction": "forward", "color": "#000000ff" },
+   { "name": "signal_1", "from": 5, "to": 5, "direction": "forward", "color": "#000000ff" },
+   { "name": "wagon1_end_bottom", "from": 6, "to": 6, "direction": "forward", "color": "#000000ff" },
+   { "name": "wagon1_body_a", "from": 7, "to": 7, "direction": "forward", "color": "#000000ff" },
+   { "name": "wagon1_body_b", "from": 8, "to": 8, "direction": "forward", "color": "#000000ff" },
+   { "name": "wagon1_end_top", "from": 9, "to": 9, "direction": "forward", "color": "#000000ff" },
+   { "name": "wagon1_coupler", "from": 10, "to": 10, "direction": "forward", "color": "#000000ff" },
+   { "name": "wagon2_end_bottom", "from": 11, "to": 11, "direction": "forward", "color": "#000000ff" },
+   { "name": "wagon2_body_a", "from": 12, "to": 12, "direction": "forward", "color": "#000000ff" },
+   { "name": "wagon2_body_b", "from": 13, "to": 13, "direction": "forward", "color": "#000000ff" },
+   { "name": "wagon2_end_top", "from": 14, "to": 14, "direction": "forward", "color": "#000000ff" },
+   { "name": "wagon2_coupler", "from": 15, "to": 15, "direction": "forward", "color": "#000000ff" },
+   { "name": "wagon3_end_bottom", "from": 16, "to": 16, "direction": "forward", "color": "#000000ff" },
+   { "name": "wagon3_body_a", "from": 17, "to": 17, "direction": "forward", "color": "#000000ff" },
+   { "name": "wagon3_body_b", "from": 18, "to": 18, "direction": "forward", "color": "#000000ff" },
+   { "name": "wagon3_end_top", "from": 19, "to": 19, "direction": "forward", "color": "#000000ff" },
+   { "name": "wagon3_coupler", "from": 20, "to": 20, "direction": "forward", "color": "#000000ff" },
+   { "name": "loco1_nose", "from": 21, "to": 21, "direction": "forward", "color": "#000000ff" },
+   { "name": "loco1_body", "from": 22, "to": 22, "direction": "forward", "color": "#000000ff" },
+   { "name": "loco1_pantograph", "from": 23, "to": 23, "direction": "forward", "color": "#000000ff" },
+   { "name": "loco2_nose", "from": 24, "to": 24, "direction": "forward", "color": "#000000ff" },
+   { "name": "loco2_body", "from": 25, "to": 25, "direction": "forward", "color": "#000000ff" },
+   { "name": "loco2_pantograph", "from": 26, "to": 26, "direction": "forward", "color": "#000000ff" },
+   { "name": "loco3_nose", "from": 27, "to": 27, "direction": "forward", "color": "#000000ff" },
+   { "name": "loco3_body", "from": 28, "to": 28, "direction": "forward", "color": "#000000ff" },
+   { "name": "loco3_pantograph", "from": 29, "to": 29, "direction": "forward", "color": "#000000ff" },
+   { "name": "ramp_up_0", "from": 30, "to": 30, "direction": "forward", "color": "#000000ff" },
+   { "name": "ramp_up_1", "from": 31, "to": 31, "direction": "forward", "color": "#000000ff" },
+   { "name": "ramp_up_2", "from": 32, "to": 32, "direction": "forward", "color": "#000000ff" },
+   { "name": "ramp_down_0", "from": 33, "to": 33, "direction": "forward", "color": "#000000ff" },
+   { "name": "ramp_down_1", "from": 34, "to": 34, "direction": "forward", "color": "#000000ff" },
+   { "name": "ramp_down_2", "from": 35, "to": 35, "direction": "forward", "color": "#000000ff" }
+  ],
+  "layers": [
+   { "name": "track", "opacity": 255, "blendMode": "normal" }
+  ],
+  "slices": [
+  ]
+ }
+}

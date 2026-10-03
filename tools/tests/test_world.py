@@ -1,0 +1,102 @@
+"""Phase 3: world generation, environments, bridges, scenery."""
+
+from harness import boot_game, load_symbols, peek8, peek16, save_screenshot, sync_game_frame
+from world_model import F_BRIDGE, F_FOREST, F_OVERLAY, Sheets, read_desc, screen_row, visible_rows
+
+TEST_SPRITE_ROWS = range(29, 34)     # picture rows the HUD test sprite can touch
+RUNNER_ROWS = range(28, 34)          # picture rows the runner (and its shadow) can touch
+
+
+def _pause(cpc, sym):
+    cpc.write_ram(sym["scroll_speed"], bytes([0]))
+    sync_game_frame(cpc, sym)
+    sync_game_frame(cpc, sym)
+
+
+def _check_screen(cpc, sym, sheets):
+    """Visible rows equal their tiles wherever no overlay can cover them:
+    lanes without an item (nor a power-up reaching up from the row below),
+    sides only in rows without overlays, the HUD always.
+    Returns the number of row parts compared."""
+    checked = 0
+    for index, (row, bank, ring) in enumerate(visible_rows(cpc, sym)):
+        desc = read_desc(cpc, sym, row)
+        below = read_desc(cpc, sym, row - 1)
+        for column, width, pens in sheets.expected(desc):
+            if column == 72:
+                if index in TEST_SPRITE_ROWS:
+                    continue
+            elif width == 14:
+                if index in RUNNER_ROWS:
+                    continue
+                lane = (column - 15) // 14
+                if desc["items"][lane] or below["items"][lane] > 1:
+                    continue
+            elif desc["flags"] & F_OVERLAY or (column == 0 and width == 72 and index in RUNNER_ROWS):
+                continue
+            assert screen_row(cpc, bank, ring, column, width) == pens, \
+                f"world row {row}: bytes {column}..{column + width - 1} differ from the tiles"
+            checked += 1
+    return checked
+
+
+def _check_desc(desc, row):
+    if desc["flags"] & F_BRIDGE:
+        assert desc["left"] < 11 and desc["lanes"] == [0, 0, 0], f"row {row}: bad bridge row {desc}"
+        return
+    count = 16 if desc["flags"] & F_FOREST else 12
+    assert desc["left"] < count and desc["left"] % 2 == 0, f"row {row}: left side {desc}"
+    assert desc["right"] < count and desc["right"] % 2 == 1, f"row {row}: right side {desc}"
+    assert all(t < 36 for t in desc["lanes"]), f"row {row}: lane tiles {desc}"
+    assert all((c & 15) <= 6 for c in desc["coll"]), f"row {row}: collision {desc}"
+    assert all(i <= 7 for i in desc["items"]), f"row {row}: items {desc}"
+
+
+def test_rows_on_screen_match_their_descriptors():
+    sym = load_symbols()
+    sheets = Sheets()
+    cpc = boot_game()
+    checked = 0
+    for stop in range(6):
+        _pause(cpc, sym)
+        checked += _check_screen(cpc, sym, sheets)
+        cpc.write_ram(sym["scroll_speed"], bytes([6]))
+        cpc.run_frames(400)
+    print(f"    {checked} row parts compared")
+    assert checked > 600
+
+
+def test_five_minute_flight():
+    """~5 minutes of play at mixed speeds: no missed frames, valid rows,
+    both environments, transitions, both bridge types, varied track."""
+    sym = load_symbols()
+    cpc = boot_game()
+    seen_rows = {}
+    for minute in range(5):
+        for speed in (2, 4, 6):
+            cpc.write_ram(sym["scroll_speed"], bytes([speed]))
+            for _ in range(8):
+                cpc.run_frames(125)                  # 2.5 s
+                top = peek16(cpc, sym["scr_top_row"])
+                assert sym["start"] <= cpc.pc < sym["end_of_code"] or cpc.pc < 0x40, f"PC #{cpc.pc:04X}"
+                for row in range(top - 33, top):     # the top row may be mid-generation
+                    desc = read_desc(cpc, sym, row)
+                    _check_desc(desc, row)
+                    seen_rows[row] = desc
+        save_screenshot(cpc, f"flight_{minute}.png")
+
+    missed = peek8(cpc, sym["missed_frames"])
+    max_load = peek8(cpc, sym["max_load"])
+    rows = [seen_rows[r] for r in sorted(seen_rows)]
+    forest = [bool(d["flags"] & F_FOREST) and not d["flags"] & F_BRIDGE for d in rows]
+    switches = sum(1 for a, b in zip(forest, forest[1:]) if a != b)
+    bridge_tiles = {d["left"] for d in rows if d["flags"] & F_BRIDGE}
+    track_tiles = {t for d in rows if not d["flags"] & F_BRIDGE for t in d["lanes"]}
+    print(f"    {len(rows)} rows, {switches} env switches, bridge tiles {sorted(bridge_tiles)}, "
+          f"{len(track_tiles)} track tiles, max load {max_load}/12")
+    assert missed == 0, f"{missed} game frames missed"
+    assert max_load < 12
+    assert len(rows) > 2000
+    assert switches >= 4
+    assert {0, 4} <= bridge_tiles, "both bridge types (shadow rows 3 and 10, deck rows 0/4) expected"
+    assert len(track_tiles) >= 25

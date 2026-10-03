@@ -1,0 +1,128 @@
+{ "frames": [
+   {
+    "filename": "footbridge_0",
+    "frame": { "x": 0, "y": 0, "w": 144, "h": 8 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 144, "h": 8 },
+    "sourceSize": { "w": 144, "h": 8 },
+    "duration": 100
+   },
+   {
+    "filename": "footbridge_1",
+    "frame": { "x": 144, "y": 0, "w": 144, "h": 8 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 144, "h": 8 },
+    "sourceSize": { "w": 144, "h": 8 },
+    "duration": 100
+   },
+   {
+    "filename": "footbridge_2",
+    "frame": { "x": 288, "y": 0, "w": 144, "h": 8 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 144, "h": 8 },
+    "sourceSize": { "w": 144, "h": 8 },
+    "duration": 100
+   },
+   {
+    "filename": "footbridge_shadow",
+    "frame": { "x": 432, "y": 0, "w": 144, "h": 8 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 144, "h": 8 },
+    "sourceSize": { "w": 144, "h": 8 },
+    "duration": 100
+   },
+   {
+    "filename": "roadbridge_0",
+    "frame": { "x": 576, "y": 0, "w": 144, "h": 8 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 144, "h": 8 },
+    "sourceSize": { "w": 144, "h": 8 },
+    "duration": 100
+   },
+   {
+    "filename": "roadbridge_1",
+    "frame": { "x": 720, "y": 0, "w": 144, "h": 8 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 144, "h": 8 },
+    "sourceSize": { "w": 144, "h": 8 },
+    "duration": 100
+   },
+   {
+    "filename": "roadbridge_2",
+    "frame": { "x": 864, "y": 0, "w": 144, "h": 8 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 144, "h": 8 },
+    "sourceSize": { "w": 144, "h": 8 },
+    "duration": 100
+   },
+   {
+    "filename": "roadbridge_3",
+    "frame": { "x": 1008, "y": 0, "w": 144, "h": 8 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 144, "h": 8 },
+    "sourceSize": { "w": 144, "h": 8 },
+    "duration": 100
+   },
+   {
+    "filename": "roadbridge_4",
+    "frame": { "x": 1152, "y": 0, "w": 144, "h": 8 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 144, "h": 8 },
+    "sourceSize": { "w": 144, "h": 8 },
+    "duration": 100
+   },
+   {
+    "filename": "roadbridge_5",
+    "frame": { "x": 1296, "y": 0, "w": 144, "h": 8 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 144, "h": 8 },
+    "sourceSize": { "w": 144, "h": 8 },
+    "duration": 100
+   },
+   {
+    "filename": "roadbridge_shadow",
+    "frame": { "x": 1440, "y": 0, "w": 144, "h": 8 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 144, "h": 8 },
+    "sourceSize": { "w": 144, "h": 8 },
+    "duration": 100
+   }
+ ],
+ "meta": {
+  "app": "https://www.aseprite.org/",
+  "version": "1.3.18.5-dev",
+  "image": "bridges.png",
+  "format": "I8",
+  "size": { "w": 1584, "h": 8 },
+  "scale": "1",
+  "frameTags": [
+   { "name": "footbridge_0", "from": 0, "to": 0, "direction": "forward", "color": "#000000ff" },
+   { "name": "footbridge_1", "from": 1, "to": 1, "direction": "forward", "color": "#000000ff" },
+   { "name": "footbridge_2", "from": 2, "to": 2, "direction": "forward", "color": "#000000ff" },
+   { "name": "footbridge_shadow", "from": 3, "to": 3, "direction": "forward", "color": "#000000ff" },
+   { "name": "roadbridge_0", "from": 4, "to": 4, "direction": "forward", "color": "#000000ff" },
+   { "name": "roadbridge_1", "from": 5, "to": 5, "direction": "forward", "color": "#000000ff" },
+   { "name": "roadbridge_2", "from": 6, "to": 6, "direction": "forward", "color": "#000000ff" },
+   { "name": "roadbridge_3", "from": 7, "to": 7, "direction": "forward", "color": "#000000ff" },
+   { "name": "roadbridge_4", "from": 8, "to": 8, "direction": "forward", "color": "#000000ff" },
+   { "name": "roadbridge_5", "from": 9, "to": 9, "direction": "forward", "color": "#000000ff" },
+   { "name": "roadbridge_shadow", "from": 10, "to": 10, "direction": "forward", "color": "#000000ff" }
+  ],
+  "layers": [
+   { "name": "bridges", "opacity": 255, "blendMode": "normal" }
+  ],
+  "slices": [
+  ]
+ }
+}

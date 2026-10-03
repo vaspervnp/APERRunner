@@ -1,0 +1,101 @@
+{
+ "frames": [
+  {
+   "filename": "coin0",
+   "frame": {
+    "x": 0,
+    "y": 0,
+    "w": 8,
+    "h": 8
+   }
+  },
+  {
+   "filename": "coin1",
+   "frame": {
+    "x": 8,
+    "y": 0,
+    "w": 8,
+    "h": 8
+   }
+  },
+  {
+   "filename": "coin2",
+   "frame": {
+    "x": 16,
+    "y": 0,
+    "w": 8,
+    "h": 8
+   }
+  },
+  {
+   "filename": "coin3",
+   "frame": {
+    "x": 24,
+    "y": 0,
+    "w": 8,
+    "h": 8
+   }
+  },
+  {
+   "filename": "pu_magnet",
+   "frame": {
+    "x": 32,
+    "y": 0,
+    "w": 12,
+    "h": 12
+   }
+  },
+  {
+   "filename": "pu_turbo",
+   "frame": {
+    "x": 44,
+    "y": 0,
+    "w": 12,
+    "h": 12
+   }
+  },
+  {
+   "filename": "pu_slow",
+   "frame": {
+    "x": 56,
+    "y": 0,
+    "w": 12,
+    "h": 12
+   }
+  },
+  {
+   "filename": "pu_spring",
+   "frame": {
+    "x": 68,
+    "y": 0,
+    "w": 12,
+    "h": 12
+   }
+  },
+  {
+   "filename": "pu_helmet",
+   "frame": {
+    "x": 80,
+    "y": 0,
+    "w": 12,
+    "h": 12
+   }
+  },
+  {
+   "filename": "pu_ticket",
+   "frame": {
+    "x": 92,
+    "y": 0,
+    "w": 12,
+    "h": 12
+   }
+  }
+ ],
+ "meta": {
+  "app": "tools/mkplaceholders.py",
+  "size": {
+   "w": 104,
+   "h": 12
+  }
+ }
+}

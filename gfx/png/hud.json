@@ -1,0 +1,138 @@
+{ "frames": [
+   {
+    "filename": "hud_bg",
+    "frame": { "x": 0, "y": 0, "w": 48, "h": 8 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 48, "h": 8 },
+    "sourceSize": { "w": 48, "h": 8 },
+    "duration": 100
+   },
+   {
+    "filename": "ic_coin",
+    "frame": { "x": 48, "y": 0, "w": 48, "h": 8 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 48, "h": 8 },
+    "sourceSize": { "w": 48, "h": 8 },
+    "duration": 100
+   },
+   {
+    "filename": "ic_magnet",
+    "frame": { "x": 96, "y": 0, "w": 48, "h": 8 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 48, "h": 8 },
+    "sourceSize": { "w": 48, "h": 8 },
+    "duration": 100
+   },
+   {
+    "filename": "ic_turbo",
+    "frame": { "x": 144, "y": 0, "w": 48, "h": 8 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 48, "h": 8 },
+    "sourceSize": { "w": 48, "h": 8 },
+    "duration": 100
+   },
+   {
+    "filename": "ic_slow",
+    "frame": { "x": 192, "y": 0, "w": 48, "h": 8 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 48, "h": 8 },
+    "sourceSize": { "w": 48, "h": 8 },
+    "duration": 100
+   },
+   {
+    "filename": "ic_spring",
+    "frame": { "x": 240, "y": 0, "w": 48, "h": 8 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 48, "h": 8 },
+    "sourceSize": { "w": 48, "h": 8 },
+    "duration": 100
+   },
+   {
+    "filename": "ic_helmet",
+    "frame": { "x": 288, "y": 0, "w": 48, "h": 8 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 48, "h": 8 },
+    "sourceSize": { "w": 48, "h": 8 },
+    "duration": 100
+   },
+   {
+    "filename": "ic_ticket",
+    "frame": { "x": 336, "y": 0, "w": 48, "h": 8 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 48, "h": 8 },
+    "sourceSize": { "w": 48, "h": 8 },
+    "duration": 100
+   },
+   {
+    "filename": "ic_life",
+    "frame": { "x": 384, "y": 0, "w": 48, "h": 8 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 48, "h": 8 },
+    "sourceSize": { "w": 48, "h": 8 },
+    "duration": 100
+   },
+   {
+    "filename": "ic_dist",
+    "frame": { "x": 432, "y": 0, "w": 48, "h": 8 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 48, "h": 8 },
+    "sourceSize": { "w": 48, "h": 8 },
+    "duration": 100
+   },
+   {
+    "filename": "bar_full",
+    "frame": { "x": 480, "y": 0, "w": 48, "h": 8 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 48, "h": 8 },
+    "sourceSize": { "w": 48, "h": 8 },
+    "duration": 100
+   },
+   {
+    "filename": "bar_empty",
+    "frame": { "x": 528, "y": 0, "w": 48, "h": 8 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 48, "h": 8 },
+    "sourceSize": { "w": 48, "h": 8 },
+    "duration": 100
+   }
+ ],
+ "meta": {
+  "app": "https://www.aseprite.org/",
+  "version": "1.3.18.5-dev",
+  "image": "hud.png",
+  "format": "I8",
+  "size": { "w": 576, "h": 8 },
+  "scale": "1",
+  "frameTags": [
+   { "name": "hud_bg", "from": 0, "to": 0, "direction": "forward", "color": "#000000ff" },
+   { "name": "ic_coin", "from": 1, "to": 1, "direction": "forward", "color": "#000000ff" },
+   { "name": "ic_magnet", "from": 2, "to": 2, "direction": "forward", "color": "#000000ff" },
+   { "name": "ic_turbo", "from": 3, "to": 3, "direction": "forward", "color": "#000000ff" },
+   { "name": "ic_slow", "from": 4, "to": 4, "direction": "forward", "color": "#000000ff" },
+   { "name": "ic_spring", "from": 5, "to": 5, "direction": "forward", "color": "#000000ff" },
+   { "name": "ic_helmet", "from": 6, "to": 6, "direction": "forward", "color": "#000000ff" },
+   { "name": "ic_ticket", "from": 7, "to": 7, "direction": "forward", "color": "#000000ff" },
+   { "name": "ic_life", "from": 8, "to": 8, "direction": "forward", "color": "#000000ff" },
+   { "name": "ic_dist", "from": 9, "to": 9, "direction": "forward", "color": "#000000ff" },
+   { "name": "bar_full", "from": 10, "to": 10, "direction": "forward", "color": "#000000ff" },
+   { "name": "bar_empty", "from": 11, "to": 11, "direction": "forward", "color": "#000000ff" }
+  ],
+  "layers": [
+   { "name": "hud", "opacity": 255, "blendMode": "normal" }
+  ],
+  "slices": [
+  ]
+ }
+}

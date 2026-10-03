@@ -1,0 +1,110 @@
+{
+ "frames": [
+  {
+   "filename": "footbridge_0",
+   "frame": {
+    "x": 0,
+    "y": 0,
+    "w": 144,
+    "h": 8
+   }
+  },
+  {
+   "filename": "footbridge_1",
+   "frame": {
+    "x": 144,
+    "y": 0,
+    "w": 144,
+    "h": 8
+   }
+  },
+  {
+   "filename": "footbridge_2",
+   "frame": {
+    "x": 288,
+    "y": 0,
+    "w": 144,
+    "h": 8
+   }
+  },
+  {
+   "filename": "footbridge_shadow",
+   "frame": {
+    "x": 432,
+    "y": 0,
+    "w": 144,
+    "h": 8
+   }
+  },
+  {
+   "filename": "roadbridge_0",
+   "frame": {
+    "x": 576,
+    "y": 0,
+    "w": 144,
+    "h": 8
+   }
+  },
+  {
+   "filename": "roadbridge_1",
+   "frame": {
+    "x": 720,
+    "y": 0,
+    "w": 144,
+    "h": 8
+   }
+  },
+  {
+   "filename": "roadbridge_2",
+   "frame": {
+    "x": 864,
+    "y": 0,
+    "w": 144,
+    "h": 8
+   }
+  },
+  {
+   "filename": "roadbridge_3",
+   "frame": {
+    "x": 1008,
+    "y": 0,
+    "w": 144,
+    "h": 8
+   }
+  },
+  {
+   "filename": "roadbridge_4",
+   "frame": {
+    "x": 1152,
+    "y": 0,
+    "w": 144,
+    "h": 8
+   }
+  },
+  {
+   "filename": "roadbridge_5",
+   "frame": {
+    "x": 1296,
+    "y": 0,
+    "w": 144,
+    "h": 8
+   }
+  },
+  {
+   "filename": "roadbridge_shadow",
+   "frame": {
+    "x": 1440,
+    "y": 0,
+    "w": 144,
+    "h": 8
+   }
+  }
+ ],
+ "meta": {
+  "app": "tools/mkplaceholders.py",
+  "size": {
+   "w": 1584,
+   "h": 8
+  }
+ }
+}

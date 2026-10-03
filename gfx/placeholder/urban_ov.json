@@ -1,0 +1,65 @@
+{
+ "frames": [
+  {
+   "filename": "car_red",
+   "frame": {
+    "x": 0,
+    "y": 0,
+    "w": 8,
+    "h": 16
+   }
+  },
+  {
+   "filename": "car_blue",
+   "frame": {
+    "x": 8,
+    "y": 0,
+    "w": 8,
+    "h": 16
+   }
+  },
+  {
+   "filename": "car_white",
+   "frame": {
+    "x": 16,
+    "y": 0,
+    "w": 8,
+    "h": 16
+   }
+  },
+  {
+   "filename": "taxi",
+   "frame": {
+    "x": 24,
+    "y": 0,
+    "w": 8,
+    "h": 16
+   }
+  },
+  {
+   "filename": "bus",
+   "frame": {
+    "x": 32,
+    "y": 0,
+    "w": 8,
+    "h": 32
+   }
+  },
+  {
+   "filename": "trolley",
+   "frame": {
+    "x": 40,
+    "y": 0,
+    "w": 8,
+    "h": 32
+   }
+  }
+ ],
+ "meta": {
+  "app": "tools/mkplaceholders.py",
+  "size": {
+   "w": 48,
+   "h": 32
+  }
+ }
+}

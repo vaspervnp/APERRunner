@@ -1,0 +1,95 @@
+"""Phase 1: overscan + vertical hardware scroll + screen-fixed sprites.
+
+Pictures are read from the emulator framebuffer (one row per scanline,
+4 framebuffer pixels per mode 0 pixel). The test world (src/testworld.asm)
+is made of tiles; the 4x12 test sprite (pen 14 inside) is fixed at screen
+line 232 in the HUD column (bytes 80-83).
+"""
+
+from harness import (boot_game, is_pastel_yellow, load_symbols, peek8,
+                     save_screenshot, sync_game_frame)
+
+PLAYFIELD_RIGHT = 576    # framebuffer x where the HUD starts
+SPRITE_X = 655           # framebuffer x through the test sprite (in the HUD)
+HUD_X = 600              # framebuffer x inside the HUD panel, left of the sprite
+COMPARE_LINES = range(40, 224)   # below the moving top edge, above the sprite
+SPEEDS = range(1, 7)
+
+
+def _rows(img):
+    return [tuple(img.crop((0, y, PLAYFIELD_RIGHT, y + 1)).getdata()) for y in range(img.height)]
+
+
+def _shift_between(before, after):
+    """Lines the playfield moved down from `before` to `after` (None if no match)."""
+    for shift in range(0, 9):
+        if all(after[y + shift] == before[y] for y in COMPARE_LINES):
+            return shift
+    return None
+
+
+def _sprite_lines(img):
+    return [y for y in range(img.height) if is_pastel_yellow(img.getpixel((SPRITE_X, y)))]
+
+
+def _set_speed(cpc, sym, speed):
+    cpc.write_ram(sym["scroll_speed"], bytes([speed]))
+
+
+def test_no_missed_frames_at_any_speed():
+    sym = load_symbols()
+    cpc = boot_game()
+    for speed in SPEEDS:
+        _set_speed(cpc, sym, speed)
+        cpc.run_frames(250)
+    missed = peek8(cpc, sym["missed_frames"])
+    max_load = peek8(cpc, sym["max_load"])
+    print(f"    max load {max_load}/12 interrupt periods")
+    assert missed == 0, f"{missed} game frames missed"
+    assert max_load < 12, f"work does not fit in a game frame (load {max_load})"
+
+
+def test_scroll_moves_exactly_speed_lines_per_game_frame():
+    sym = load_symbols()
+    cpc = boot_game()
+    for speed in SPEEDS:
+        _set_speed(cpc, sym, speed)
+        sync_game_frame(cpc, sym)                    # let the new speed settle
+        before = _rows(sync_game_frame(cpc, sym))
+        for i in range(16):
+            after = _rows(sync_game_frame(cpc, sym))
+            moved = _shift_between(before, after)
+            assert moved == speed, f"speed {speed}, frame {i}: moved {moved} lines"
+            before = after
+
+
+def test_sprite_stays_fixed_while_scrolling():
+    sym = load_symbols()
+    cpc = boot_game()
+    expected = None
+    for speed in (1, 3, 6):
+        _set_speed(cpc, sym, speed)
+        sync_game_frame(cpc, sym)
+        for i in range(48):                          # crosses many ring wraps
+            img = sync_game_frame(cpc, sym)
+            lines = _sprite_lines(img)
+            if expected is None:
+                expected = lines
+                save_screenshot(cpc, "scroll_sprite.png")
+            assert lines == expected, f"speed {speed}, frame {i}: sprite at {lines[:1]}..{lines[-1:]}"
+    assert len(expected) == 10, f"sprite interior should be 10 lines, got {len(expected)}"
+
+
+def test_hud_panel_is_static():
+    sym = load_symbols()
+    cpc = boot_game()
+    _set_speed(cpc, sym, 3)
+    reference = None
+    for _ in range(16):
+        img = sync_game_frame(cpc, sym)
+        # skip the top 8 lines: the picture edge moves with the fine scroll
+        column = [img.getpixel((HUD_X, y)) for y in range(8, 272)]
+        assert len(set(column)) == 1, "HUD panel column is not uniform"
+        if reference is None:
+            reference = column[0]
+        assert column[0] == reference
