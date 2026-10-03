@@ -1,5 +1,5 @@
 ; =============================================================================
-; A.P.E.R. RUNNER - Athens Piraeus Electric Railways
+; Runner A.P.E.R - Athens Piraeus Electric Railways
 ; Amstrad CPC 6128 - Z80 (rasm)
 ;
 ; Memory: code + variables from &1000 (main RAM); graphics in the 6128's
@@ -51,9 +51,7 @@ start:
                 call crtc_init
                 ld hl,game_palette
                 call set_palette
-                call world_init
-                call scroll_init
-                call player_init
+                call new_run
 
                 xor a
                 ld (missed_frames),a
@@ -79,7 +77,11 @@ main_loop:
 
                 ; sprites first: the beam is still above the bottom of the picture
                 BORDER #12                  ; bright green: runner + sprites
+                call game_state_update
+                jr nz,.not_playing
                 call player_update
+                call collide
+.not_playing:   call effects
                 call build_row_table
                 call build_clip_table
                 call player_draw
@@ -93,14 +95,35 @@ main_loop:
                 call draw_sprite
                 ; then the scroll for the next game frame (off-screen rows only)
                 BORDER #0C                  ; bright red: scroll work
+                ld a,(game_state)           ; the world stops while crashed
+                or a
+                ld a,0
+                jr nz,.scroll
                 ld a,(scroll_speed)
-                call scroll_step
+.scroll:        call scroll_step
                 BORDER #14                  ; black
                 call measure_load
                 ld hl,(frame_counter)
                 inc hl
                 ld (frame_counter),hl
                 jr main_loop
+
+; -----------------------------------------------------------------------------
+; new_run: fresh world, screen and runner (start and after a game over).
+; -----------------------------------------------------------------------------
+new_run:
+                di
+                call world_init
+                call scroll_init
+                call player_init
+                xor a
+                ld (game_state),a
+                ld (invuln),a
+                ld (was_airborne),a
+                ld a,LIVES_START
+                ld (lives),a
+                ei
+                ret
 
 ; -----------------------------------------------------------------------------
 ; wait_game_frame: waits until VBLS_PER_FRAME VSYNCs passed since the last
@@ -160,10 +183,11 @@ measure_load:
                 include "world.asm"
                 include "input.asm"
                 include "player.asm"
+                include "collide.asm"
                 include "data/palette.asm"
 
-; 4x12 screen-fixed test item (HUD icon size): red frame, pastel yellow
-; (pen 14) inside, transparent corners. Replaced by the HUD in phase 7.
+; 4x12 screen-fixed test item (HUD icon size): red frame, bright yellow
+; (pen 7) inside, transparent corners. Replaced by the HUD in phase 7.
 TEST_SPRITE_W   equ 4
 TEST_SPRITE_H   equ 12
 test_sprite:    defb TEST_SPRITE_W,TEST_SPRITE_H
@@ -174,7 +198,7 @@ test_sprite:    defb TEST_SPRITE_W,TEST_SPRITE_H
                 elseif ln==1 || ln==TEST_SPRITE_H || bx==1 || bx==TEST_SPRITE_W
                 defb #00,#F3
                 else
-                defb #00,#3F
+                defb #00,#FC
                 endif
                 rend
                 rend

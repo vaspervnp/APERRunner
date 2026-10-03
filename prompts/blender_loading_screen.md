@@ -1,4 +1,4 @@
-# Prompt — Loading screen A.P.E.R. RUNNER με Blender MCP
+# Prompt — Loading screen Runner A.P.E.R με Blender MCP
 
 > Αντίγραψε όλο το κείμενο κάτω από τη γραμμή και δώσ' το σε νέα συνεδρία Claude Code
 > στο `~/repos/APERRunner`, με ανοιχτό το Blender και ενεργό το **Blender MCP add-on**.
@@ -6,7 +6,7 @@
 ---
 
 Φτιάξε στο Blender (μέσω των εργαλείων `mcp__Blender__*`) τη σκηνή για το **loading screen** του
-παιχνιδιού **A.P.E.R. RUNNER** (Athens Piraeus Electric Railways) για Amstrad CPC 6128.
+παιχνιδιού **Runner A.P.E.R** (Athens Piraeus Electric Railways) για Amstrad CPC 6128.
 Το τελικό αποτέλεσμα θα γίνει εικόνα **mode 0 overscan 192×272 pixels, 16 χρώματα** από την
 παλέτα των 27 χρωμάτων του CPC. Άρα: **μεγάλες, καθαρές χρωματικές επιφάνειες, έντονη αντίθεση,
 σιλουέτες που διαβάζονται σε πολύ χαμηλή ανάλυση**. Καμία λεπτομέρεια μικρότερη από ~1/100 του πλάτους.
@@ -35,7 +35,7 @@
 4. **Ουρανός**: διαβάθμιση πορτοκαλί → ροζ → μωβ/σκούρο μπλε, μεγάλος ήλιος χαμηλά πίσω από την
    Ακρόπολη (έντονο backlight → καθαρές σιλουέτες).
 5. **Πάνω 56 γραμμές (≈20% του ύψους)**: **άφησέ τες ως καθαρό ουρανό** — εκεί θα μπει το pixel-art
-   λογότυπο «A.P.E.R. RUNNER» από το Aseprite. **Μη βάλεις κείμενο** στο Blender.
+   λογότυπο «RUNNER A.P.E.R» από το Aseprite. **Μη βάλεις κείμενο** στο Blender.
 
 ## Στυλ & υλικά
 - Low-poly, **flat/toon shading** (Shader to RGB + Color Ramp με 2–3 σκαλοπάτια) ή Workbench Flat.

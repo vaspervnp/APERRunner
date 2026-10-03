@@ -1,5 +1,5 @@
 -- =============================================================================
--- Shared helpers for the A.P.E.R. RUNNER Aseprite sheet scripts.
+-- Shared helpers for the Runner A.P.E.R Aseprite sheet scripts.
 -- Run through the Aseprite MCP (Aseprite runs on Windows, the repo is reached
 -- through \\wsl.localhost\...):
 --   dofile(GFX .. "src\\track.lua")

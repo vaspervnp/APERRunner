@@ -140,7 +140,22 @@ arc_roof:       defb 12, 3,3,4,4,4,4,4,4,4,4,3,3
 ; player_sprite: A = frame index in gfx_player_table for the current state.
 ; -----------------------------------------------------------------------------
 player_sprite:
-                ld hl,(arc_ptr)
+                ld a,(game_state)           ; crashed: tumble (crash0/crash1)
+                or a
+                jr z,.alive
+                ld a,(anim_tick)
+                rra
+                rra
+                and 1
+                ld b,a
+                ld a,(player_base)
+                or a
+                ld a,IDX_PLAYER_S1_CRASH0
+                jr z,.crash
+                ld a,IDX_PLAYER_S3_CRASH0
+.crash:         add a,b
+                ret
+.alive:         ld hl,(arc_ptr)
                 ld a,h
                 or l
                 jr z,.running
@@ -237,6 +252,9 @@ player_draw:
                 ld hl,shadow_save
                 call restore_sprite
 
+                ld a,(invuln)               ; blinking while protected
+                and 2
+                ret nz
                 MAP_RAM GA_RAM_C5
                 ld a,1                      ; hidden under bridge decks
                 ld (spr_clip_on),a

@@ -1,4 +1,4 @@
-# Γραφικά A.P.E.R. RUNNER
+# Γραφικά Runner A.P.E.R
 
 Όλα τα γραφικά είναι **mode 0** (pixel 2:1), με την παλέτα του παιχνιδιού
 (`palette/aper_game.gpl`, από το `tools/cpcpalette.py`).

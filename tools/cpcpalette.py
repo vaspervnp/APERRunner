@@ -1,4 +1,4 @@
-"""Amstrad CPC colours and the A.P.E.R. RUNNER game palette (single source).
+"""Amstrad CPC colours and the Runner A.P.E.R game palette (single source).
 
 Run as a script to (re)generate:
   gfx/palette/aper_game.gpl   - palette for Aseprite (index = CPC pen)
@@ -85,7 +85,7 @@ def hardware_colour(pen):
 
 
 def write_gpl(path):
-    lines = ["GIMP Palette", "Name: A.P.E.R. RUNNER game", "Columns: 8", "#"]
+    lines = ["GIMP Palette", "Name: Runner A.P.E.R game", "Columns: 8", "#"]
     for pen, (firmware, _, use) in enumerate(GAME_PALETTE):
         r, g, b = editor_rgb(pen)
         lines.append(f"{r:3d} {g:3d} {b:3d}\tpen {pen:2d} fw {firmware:2d} {CPC_COLOURS[firmware][0]} - {use}")

@@ -1,11 +1,11 @@
-# Prompt — Γραφικά A.P.E.R. RUNNER με Aseprite MCP
+# Prompt — Γραφικά Runner A.P.E.R με Aseprite MCP
 
 > Αντίγραψε όλο το κείμενο κάτω από τη γραμμή και δώσ' το σε νέα συνεδρία Claude Code
 > στο `~/repos/APERRunner` με ενεργό τον **aseprite MCP server**.
 
 ---
 
-Είσαι pixel artist για ένα παιχνίδι **Amstrad CPC 6128, mode 0** με τίτλο **A.P.E.R. RUNNER**
+Είσαι pixel artist για ένα παιχνίδι **Amstrad CPC 6128, mode 0** με τίτλο **Runner A.P.E.R**
 (Athens Piraeus Electric Railways). Είναι top-down endless runner: ο παίκτης τρέχει πάνω σε
 **3 παράλληλες γραμμές ηλεκτρικού τρένου**, η πίστα κυλά προς τα κάτω, ο παίκτης είναι στο κάτω
 μέρος της οθόνης και «κοιτάει» προς τα πάνω. Διάβασε πρώτα το `plan.md` (ενότητες 1, 2.4, 2.5, 5).
@@ -149,7 +149,7 @@
   (ink 7→5→4) για τίτλους και σκορ.
 
 ### I. `screens.aseprite` — μενού & σκορ (δική τους παλέτα επιτρέπεται, 16 χρώματα CPC)
-- `logo` 192×48 — «A.P.E.R. RUNNER» με μεγάλα γράμματα, εφέ ταχύτητας, μικρό ηλεκτρικό τρένο
+- `logo` 192×48 — «RUNNER A.P.E.R» με μεγάλα γράμματα, εφέ ταχύτητας, μικρό ηλεκτρικό τρένο
   και κάτω υπότιτλος «ATHENS · PIRAEUS ELECTRIC RAILWAYS» με `font_small`.
 - `cursor` 12×8 — μικρό τρενάκι-κέρσορας μενού (2 frames animation).
 - `medal_gold`, `medal_silver`, `medal_bronze` 16×16.

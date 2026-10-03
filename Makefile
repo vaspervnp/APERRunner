@@ -1,4 +1,4 @@
-# A.P.E.R. RUNNER - build
+# Runner A.P.E.R - build
 #   make        -> build/aper.dsk
 #   make run    -> Caprice32 (snap) with auto RUN"DISC
 #   make test   -> headless tests with ~/cpcemu

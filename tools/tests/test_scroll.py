@@ -2,11 +2,11 @@
 
 Pictures are read from the emulator framebuffer (one row per scanline,
 4 framebuffer pixels per mode 0 pixel). The test world (src/testworld.asm)
-is made of tiles; the 4x12 test sprite (pen 14 inside) is fixed at screen
+is made of tiles; the 4x12 test sprite (pen 7 inside) is fixed at screen
 line 232 in the HUD column (bytes 80-83).
 """
 
-from harness import (boot_game, is_pastel_yellow, load_symbols, peek8,
+from harness import (boot_game, is_bright_yellow, load_symbols, peek8,
                      save_screenshot, sync_game_frame)
 
 PLAYFIELD_RIGHT = 576    # framebuffer x where the HUD starts
@@ -16,8 +16,19 @@ COMPARE_LINES = range(40, 224)   # below the moving top edge, above the sprite
 SPEEDS = range(1, 7)
 
 
+def _steady(p):
+    """Pens 14 (coin glint) and 15 (signal lamp) cycle their colours:
+    map each pair to one value so only movement is compared."""
+    if p[0] > 200 and p[1] > 200 and p[2] > 80:          # pastel yellow / bright white
+        return (255, 255, 255)
+    if p[0] < 50 and p[1] > 200 and p[2] < 50:            # lamp green -> lamp red
+        return (255, 0, 0)
+    return p
+
+
 def _rows(img):
-    return [tuple(img.crop((0, y, PLAYFIELD_RIGHT, y + 1)).getdata()) for y in range(img.height)]
+    return [tuple(_steady(p) for p in img.crop((0, y, PLAYFIELD_RIGHT, y + 1)).getdata())
+            for y in range(img.height)]
 
 
 def _shift_between(before, after):
@@ -29,7 +40,7 @@ def _shift_between(before, after):
 
 
 def _sprite_lines(img):
-    return [y for y in range(img.height) if is_pastel_yellow(img.getpixel((SPRITE_X, y)))]
+    return [y for y in range(img.height) if is_bright_yellow(img.getpixel((SPRITE_X, y)))]
 
 
 def _set_speed(cpc, sym, speed):

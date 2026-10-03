@@ -78,10 +78,15 @@ def test_ground_jump_uses_size_2_then_lands():
 
 
 def test_roof_jump_reaches_sizes_4_and_5():
-    sym = load_symbols()
-    cpc = boot_game()
-    cpc.write_ram(sym["player_base"], bytes([2]))   # as if a ramp had lifted us (phase 5)
-    _settle(cpc, sym)
+    from test_collisions import COL_TRAIN, Scenario, ramp_up
+    sc = Scenario()                                  # a ramp and a long train in the runner's lane
+    sc.plant_lane(0, 1, ramp_up() + [COL_TRAIN] * 30)
+    sc.go()
+    for _ in range(200):
+        if sc.frame()["base"] == 2:
+            break
+    sym, cpc = sc.sym, sc.cpc
+    sc.run(4)
     running = _state(cpc, sym)["player_frame"]
     assert sym["idx_player_s3_run0"] <= running <= sym["idx_player_s3_run3"]
     _tap(cpc, sym, "q")                              # Q = jump
@@ -89,7 +94,7 @@ def test_roof_jump_reaches_sizes_4_and_5():
     frames = {s["player_frame"] for s in states}
     assert sym["idx_player_s5_jump"] in frames
     assert {sym["idx_player_s4_jump_up"], sym["idx_player_s4_jump_down"]} <= frames
-    assert states[-1]["player_z"] == 2
+    assert states[-1]["player_z"] == 2 and states[-1]["player_base"] == 2
 
 
 def test_down_shortens_a_jump():
