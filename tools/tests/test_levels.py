@@ -121,10 +121,10 @@ def test_coins_are_in_one_lane_per_row():
 
 
 def test_coins_side_by_side_are_rejected():
-    _compile("..c  ...  ...\n...  ..c  ...\n")             # zig-zag across rows is fine
+    _compile("..c  ...  ...\n" * 3 + "...  ..c  ...\n" * 3)   # zig-zag across rows is fine
     for line in ("..c  ..c  ...", "...  ..c  ..c", "..c  ...  ..c", "..c  ..c  ..c"):
         try:
-            _compile(line + "\n")
+            _compile((line + "\n") * 3)
         except mklevel.LevelError as e:
             assert "one lane only" in str(e)
         else:
@@ -137,3 +137,28 @@ def test_coins_are_sparse():
     coins = sum(1 for c in chunks for row in c["rows"] for lane in range(3) if row[lane * 3 + 2] == mklevel.ITEMS["c"])
     rows = sum(len(c["rows"]) for c in chunks)
     assert coins <= 0.24 * rows, f"{coins} coins in {rows} rows"
+
+
+def test_coins_come_in_runs_of_three_or_more():
+    coin = mklevel.ITEMS["c"]
+    for chunk in mklevel.load_all():
+        for lane in range(3):
+            column = [row[lane * 3 + 2] == coin for row in chunk["rows"]] + [False]
+            run = 0
+            for r, has in enumerate(column):
+                if has:
+                    run += 1
+                    continue
+                assert run == 0 or run >= 3, f"{chunk['name']}: lane {lane + 1}: run of {run} ending at row {r}"
+                run = 0
+
+
+def test_short_coin_runs_are_rejected():
+    _compile("..c  ...  ...\n..c  ...  ...\n..c  ...  ...\n")
+    for text in ("..c  ...  ...\n", "..c  ...  ...\n..c  ...  ...\n...  ...  ...\n"):
+        try:
+            _compile(text)
+        except mklevel.LevelError as e:
+            assert "runs of at least 3" in str(e)
+        else:
+            raise AssertionError(f"accepted {text!r}")

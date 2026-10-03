@@ -1,9 +1,9 @@
 """Phase 5: obstacles and collisions.
 
 Each scenario stops the scroll, clears every collision class in the world
-ring and plants its own obstacles a few rows ahead of the runner (rows
-generated later appear above them, so nothing else can get in the way).
-The drawn tiles do not change - collisions only read the descriptors.
+ring (and every item) and plants its own obstacles a few rows ahead of the
+runner (rows generated later appear above them, so nothing else can get in
+the way). The drawn tiles do not change - collisions only read the descriptors.
 """
 
 from harness import boot_game, load_symbols, peek8, peek16, sync_game_frame
@@ -18,9 +18,9 @@ class Scenario:
     """Rows are planted when the game has generated them (generation clears
     a descriptor), so the plan is applied to every new row each frame."""
 
-    def __init__(self, speed=4):
+    def __init__(self, speed=4, pickups=False):
         self.sym = load_symbols()
-        self.cpc = boot_game(collisions=True)
+        self.cpc = boot_game(collisions=True, pickups=pickups)
         self.speed = speed
         self.plan = {}
         self.applied = set()
@@ -31,6 +31,8 @@ class Scenario:
         self.base_row = self.top - AHEAD
         self.clear_until = self.top + 80
         self._apply()
+        if pickups:                 # forget what was picked up while booting
+            self.cpc.write_ram(self.sym["score"], bytes(5))         # score, coins
 
     def _set_speed(self, speed):
         self.cpc.write_ram(self.sym["scroll_speed"], bytes([speed]))
@@ -45,8 +47,8 @@ class Scenario:
         for row in range(top - 60, top):
             if row in self.applied or row > self.clear_until:
                 continue
-            classes = self.plan.get(row, [COL_NONE] * 3)
-            self.cpc.write_ram(self._desc(row) + 6, bytes(classes))
+            cells = self.plan.get(row, [COL_NONE] * 3 + [0] * 3)     # 3 classes, 3 items
+            self.cpc.write_ram(self._desc(row) + 6, bytes(cells))
             self.applied.add(row)
 
     def plant_lane(self, offset, lane, classes):
@@ -54,8 +56,15 @@ class Scenario:
         for k, cls in enumerate(classes):
             row = self.base_row + offset + k
             assert row not in self.applied or row < self.top, "plant before go()"
-            self.plan.setdefault(row, [COL_NONE] * 3)[lane] = cls
+            self.plan.setdefault(row, [COL_NONE] * 3 + [0] * 3)[lane] = cls
             self.applied.discard(row)
+        self._apply()
+
+    def plant_item(self, offset, lane, item):
+        row = self.base_row + offset
+        assert row not in self.applied or row < self.top, "plant before go()"
+        self.plan.setdefault(row, [COL_NONE] * 3 + [0] * 3)[3 + lane] = item
+        self.applied.discard(row)
         self._apply()
 
     def go(self):

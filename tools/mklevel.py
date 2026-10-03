@@ -24,7 +24,8 @@ is the first one the player meets). Each lane cell has 3 characters:
   item    '.' none  'c' coin  'M' magnet  'T' turbo  'Z' slow (turtle)
           'J' spring  'H' helmet  'X' ticket x2
 
-A row has coins in one lane at most (never side by side in 2 or 3 lanes).
+A row has coins in one lane at most (never side by side in 2 or 3 lanes),
+and coins come in runs of at least MIN_COIN_RUN consecutive rows of a lane.
 
 Trains are long: a locomotive of LOCO_ROWS rows and at least MIN_WAGONS
 wagons of WAGON_ROWS rows, joined by 1-row couplers. A T/R run must be
@@ -54,6 +55,7 @@ ENVS = {"any": 0, "urban": 1, "forest": 2}
 WAGON_ROWS = 12
 LOCO_ROWS = 12
 MIN_WAGONS = 2
+MIN_COIN_RUN = 3
 
 
 def train_length(wagons):
@@ -189,6 +191,11 @@ def compile_chunk(path):
         if coin_lanes > 1:
             raise LevelError(f"{path}: line {grid[r][0]}: coins in {coin_lanes} lanes - a row has coins in one lane only")
         rows.append(row)
+    for lane in range(3):
+        for start, length, obj, _ in _runs([cell[2] * 2 for cell in columns[lane]]):
+            if obj == "c" and length < MIN_COIN_RUN:
+                raise LevelError(f"{path}: line {grid[start][0]}: {length} coin(s) in lane {lane + 1} - "
+                                 f"coins come in runs of at least {MIN_COIN_RUN}")
     return {"name": name, "env": ENVS[env], "diff": diff, "weight": weight, "rows": rows}
 
 

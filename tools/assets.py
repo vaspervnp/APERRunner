@@ -7,6 +7,8 @@ writes stand-ins to gfx/placeholder/. Sizes are in mode 0 pixels.
 An asset converts frames of a sheet into src/data/gfx_<asset>.asm:
   kind "tile"   - opaque, width/2 bytes per line, lines top to bottom
   kind "sprite" - masked: width (bytes), height, then (mask, data) pairs
+  kind "compiled" - masked sprite as code (see png2cpc.compiled_source):
+                  saves the background and draws, no data reads
   mirror        - also emit horizontally mirrored copies (<frame>_m)
 """
 
@@ -74,4 +76,5 @@ ASSETS = {
     "items": ("items", "sprite", None, False),
     "hud_bg": ("hud", "tile", ["hud_bg"], False),
     "hud_icons": ("hud", "sprite", HUD_ICONS + ["bar_full", "bar_empty"], False),
+    "coin_code": ("items", "compiled", [f"coin{i}" for i in range(4)], False),
 }

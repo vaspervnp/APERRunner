@@ -77,14 +77,24 @@ main_loop:
 
                 ; sprites first: the beam is still above the bottom of the picture
                 BORDER #12                  ; bright green: runner + sprites
+                call build_row_table
+                call restore_flyers         ; reverse drawing order
+                call player_restore
                 call game_state_update
                 jr nz,.not_playing
                 call player_update
                 call collide
-.not_playing:   call effects
-                call build_row_table
+                ld a,(game_state)
+                or a
+                jr nz,.not_playing
+                call pickups                ; erases picked-up items: no sprite on screen now
+                call magnet
+                call tick_powerups
+.not_playing:   call move_flyers
+                call effects
                 call build_clip_table
                 call player_draw
+                call draw_flyers
                 ld hl,test_sprite_save      ; screen-fixed test item in the HUD
                 call restore_sprite
                 ld ix,test_sprite
@@ -99,7 +109,7 @@ main_loop:
                 or a
                 ld a,0
                 jr nz,.scroll
-                ld a,(scroll_speed)
+                call current_speed          ; turbo / slow / normal
 .scroll:        call scroll_step
                 BORDER #14                  ; black
                 call measure_load
@@ -116,6 +126,7 @@ new_run:
                 call world_init
                 call scroll_init
                 call player_init
+                call pickups_init
                 xor a
                 ld (game_state),a
                 ld (invuln),a
@@ -184,6 +195,7 @@ measure_load:
                 include "input.asm"
                 include "player.asm"
                 include "collide.asm"
+                include "pickups.asm"
                 include "data/palette.asm"
 
 ; 4x12 screen-fixed test item (HUD icon size): red frame, bright yellow

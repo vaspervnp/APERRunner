@@ -26,11 +26,12 @@ def load_symbols(path=SYM):
     return symbols
 
 
-def boot_game(max_frames=1500, collisions=False):
+def boot_game(max_frames=1500, collisions=False, pickups=False):
     """Cold-boots a 6128, inserts build/aper.dsk, RUN"DISC (loads the banks
     and the game) and waits until the game's main loop is running.
     Unless `collisions` is set, the debug switch no_crash is turned on so
-    tests about other things are not interrupted by crashes."""
+    tests about other things are not interrupted by crashes. Likewise
+    no_pickups keeps power-ups (speed changes!) out unless `pickups` is set."""
     sym = load_symbols()
     cpc = CPC()
     cpc.run_frames(BOOT_FRAMES)
@@ -40,6 +41,7 @@ def boot_game(max_frames=1500, collisions=False):
         cpc.run_frames(25)
         if sym["start"] <= cpc.pc < sym["end_of_code"] and peek16(cpc, sym["frame_counter"]) > 2:
             cpc.write_ram(sym["no_crash"], bytes([0 if collisions else 1]))
+            cpc.write_ram(sym["no_pickups"], bytes([0 if pickups else 1]))
             return cpc
     raise AssertionError(f"game did not start (PC #{cpc.pc:04X})")
 

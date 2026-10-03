@@ -124,7 +124,7 @@ collide:
                 jp c,.crash_feet            ; jumped into the side of a train
                 ld a,(player_base)
                 cp b
-                jr z,.front
+                jp z,.front
                 jr c,.set_base              ; landed higher (roof)
                 ld a,b                      ; landed lower: fall the rest
                 jr .drop
@@ -166,9 +166,34 @@ collide:
                 ld (player_z),a
                 jr .front
 
-.airborne:      ld a,1
+.airborne:      ld a,(player_z)             ; descending onto a higher level
+                ld b,a                      ; (springs: land on a roof)?
+                ld a,(prev_z)
+                cp b
+                jr c,.rising
+                jr z,.rising
+                ld c,a                      ; C = prev_z > z
+                ld a,(support)
+                cp b
+                jr c,.rising                ; still above the level
+                ld d,a                      ; D = S >= z
+                ld a,c
+                cp d
+                jr c,.rising                ; was below it last frame
+                ld a,(player_base)
+                cp d
+                jr nc,.rising               ; not higher than the base
+                ld hl,0
+                ld (arc_ptr),hl
+                xor a
                 ld (was_airborne),a
-                ld a,(player_z)
+                ld a,d
+                ld (player_base),a
+                ld (player_z),a
+                jp .front
+.rising:        ld a,1
+                ld (was_airborne),a
+                ld a,b
                 ld (prev_z),a
 
                 ; --- obstacles at the front ---
@@ -225,6 +250,15 @@ crash:
                 ld a,(no_crash)             ; test/debug switch
                 or a
                 ret nz
+                ld a,(helmet)               ; helmet: absorbs this one
+                or a
+                jr z,.hurt
+                xor a
+                ld (helmet),a
+                ld a,INVULN_FRAMES
+                ld (invuln),a
+                ret
+.hurt:
                 ld a,STATE_CRASHED
                 ld (game_state),a
                 ld a,CRASH_FRAMES

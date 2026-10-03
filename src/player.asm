@@ -87,12 +87,19 @@ player_update:
                 ld a,(keys_pressed)
                 and KEY_JUMP
                 jr z,.on_ground
-                ld hl,arc_ground
+                ld hl,arc_roof
                 ld a,(player_base)
                 or a
+                jr nz,.start_arc
+                ld hl,arc_ground
+                ld de,(pu_spring)           ; springs: super jump from the ground
+                ld a,d
+                or e
                 jr z,.start_arc
-                ld hl,arc_roof
+                ld hl,arc_spring
 .start_arc:     ld (arc_ptr),hl
+                ld a,(player_base)          ; (collide: not descending yet)
+                ld (prev_z),a
                 xor a
                 ld (arc_index),a
 .in_air:        ld a,(arc_index)            ; last arc frame shown: back on the base
@@ -135,6 +142,7 @@ move_step_sizes: defb 3,3,4,4           ; indexed by steps left (4 first)
 ; arcs: length, then z per game frame
 arc_ground:     defb 12, 1,1,1,1,1,1,1,1,1,1,1,1
 arc_roof:       defb 12, 3,3,4,4,4,4,4,4,4,4,3,3
+arc_spring:     defb 16, 1,3,4,4,4,4,4,4,4,4,4,4,4,4,3,1
 
 ; -----------------------------------------------------------------------------
 ; player_sprite: A = frame index in gfx_player_table for the current state.
@@ -243,15 +251,16 @@ build_clip_table:
                 ret
 
 ; -----------------------------------------------------------------------------
-; player_draw: restores the old runner/shadow, draws the new ones.
-; Needs build_row_table for this frame.
+; player_restore: removes the runner/shadow drawn last frame.
+; player_draw: draws them. Needs build_row_table for this frame.
 ; -----------------------------------------------------------------------------
-player_draw:
+player_restore:
                 ld hl,player_save           ; restore in reverse drawing order
                 call restore_sprite
                 ld hl,shadow_save
-                call restore_sprite
+                jp restore_sprite
 
+player_draw:
                 ld a,(invuln)               ; blinking while protected
                 and 2
                 ret nz

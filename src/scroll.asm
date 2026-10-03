@@ -64,6 +64,7 @@ scroll_step:
                 jp publish_scroll
 
 coarse_step:
+                call score_row
                 ; D1 moves up one row in its ring, new row 0 = next world row
                 ld hl,(scr_d1)
                 ld bc,-ROW_BYTES
