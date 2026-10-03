@@ -216,7 +216,7 @@
     "duration": 100
    },
    {
-    "filename": "loco2_nose",
+    "filename": "loco1_nose_top",
     "frame": { "x": 672, "y": 0, "w": 28, "h": 8 },
     "rotated": false,
     "trimmed": false,
@@ -225,7 +225,7 @@
     "duration": 100
    },
    {
-    "filename": "loco2_body",
+    "filename": "loco2_nose",
     "frame": { "x": 700, "y": 0, "w": 28, "h": 8 },
     "rotated": false,
     "trimmed": false,
@@ -234,7 +234,7 @@
     "duration": 100
    },
    {
-    "filename": "loco2_pantograph",
+    "filename": "loco2_body",
     "frame": { "x": 728, "y": 0, "w": 28, "h": 8 },
     "rotated": false,
     "trimmed": false,
@@ -243,7 +243,7 @@
     "duration": 100
    },
    {
-    "filename": "loco3_nose",
+    "filename": "loco2_pantograph",
     "frame": { "x": 756, "y": 0, "w": 28, "h": 8 },
     "rotated": false,
     "trimmed": false,
@@ -252,7 +252,7 @@
     "duration": 100
    },
    {
-    "filename": "loco3_body",
+    "filename": "loco2_nose_top",
     "frame": { "x": 784, "y": 0, "w": 28, "h": 8 },
     "rotated": false,
     "trimmed": false,
@@ -261,7 +261,7 @@
     "duration": 100
    },
    {
-    "filename": "loco3_pantograph",
+    "filename": "loco3_nose",
     "frame": { "x": 812, "y": 0, "w": 28, "h": 8 },
     "rotated": false,
     "trimmed": false,
@@ -270,7 +270,7 @@
     "duration": 100
    },
    {
-    "filename": "ramp_up_0",
+    "filename": "loco3_body",
     "frame": { "x": 840, "y": 0, "w": 28, "h": 8 },
     "rotated": false,
     "trimmed": false,
@@ -279,7 +279,7 @@
     "duration": 100
    },
    {
-    "filename": "ramp_up_1",
+    "filename": "loco3_pantograph",
     "frame": { "x": 868, "y": 0, "w": 28, "h": 8 },
     "rotated": false,
     "trimmed": false,
@@ -288,7 +288,7 @@
     "duration": 100
    },
    {
-    "filename": "ramp_up_2",
+    "filename": "loco3_nose_top",
     "frame": { "x": 896, "y": 0, "w": 28, "h": 8 },
     "rotated": false,
     "trimmed": false,
@@ -297,7 +297,7 @@
     "duration": 100
    },
    {
-    "filename": "ramp_down_0",
+    "filename": "ramp_up_0",
     "frame": { "x": 924, "y": 0, "w": 28, "h": 8 },
     "rotated": false,
     "trimmed": false,
@@ -306,7 +306,7 @@
     "duration": 100
    },
    {
-    "filename": "ramp_down_1",
+    "filename": "ramp_up_1",
     "frame": { "x": 952, "y": 0, "w": 28, "h": 8 },
     "rotated": false,
     "trimmed": false,
@@ -315,8 +315,35 @@
     "duration": 100
    },
    {
-    "filename": "ramp_down_2",
+    "filename": "ramp_up_2",
     "frame": { "x": 980, "y": 0, "w": 28, "h": 8 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 28, "h": 8 },
+    "sourceSize": { "w": 28, "h": 8 },
+    "duration": 100
+   },
+   {
+    "filename": "ramp_down_0",
+    "frame": { "x": 1008, "y": 0, "w": 28, "h": 8 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 28, "h": 8 },
+    "sourceSize": { "w": 28, "h": 8 },
+    "duration": 100
+   },
+   {
+    "filename": "ramp_down_1",
+    "frame": { "x": 1036, "y": 0, "w": 28, "h": 8 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 28, "h": 8 },
+    "sourceSize": { "w": 28, "h": 8 },
+    "duration": 100
+   },
+   {
+    "filename": "ramp_down_2",
+    "frame": { "x": 1064, "y": 0, "w": 28, "h": 8 },
     "rotated": false,
     "trimmed": false,
     "spriteSourceSize": { "x": 0, "y": 0, "w": 28, "h": 8 },
@@ -329,7 +356,7 @@
   "version": "1.3.18.5-dev",
   "image": "track.png",
   "format": "I8",
-  "size": { "w": 1008, "h": 8 },
+  "size": { "w": 1092, "h": 8 },
   "scale": "1",
   "frameTags": [
    { "name": "rail_a", "from": 0, "to": 0, "direction": "forward", "color": "#000000ff" },
@@ -356,18 +383,21 @@
    { "name": "loco1_nose", "from": 21, "to": 21, "direction": "forward", "color": "#000000ff" },
    { "name": "loco1_body", "from": 22, "to": 22, "direction": "forward", "color": "#000000ff" },
    { "name": "loco1_pantograph", "from": 23, "to": 23, "direction": "forward", "color": "#000000ff" },
-   { "name": "loco2_nose", "from": 24, "to": 24, "direction": "forward", "color": "#000000ff" },
-   { "name": "loco2_body", "from": 25, "to": 25, "direction": "forward", "color": "#000000ff" },
-   { "name": "loco2_pantograph", "from": 26, "to": 26, "direction": "forward", "color": "#000000ff" },
-   { "name": "loco3_nose", "from": 27, "to": 27, "direction": "forward", "color": "#000000ff" },
-   { "name": "loco3_body", "from": 28, "to": 28, "direction": "forward", "color": "#000000ff" },
-   { "name": "loco3_pantograph", "from": 29, "to": 29, "direction": "forward", "color": "#000000ff" },
-   { "name": "ramp_up_0", "from": 30, "to": 30, "direction": "forward", "color": "#000000ff" },
-   { "name": "ramp_up_1", "from": 31, "to": 31, "direction": "forward", "color": "#000000ff" },
-   { "name": "ramp_up_2", "from": 32, "to": 32, "direction": "forward", "color": "#000000ff" },
-   { "name": "ramp_down_0", "from": 33, "to": 33, "direction": "forward", "color": "#000000ff" },
-   { "name": "ramp_down_1", "from": 34, "to": 34, "direction": "forward", "color": "#000000ff" },
-   { "name": "ramp_down_2", "from": 35, "to": 35, "direction": "forward", "color": "#000000ff" }
+   { "name": "loco1_nose_top", "from": 24, "to": 24, "direction": "forward", "color": "#000000ff" },
+   { "name": "loco2_nose", "from": 25, "to": 25, "direction": "forward", "color": "#000000ff" },
+   { "name": "loco2_body", "from": 26, "to": 26, "direction": "forward", "color": "#000000ff" },
+   { "name": "loco2_pantograph", "from": 27, "to": 27, "direction": "forward", "color": "#000000ff" },
+   { "name": "loco2_nose_top", "from": 28, "to": 28, "direction": "forward", "color": "#000000ff" },
+   { "name": "loco3_nose", "from": 29, "to": 29, "direction": "forward", "color": "#000000ff" },
+   { "name": "loco3_body", "from": 30, "to": 30, "direction": "forward", "color": "#000000ff" },
+   { "name": "loco3_pantograph", "from": 31, "to": 31, "direction": "forward", "color": "#000000ff" },
+   { "name": "loco3_nose_top", "from": 32, "to": 32, "direction": "forward", "color": "#000000ff" },
+   { "name": "ramp_up_0", "from": 33, "to": 33, "direction": "forward", "color": "#000000ff" },
+   { "name": "ramp_up_1", "from": 34, "to": 34, "direction": "forward", "color": "#000000ff" },
+   { "name": "ramp_up_2", "from": 35, "to": 35, "direction": "forward", "color": "#000000ff" },
+   { "name": "ramp_down_0", "from": 36, "to": 36, "direction": "forward", "color": "#000000ff" },
+   { "name": "ramp_down_1", "from": 37, "to": 37, "direction": "forward", "color": "#000000ff" },
+   { "name": "ramp_down_2", "from": 38, "to": 38, "direction": "forward", "color": "#000000ff" }
   ],
   "layers": [
    { "name": "track", "opacity": 255, "blendMode": "normal" }

@@ -22,6 +22,20 @@ PICTURE_ROWS    equ ROWS_PER_BLOCK*2
 ; Destroys A, BC, DE, HL.
 ; -----------------------------------------------------------------------------
 build_row_table:
+                ld hl,(cur_d1)              ; unchanged since the last build?
+                ld de,(row_table_d1)
+                or a
+                sbc hl,de
+                jr nz,.build
+                ld hl,(cur_d2)
+                ld de,(row_table_d2)
+                or a
+                sbc hl,de
+                ret z
+.build:         ld hl,(cur_d1)
+                ld (row_table_d1),hl
+                ld hl,(cur_d2)
+                ld (row_table_d2),hl
                 ld de,row_table
                 ld hl,(cur_d1)
                 ld c,D1_BANK_HI
@@ -327,4 +341,6 @@ spr_clip_on:    defb 0                  ; 1 = honour row_clip (runner and shadow
 spr_hidden:     defb 0                  ; current char row is hidden
 
 row_table:      defs PICTURE_ROWS*2
+row_table_d1:   defw #FFFF                  ; ring offsets row_table was built for
+row_table_d2:   defw #FFFF
 row_clip:       defs PICTURE_ROWS           ; non-zero: sprites are not drawn in that picture row

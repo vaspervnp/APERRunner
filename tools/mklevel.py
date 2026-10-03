@@ -15,17 +15,21 @@ Chunk file format:
 Grid rows are listed top to bottom as they appear on screen (the last line
 is the first one the player meets). Each lane cell has 3 characters:
 
-  object  '.' rail   'W' wagon   'L' locomotive   '=' coupler
+  object  '.' rail
+          'T' train, locomotive first: its cab faces the player (bottom)
+          'R' train, locomotive last: the player meets a wagon end first
           '^' ramp up (3 rows, below a train)   'v' ramp down (3 rows, above a train)
           'S' buffer stop (2 rows)   'F' signal (2 rows)
-  type    train livery 1-3 for W/L/=, '.' otherwise
+  type    train livery 1-3 for T/R, '.' otherwise
   item    '.' none  'c' coin  'M' magnet  'T' turbo  'Z' slow (turtle)
           'J' spring  'H' helmet  'X' ticket x2
 
-Runs of W/L cells become whole trains: W runs are split into cars
-(end_bottom, body_a/body_b..., end_top) joined by couplers; L runs start
-with the nose at the bottom, alternate body/pantograph and end with the
-wagon end_top unless a '=' coupler continues the train above.
+A row has coins in one lane at most (never side by side in 2 or 3 lanes).
+
+Trains are long: a locomotive of LOCO_ROWS rows and at least MIN_WAGONS
+wagons of WAGON_ROWS rows, joined by 1-row couplers. A T/R run must be
+exactly LOCO_ROWS + k * (1 + WAGON_ROWS) rows with k >= MIN_WAGONS
+(38 rows for 2 wagons, 51 for 3, ...).
 """
 
 import glob
@@ -46,6 +50,14 @@ COL_NONE, COL_STOP, COL_SIGNAL, COL_TRAIN, COL_NOSE, COL_RAMP_UP, COL_RAMP_DOWN 
 ITEMS = {".": 0, "c": 1, "M": 2, "T": 3, "Z": 4, "J": 5, "H": 6, "X": 7}
 ITEM_ROWS = {0: 0, 1: 1}                       # rows an item overlay covers (default 2)
 ENVS = {"any": 0, "urban": 1, "forest": 2}
+
+WAGON_ROWS = 12
+LOCO_ROWS = 12
+MIN_WAGONS = 2
+
+
+def train_length(wagons):
+    return LOCO_ROWS + wagons * (1 + WAGON_ROWS)
 
 
 class LevelError(Exception):
@@ -98,48 +110,38 @@ def resolve_lane(path, column, lane):
         if obj == ".":
             for r in rows:
                 out[r] = (TILE["rail_b" if (r * 7 + lane * 3) % 11 == 0 else "rail_a"], COL_NONE)
-        elif obj == "W":
+        elif obj in "TR":
             tt = _train_type(path, start, t)
-            cars = max(1, round((length + 1) / 6))
-            car_rows = length - (cars - 1)
-            if car_rows < 3 * cars:
-                raise LevelError(f"{path}: {where}: wagon run too short ({length})")
-            sizes = [car_rows // cars + (1 if i < car_rows % cars else 0) for i in range(cars)]
-            r = start
-            for i, size in enumerate(sizes):
-                for k in range(size):
-                    if k == 0:
-                        part = "end_bottom"
-                    elif k == size - 1:
-                        part = "end_top"
-                    else:
-                        part = "body_a" if k % 2 else "body_b"
-                    out[r] = (TILE[f"wagon{tt}_{part}"], COL_TRAIN)
-                    r += 1
-                if i < cars - 1:
-                    out[r] = (TILE[f"wagon{tt}_coupler"], COL_TRAIN)
-                    r += 1
-        elif obj == "L":
-            tt = _train_type(path, start, t)
-            above = column[start + length][0] if start + length < len(column) else None
-            for k, r in enumerate(rows):
-                if k == 0:
-                    out[r] = (TILE[f"loco{tt}_nose"], COL_NOSE)
-                elif k == length - 1 and above != "=":
-                    out[r] = (TILE[f"wagon{tt}_end_top"], COL_TRAIN)
-                else:
-                    out[r] = (TILE[f"loco{tt}_{'pantograph' if k % 2 == 0 else 'body'}"], COL_TRAIN)
-            if length < 2:
-                raise LevelError(f"{path}: {where}: locomotive needs at least 2 rows")
-        elif obj == "=":
-            tt = _train_type(path, start, t)
-            for r in rows:
-                out[r] = (TILE[f"wagon{tt}_coupler"], COL_TRAIN)
+            wagons, rest = divmod(length - LOCO_ROWS, 1 + WAGON_ROWS)
+            if length < LOCO_ROWS or rest or wagons < MIN_WAGONS:
+                valid = ", ".join(str(train_length(k)) for k in range(MIN_WAGONS, MIN_WAGONS + 3))
+                raise LevelError(f"{path}: {where}: a train needs a locomotive and at least {MIN_WAGONS} wagons: "
+                                 f"{length} rows, valid lengths are {valid}, ...")
+            parts = []                               # bottom to top, as (tile name, collision)
+            wagon = ([f"wagon{tt}_end_bottom"]
+                     + [f"wagon{tt}_body_{'a' if k % 3 == 1 else 'b'}" for k in range(WAGON_ROWS - 2)]
+                     + [f"wagon{tt}_end_top"])
+            if obj == "T":                           # cab at the bottom, back end at the top
+                parts += ([(f"loco{tt}_nose", COL_NOSE)]
+                          + [(f"loco{tt}_{'pantograph' if k in (2, LOCO_ROWS - 4) else 'body'}", COL_TRAIN)
+                             for k in range(1, LOCO_ROWS - 1)]
+                          + [(f"wagon{tt}_end_top", COL_TRAIN)])
+                for _ in range(wagons):
+                    parts += [(f"wagon{tt}_coupler", COL_TRAIN)] + [(n, COL_TRAIN) for n in wagon]
+            else:                                    # wagons first, cab facing away at the top
+                for _ in range(wagons):
+                    parts += [(n, COL_TRAIN) for n in wagon] + [(f"wagon{tt}_coupler", COL_TRAIN)]
+                parts += ([(f"wagon{tt}_end_bottom", COL_TRAIN)]
+                          + [(f"loco{tt}_{'pantograph' if k in (3, LOCO_ROWS - 3) else 'body'}", COL_TRAIN)
+                             for k in range(1, LOCO_ROWS - 1)]
+                          + [(f"loco{tt}_nose_top", COL_TRAIN)])
+            for r, (name, collision) in zip(rows, parts):
+                out[r] = (TILE[name], collision)
         elif obj in "^v":
             if length != 3:
                 raise LevelError(f"{path}: {where}: ramps are exactly 3 rows")
             neighbour = start + 3 if obj == "^" else start - 1
-            if not (0 <= neighbour < len(column)) or column[neighbour][0] not in "WL":
+            if not (0 <= neighbour < len(column)) or column[neighbour][0] not in "TR":
                 raise LevelError(f"{path}: {where}: ramp {'up must sit below' if obj == '^' else 'down must sit above'} a train")
             for k, r in enumerate(rows):
                 name = f"ramp_{'up' if obj == '^' else 'down'}_{k}"
@@ -183,6 +185,9 @@ def compile_chunk(path):
                 raise LevelError(f"{path}: line {grid[r][0]}: power-ups cover 2 rows, not allowed on the top row")
             tile, collision = lanes[lane][r]
             row += [tile, collision, item]
+        coin_lanes = sum(1 for lane in range(3) if row[lane * 3 + 2] == ITEMS["c"])
+        if coin_lanes > 1:
+            raise LevelError(f"{path}: line {grid[r][0]}: coins in {coin_lanes} lanes - a row has coins in one lane only")
         rows.append(row)
     return {"name": name, "env": ENVS[env], "diff": diff, "weight": weight, "rows": rows}
 

@@ -16,7 +16,7 @@ TRACK_TILES = (
     ["rail_a", "rail_b", "stop_0", "stop_1", "signal_0", "signal_1"]
     + [f"wagon{t}_{part}" for t in TRAIN_TYPES
        for part in ("end_bottom", "body_a", "body_b", "end_top", "coupler")]
-    + [f"loco{t}_{part}" for t in TRAIN_TYPES for part in ("nose", "body", "pantograph")]
+    + [f"loco{t}_{part}" for t in TRAIN_TYPES for part in ("nose", "body", "pantograph", "nose_top")]
     + [f"ramp_up_{i}" for i in range(3)]
     + [f"ramp_down_{i}" for i in range(3)]
 )

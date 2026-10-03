@@ -114,6 +114,11 @@ local function wagon(t, part)
 end
 
 local function loco(t, part)
+  if part == "nose_top" then                     -- cab facing up (loco at the rear of a train)
+    local c = loco(t, "nose")
+    c:flip_v()
+    return c
+  end
   local c = track(20 + t, nil)
   local l = LIVERY[t]
   roof(c, t, 0, H - 1)
@@ -228,7 +233,7 @@ for t = 1, 3 do
   end
 end
 for t = 1, 3 do
-  for _, part in ipairs({ "nose", "body", "pantograph" }) do
+  for _, part in ipairs({ "nose", "body", "pantograph", "nose_top" }) do
     add("loco" .. t .. "_" .. part, loco(t, part))
   end
 end

@@ -987,6 +987,10 @@ draw_overlay_slice:
                 ld a,(iy+OV_COLUMN)
                 call ring_column
                 ex de,hl                    ; HL = plane 0 address
+                ld a,(.width)               ; same offset in every plane: test once
+                ld c,a
+                call ring_fits
+                jr z,.fast
                 ld a,(.count)
                 ld b,a
 .line:          push bc
@@ -1011,6 +1015,30 @@ draw_overlay_slice:
                 ld h,a
                 pop bc
                 djnz .line
+                ret
+; no plane-end crossing: plain loop, source pointer kept in DE across planes
+.fast:          ld de,(.src)
+                ld a,(.count)
+.fast_line:     push hl
+                push af
+                ld a,(.width)
+                ld b,a
+.fast_byte:     ld a,(de)
+                and (hl)
+                inc de
+                ld c,a
+                ld a,(de)
+                or c
+                inc de
+                ld (hl),a
+                inc hl
+                djnz .fast_byte
+                pop af
+                pop hl
+                ld bc,PLANE_SIZE
+                add hl,bc
+                dec a
+                jr nz,.fast_line
                 ret
 .width:         defb 0
 .count:         defb 0

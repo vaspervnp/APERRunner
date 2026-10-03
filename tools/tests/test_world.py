@@ -3,6 +3,7 @@
 from harness import boot_game, load_symbols, peek8, peek16, save_screenshot, sync_game_frame
 from world_model import F_BRIDGE, F_FOREST, F_OVERLAY, Sheets, read_desc, screen_row, visible_rows
 
+TRACK_TILES = 39
 TEST_SPRITE_ROWS = range(29, 34)     # picture rows the HUD test sprite can touch
 RUNNER_ROWS = range(28, 34)          # picture rows the runner (and its shadow) can touch
 
@@ -47,7 +48,7 @@ def _check_desc(desc, row):
     count = 16 if desc["flags"] & F_FOREST else 12
     assert desc["left"] < count and desc["left"] % 2 == 0, f"row {row}: left side {desc}"
     assert desc["right"] < count and desc["right"] % 2 == 1, f"row {row}: right side {desc}"
-    assert all(t < 36 for t in desc["lanes"]), f"row {row}: lane tiles {desc}"
+    assert all(t < TRACK_TILES for t in desc["lanes"]), f"row {row}: lane tiles {desc}"
     assert all((c & 15) <= 6 for c in desc["coll"]), f"row {row}: collision {desc}"
     assert all(i <= 7 for i in desc["items"]), f"row {row}: items {desc}"
 

@@ -217,7 +217,7 @@
    }
   },
   {
-   "filename": "loco2_nose",
+   "filename": "loco1_nose_top",
    "frame": {
     "x": 672,
     "y": 0,
@@ -226,7 +226,7 @@
    }
   },
   {
-   "filename": "loco2_body",
+   "filename": "loco2_nose",
    "frame": {
     "x": 700,
     "y": 0,
@@ -235,7 +235,7 @@
    }
   },
   {
-   "filename": "loco2_pantograph",
+   "filename": "loco2_body",
    "frame": {
     "x": 728,
     "y": 0,
@@ -244,7 +244,7 @@
    }
   },
   {
-   "filename": "loco3_nose",
+   "filename": "loco2_pantograph",
    "frame": {
     "x": 756,
     "y": 0,
@@ -253,7 +253,7 @@
    }
   },
   {
-   "filename": "loco3_body",
+   "filename": "loco2_nose_top",
    "frame": {
     "x": 784,
     "y": 0,
@@ -262,7 +262,7 @@
    }
   },
   {
-   "filename": "loco3_pantograph",
+   "filename": "loco3_nose",
    "frame": {
     "x": 812,
     "y": 0,
@@ -271,7 +271,7 @@
    }
   },
   {
-   "filename": "ramp_up_0",
+   "filename": "loco3_body",
    "frame": {
     "x": 840,
     "y": 0,
@@ -280,7 +280,7 @@
    }
   },
   {
-   "filename": "ramp_up_1",
+   "filename": "loco3_pantograph",
    "frame": {
     "x": 868,
     "y": 0,
@@ -289,7 +289,7 @@
    }
   },
   {
-   "filename": "ramp_up_2",
+   "filename": "loco3_nose_top",
    "frame": {
     "x": 896,
     "y": 0,
@@ -298,7 +298,7 @@
    }
   },
   {
-   "filename": "ramp_down_0",
+   "filename": "ramp_up_0",
    "frame": {
     "x": 924,
     "y": 0,
@@ -307,7 +307,7 @@
    }
   },
   {
-   "filename": "ramp_down_1",
+   "filename": "ramp_up_1",
    "frame": {
     "x": 952,
     "y": 0,
@@ -316,9 +316,36 @@
    }
   },
   {
-   "filename": "ramp_down_2",
+   "filename": "ramp_up_2",
    "frame": {
     "x": 980,
+    "y": 0,
+    "w": 28,
+    "h": 8
+   }
+  },
+  {
+   "filename": "ramp_down_0",
+   "frame": {
+    "x": 1008,
+    "y": 0,
+    "w": 28,
+    "h": 8
+   }
+  },
+  {
+   "filename": "ramp_down_1",
+   "frame": {
+    "x": 1036,
+    "y": 0,
+    "w": 28,
+    "h": 8
+   }
+  },
+  {
+   "filename": "ramp_down_2",
+   "frame": {
+    "x": 1064,
     "y": 0,
     "w": 28,
     "h": 8
@@ -328,7 +355,7 @@
  "meta": {
   "app": "tools/mkplaceholders.py",
   "size": {
-   "w": 1008,
+   "w": 1092,
    "h": 8
   }
  }
