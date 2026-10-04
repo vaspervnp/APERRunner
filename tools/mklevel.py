@@ -24,9 +24,10 @@ is the first one the player meets). Each lane cell has 3 characters:
   item    '.' none  'c' coin  'M' magnet  'T' turbo  'Z' slow (turtle)
           'J' spring  'H' helmet  'X' ticket x2
 
-A row has coins in one lane at most (never side by side in 2 or 3 lanes),
-and coins come in runs of MIN_COIN_RUN to MAX_COIN_RUN consecutive rows of
-a lane.
+A row has coins in one lane at most (never side by side in 2 or 3 lanes).
+Coins come in runs of MIN_COIN_RUN to MAX_COIN_RUN coins in one lane, one
+coin every COIN_STEP rows (an empty row between two coins); two coins are
+never on consecutive rows of a lane.
 
 A chunk with a ramp up says how it rewards or forces the ramp:
 
@@ -68,6 +69,7 @@ LOCO_ROWS = 12
 MIN_WAGONS = 2
 MIN_COIN_RUN = 3
 MAX_COIN_RUN = 10
+COIN_STEP = 2
 RAMP_ROOF_SHARE = 0.6
 BLOCK_ROWS = 12
 RAMP_KINDS = ("coins", "blocked")
@@ -207,12 +209,30 @@ def compile_chunk(path):
             raise LevelError(f"{path}: line {grid[r][0]}: coins in {coin_lanes} lanes - a row has coins in one lane only")
         rows.append(row)
     for lane in range(3):
-        for start, length, obj, _ in _runs([cell[2] * 2 for cell in columns[lane]]):
-            if obj == "c" and not MIN_COIN_RUN <= length <= MAX_COIN_RUN:
+        for start, length in coin_runs([cell[2] == "c" for cell in columns[lane]], path, grid, lane):
+            if not MIN_COIN_RUN <= length <= MAX_COIN_RUN:
                 raise LevelError(f"{path}: line {grid[start][0]}: {length} coin(s) in lane {lane + 1} - "
                                  f"coins come in runs of {MIN_COIN_RUN} to {MAX_COIN_RUN}")
     ramp = check_ramp(path, header, columns)
     return {"name": name, "env": ENVS[env], "diff": diff, "weight": weight, "rows": rows, "ramp": ramp}
+
+
+def coin_runs(column, path="", grid=None, lane=0):
+    """[(first row, coins)] of a lane's coin runs (bottom first): one coin
+    every COIN_STEP rows. Coins on consecutive rows are rejected."""
+    rows = [r for r, has in enumerate(column) if has]
+    runs = []
+    for r in rows:
+        if runs and r - runs[-1][2] < COIN_STEP:
+            line = grid[r][0] if grid else r
+            raise LevelError(f"{path}: line {line}: coins on consecutive rows in lane {lane + 1} - "
+                             f"leave an empty row between two coins")
+        if runs and r - runs[-1][2] == COIN_STEP:
+            runs[-1][1] += 1
+            runs[-1][2] = r
+        else:
+            runs.append([r, 1, r])
+    return [(start, count) for start, count, _ in runs]
 
 
 def check_ramp(path, header, columns):

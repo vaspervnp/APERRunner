@@ -57,6 +57,7 @@ pickups_init:
                 ldir
                 xor a
                 ld (label_wait),a
+                ld (erase_wait),a
                 ret
 
 ; -----------------------------------------------------------------------------
@@ -86,14 +87,24 @@ pickups:
                 ret z
                 ld (hl),0
                 push af
-                ld c,1                      ; coin: 1 row, power-up: 2
+                ld c,1                      ; coin: 1 row
                 cp ITEM_COIN
                 jr z,.erase
-                inc c
+                ld a,(erase_wait)           ; power-up: 2 rows, in a light
+                or a                        ; frame (late_erase) unless one
+                jr nz,.now                  ; is already waiting
+                inc a
+                ld (erase_wait),a
+                ld hl,(probe_row)
+                ld (erase_row),hl
+                ld a,(probe_lane)
+                ld (erase_lane),a
+                jr .erased
+.now:           inc c
 .erase:         ld hl,(probe_row)
                 ld a,(probe_lane)
                 call erase_item
-                pop af
+.erased:        pop af
                 cp ITEM_COIN
                 jp z,collect_coin
                 ; fall through
@@ -102,6 +113,10 @@ pickups:
 ; activate_powerup: A = item 2..7.
 ; -----------------------------------------------------------------------------
 activate_powerup:
+                push af
+                ld a,SFX_POWERUP
+                ld (sfx_request),a
+                pop af
                 push af
                 call make_label             ; its name in the middle of the screen
                 pop af
@@ -215,6 +230,8 @@ score_add:
 
 ; a coin: +1 coin (BCD, saturates at 9999), +10 points (+20 with the ticket)
 collect_coin:
+                ld a,SFX_COIN
+                ld (sfx_request),a
                 ld hl,coins
                 ld a,(hl)
                 add 1
@@ -254,7 +271,7 @@ erase_item:
                 jp nz,.next
                 ld a,l
                 cp PICTURE_ROWS
-                jr nc,.next
+                jp nc,.next
                 ld c,0                      ; DE = plane 0 address of the row
                 call row_base
                 ex de,hl
@@ -517,14 +534,35 @@ make_label:                                 ; A = item 2..7
                 ld (label_wait),a
                 ret
 
+; C if this frame's scroll_step will make a coarse step (a heavy frame)
+coarse_ahead:
+                call current_speed
+                ld b,a
+                ld a,(scr_j)
+                cp b
+                ret
+
+; late_erase: the picked-up power-up (pickups) off the screen, in a frame
+; without a coarse step; the runner hides it meanwhile. Between the sprite
+; restores and draws.
+late_erase:
+                ld a,(erase_wait)
+                or a
+                ret z
+                call coarse_ahead
+                ret c
+                xor a
+                ld (erase_wait),a
+                ld hl,(erase_row)
+                ld a,(erase_lane)
+                ld c,2
+                jp erase_item
+
 draw_label:                                 ; between the sprite restores and draws
                 ld a,(label_wait)
                 or a
                 ret z
-                call current_speed          ; a coarse step ahead: not now
-                ld b,a
-                ld a,(scr_j)
-                cp b
+                call coarse_ahead           ; a coarse step ahead: not now
                 ret c
                 ld a,(label_wait)
                 dec a
@@ -623,6 +661,9 @@ world_line:
                 sbc hl,de
                 ret
 
+erase_wait:     defb 0                  ; late_erase
+erase_row:      defw 0
+erase_lane:     defb 0
 label_item:     defb 0
 label_w:        defb 0
 label_line:     defw 0

@@ -62,10 +62,13 @@ mend
 
 ; -----------------------------------------------------------------------------
 ; MAP_RAM config : selects the RAM configuration (GA_RAM_*). Preserves all.
+; cur_ram keeps it (low byte) for irq2, which maps bank C7 for the sound and
+; puts the configuration back.
 ; -----------------------------------------------------------------------------
 macro MAP_RAM config
                 push bc
                 ld bc,GA_PORT*256+{config}
+                ld (cur_ram),bc
                 out (c),c
                 pop bc
 mend

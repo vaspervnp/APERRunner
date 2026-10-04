@@ -120,47 +120,58 @@ def test_coins_are_in_one_lane_per_row():
             assert len(lanes) <= 1, f"{chunk['name']}: row {r} has coins in lanes {lanes}"
 
 
+def _coins(n, lane=0, gap=1):
+    """n coins in a lane, `gap` empty rows between them."""
+    cell = ["...  ...  ...", "...  ...  ...", "...  ...  ..."]
+    coin = ["..c  ...  ...", "...  ..c  ...", "...  ...  ..c"][lane]
+    return ((coin + "\n") + (cell[lane] + "\n") * gap) * (n - 1) + coin + "\n"
+
+
 def test_coins_side_by_side_are_rejected():
-    _compile("..c  ...  ...\n" * 3 + "...  ..c  ...\n" * 3)   # zig-zag across rows is fine
+    _compile(_coins(3, 0) + "...  ...  ...\n" + _coins(3, 1))   # zig-zag across rows is fine
     for line in ("..c  ..c  ...", "...  ..c  ..c", "..c  ...  ..c", "..c  ..c  ..c"):
         try:
-            _compile((line + "\n") * 3)
+            _compile((line + "\n...  ...  ...\n") * 3)
         except mklevel.LevelError as e:
             assert "one lane only" in str(e)
         else:
             raise AssertionError(f"accepted {line!r}")
 
 
-def test_coins_are_sparse():
-    # 40% fewer coins than the original layouts (0.40 per row): at most 0.24 per row overall
+def test_more_coins_on_screen():
+    # one and a half times the earlier density (~6 coins on the 34 rows of
+    # the screen, weighted by chunk probability): ~9 now
     chunks = mklevel.load_all()
-    coins = sum(1 for c in chunks for row in c["rows"] for lane in range(3) if row[lane * 3 + 2] == mklevel.ITEMS["c"])
-    rows = sum(len(c["rows"]) for c in chunks)
-    assert coins <= 0.24 * rows, f"{coins} coins in {rows} rows"
+    coin = mklevel.ITEMS["c"]
+    coins = sum(c["weight"] * sum(1 for row in c["rows"] for lane in range(3) if row[lane * 3 + 2] == coin)
+                for c in chunks)
+    rows = sum(c["weight"] * len(c["rows"]) for c in chunks)
+    on_screen = 34 * coins / rows
+    print(f"    {on_screen:.1f} coins on screen on average")
+    assert 8.5 <= on_screen <= 10.5, on_screen
 
 
-def test_coins_come_in_runs_of_three_to_ten():
+def test_coins_come_in_runs_of_three_to_ten_with_gaps():
     coin = mklevel.ITEMS["c"]
     for chunk in mklevel.load_all():
         for lane in range(3):
-            column = [row[lane * 3 + 2] == coin for row in chunk["rows"]] + [False]
-            run = 0
-            for r, has in enumerate(column):
-                if has:
-                    run += 1
-                    continue
-                assert run == 0 or 3 <= run <= 10, f"{chunk['name']}: lane {lane + 1}: run of {run} ending at row {r}"
-                run = 0
+            column = [row[lane * 3 + 2] == coin for row in chunk["rows"]]
+            for r in range(len(column) - 1):
+                assert not (column[r] and column[r + 1]), f"{chunk['name']}: lane {lane + 1}: coins on rows {r}, {r + 1}"
+            for start, count in mklevel.coin_runs(column):
+                assert 3 <= count <= 10, f"{chunk['name']}: lane {lane + 1}: run of {count} from row {start}"
 
 
-def test_short_and_long_coin_runs_are_rejected():
-    _compile("..c  ...  ...\n..c  ...  ...\n..c  ...  ...\n")
-    _compile("..c  ...  ...\n" * 10)
-    for text in ("..c  ...  ...\n", "..c  ...  ...\n..c  ...  ...\n...  ...  ...\n", "..c  ...  ...\n" * 11):
+def test_bad_coin_runs_are_rejected():
+    _compile(_coins(3))
+    _compile(_coins(10))
+    _compile(_coins(3) + "...  ...  ...\n" * 2 + _coins(3))     # two runs
+    for text, error in ((_coins(1), "runs of 3 to 10"), (_coins(2), "runs of 3 to 10"),
+                        (_coins(11), "runs of 3 to 10"), (_coins(3, gap=0), "consecutive rows")):
         try:
             _compile(text)
         except mklevel.LevelError as e:
-            assert "runs of 3 to 10" in str(e)
+            assert error in str(e), str(e)
         else:
             raise AssertionError(f"accepted {text!r}")
 
@@ -170,9 +181,9 @@ def _ramp_chunk(kind, roof_coins, ground_coins, stops):
     rows = []                                   # bottom first
     for r in range(3 + 38):
         obj = "^.." if r < 3 else "R1."
-        if 3 + 2 <= r < 3 + 2 + roof_coins:
+        if 3 + 2 <= r < 3 + 2 + 2 * roof_coins and r % 2 == 1:
             obj = "R1c"
-        left = "..c" if r < ground_coins else "..."
+        left = "..c" if r < 2 * ground_coins and r % 2 == 0 else "..."
         right = "S.." if (r - 2) % 10 in (0, 1) and stops and r >= 2 else "..."
         if stops and (r - 7) % 10 in (0, 1) and r >= 7:
             left = "S.."

@@ -3,19 +3,23 @@
 ;
 ; Every 312-line frame is three CRTC "frames" (vertical ruptures), all R9=7:
 ;
-;   B  : 4 rows (R4=3) + adjust 8-j lines. VSYNC at its row 0. Shows 4 black
+;   B  : 4 rows (R4=3) + adjust 8-j lines. VSYNC at its row 1. Shows 4 black
 ;        rows kept in base RAM bank 1 (B_ROWS_ADDR), R6=4 blanks the adjust.
 ;   D1 : 17 rows, top half of the picture, &8000 bank, 16K mode.
-;   D2 : 17 rows, bottom half, &C000 bank, 16K mode, + adjust j lines.
+;   D2 : 17 rows, bottom half, &C000 bank, 16K mode, + adjust j lines that
+;        show its ring row 17 (R6=18): the world row below the picture.
 ;
-;   40-j lines from VSYNC to D1 start  ->  j (0..7) moves the picture by
-;   one line; 8-j + j keeps the frame at 312 lines.
+;   32-j lines from VSYNC to D1 start  ->  j (0..7) moves the picture by
+;   one line; 8-j + j keeps the frame at 312 lines. The top edge of the
+;   picture (which moves with j) stays above the visible area, and with the
+;   adjust lines shown the picture always reaches B: the bottom edge does
+;   not move either (no flicker at the edges).
 ;
 ; Gate array interrupts come 2 lines after VSYNC and then every 52 lines,
 ; so relative to B line 0 they land at:
-;   irq0  B+2      : R4=3, R5=8-j, R6=4, R7=127, then (B row >= 1) R12/13=D1
-;   irq1  D1 14+j  : R4=16, R6=17, R5=0, R12/13=D2   (must be < D1 line 32)
-;   irq4  D2 34+j  : R5=j, R7=0, R12/13=B rows
+;   irq0  B+10     : R4=3, R5=8-j, R6=4, R7=127, R12/13=D1, then the sound
+;   irq1  D1 22+j  : R4=16, R6=18, R5=0, R12/13=D2   (must be < D1 line 32)
+;   irq4  D2 42+j  : R5=j, R7=1, R12/13=B rows
 ; Writes only happen where the old value can no longer match (real CRTC
 ; compares with equality) and avoid VCC=0 rows for R12/13 (CRTC 1 reloads
 ; the start address on every line of row 0).
@@ -31,6 +35,7 @@ D1_R12_BASE     equ #20             ; MA13-12 = 10 -> &8000, 16K mode
 D2_R12_BASE     equ #30             ; MA13-12 = 11 -> &C000
 
 B_ROWS          equ 4
+VSYNC_ROW       equ 1                   ; B row with the VSYNC
 B_ROWS_OFFSET   equ #800-B_ROWS*ROW_BYTES   ; #680, end of every 2K plane
 B_ROWS_ADDR     equ #4000+B_ROWS_OFFSET
 B_R12           equ #10|(B_ROWS_OFFSET>>9)    ; rasm '/' is float: use shifts
@@ -53,6 +58,7 @@ crtc_init:
                 ld bc,GA_PORT*256+GA_RMR_MODE0_NOROM
                 out (c),c
                 ld bc,GA_PORT*256+GA_RAM_C0
+                ld (cur_ram),bc
                 out (c),c
 
                 call clear_b_rows
@@ -161,7 +167,7 @@ irq_exit:
                 ei
                 ret
 
-; --- B line 2: VSYNC -----------------------------------------------------------
+; --- B line 10: VSYNC -----------------------------------------------------------
 irq0:
                 xor a
                 ld (irq_index),a
@@ -196,28 +202,40 @@ irq0:
                 CRTC_N R_VDISP,B_ROWS
                 CRTC_N R_VSYNCPOS,127
 
-                ; R12/13 for D1 only once B has left row 0 (>= line 8)
-                WAIT_DJNZ 120
+                ; R12/13 for D1: B is in row 1 (CRTC 1 reloads them on every
+                ; line of row 0 only), D1 starts at B line 40-j
                 ld hl,(cur_d1)
                 ld a,D1_R12_BASE
                 call write_start_addr
+
+                ; sound, 50 times a second: bank C7 (src/sound.asm)
+                push ix
+                ld a,(cur_ram)              ; whatever the game had mapped
+                push af
+                ld bc,GA_PORT*256+GA_RAM_C7
+                out (c),c
+                call sound_tick
+                pop af
+                ld b,GA_PORT
+                out (c),a
+                pop ix
                 jp irq_exit
 
-; --- D1 line 14+j ---------------------------------------------------------------
+; --- D1 line 22+j ---------------------------------------------------------------
 irq1:
                 CRTC_N R_VTOTAL,ROWS_PER_BLOCK-1
-                CRTC_N R_VDISP,ROWS_PER_BLOCK
+                CRTC_N R_VDISP,ROWS_PER_BLOCK+1     ; D2: adjust lines shown
                 CRTC_N R_VADJUST,0
                 ld hl,(cur_d2)
                 ld a,D2_R12_BASE
                 call write_start_addr
                 jp irq_exit
 
-; --- D2 line 34+j ---------------------------------------------------------------
+; --- D2 line 42+j ---------------------------------------------------------------
 irq4:
                 ld a,(cur_j)
                 CRTC_A R_VADJUST
-                CRTC_N R_VSYNCPOS,0
+                CRTC_N R_VSYNCPOS,VSYNC_ROW
                 CRTC_N R_STARTHI,B_R12
                 CRTC_N R_STARTLO,B_R13
                 jp irq_exit
@@ -234,6 +252,8 @@ write_start_addr:
 
 ; --- variables -------------------------------------------------------------------
 irq_index:      defb 0
+cur_ram:        defw GA_PORT*256+GA_RAM_C0  ; RAM configuration (MAP_RAM)
+sfx_request:    defb 0                  ; effect to play (SFX_*), 0 = none
 vbl_tick:       defb 0              ; +1 every VSYNC
 next_ready:     defb 0
 next_apply_tick: defb 0

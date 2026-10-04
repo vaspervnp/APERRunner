@@ -240,6 +240,31 @@ collide:
                 ld (player_z),a
                 ret
 
+; a signal turned red: its bell if one is in the 16 rows ahead of the runner
+signal_bell:
+                ld hl,(feet_row)
+                ld b,16
+.row:           push hl
+                call desc_addr
+                ld a,D_COLL
+                call add_a_hl
+                ld c,3
+.lane:          ld a,(hl)
+                and 15
+                cp COL_SIGNAL
+                jr z,.ring
+                inc hl
+                dec c
+                jr nz,.lane
+                pop hl
+                inc hl
+                djnz .row
+                ret
+.ring:          pop hl
+                ld a,SFX_SIGNAL
+                ld (sfx_request),a
+                ret
+
 ; fall from a roof: length, z per frame (base already lowered)
 arc_fall:       defb 2, 1,1
 
@@ -250,6 +275,8 @@ crash:
                 ld a,(no_crash)             ; test/debug switch
                 or a
                 ret nz
+                ld a,SFX_CRASH              ; also when the helmet takes it
+                ld (sfx_request),a
                 ld a,(helmet)               ; helmet: absorbs this one
                 or a
                 jr z,.hurt
@@ -372,6 +399,9 @@ effects:
                 add 70
 .set_time:      ld (hl),a
                 ld a,b
+                or a
+                call nz,signal_bell
+                ld a,(signal_red)
                 or a
                 ld a,HW_BRIGHT_RED
                 jr nz,.lamp

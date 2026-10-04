@@ -7,6 +7,9 @@ ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
 BUILD = os.path.join(ROOT, "build")
 DSK = os.path.join(BUILD, "aper.dsk")
 SYM = os.path.join(BUILD, "aper.sym")
+# framebuffer line of screen line 0 (the picture starts 32-j lines after
+# VSYNC, the framebuffer 35 lines after it, j = 0 shows picture line 0 at 32)
+IMAGE_Y = -3
 ARTIFACTS = os.path.join(BUILD, "test-artifacts")
 
 sys.path.insert(0, os.environ.get("CPCEMU", os.path.expanduser("~/cpcemu")))

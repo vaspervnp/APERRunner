@@ -102,6 +102,7 @@ main_loop:
                 call pickups                ; erases picked-up items: no sprite on screen now
                 call magnet
                 call tick_powerups
+                call late_erase             ; a picked-up power-up off the screen
                 call draw_label             ; a power-up's name on the track
 .not_playing:   call move_flyers
                 call effects
@@ -274,6 +275,8 @@ bank7_start:
                 include "data/gfx_font.asm"
                 include "data/gfx_logo.asm"
                 include "data/text.asm"
+                include "sound.asm"
+                include "data/music.asm"
 bank7_end:
                 assert bank7_end <= #8000
                 save "build/aperb7.bin",bank7_start,bank7_end-bank7_start

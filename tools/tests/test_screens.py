@@ -4,14 +4,14 @@ pause, languages."""
 import os
 import sys
 
-from harness import ROOT, boot_game, load_symbols, peek8, peek16, save_screenshot, start_from_menu, sync_game_frame
+from harness import IMAGE_Y, ROOT, boot_game, load_symbols, peek8, peek16, save_screenshot, start_from_menu, sync_game_frame
 import cpc as cpcmod  # noqa: E402  (path set up by harness)
 import test_collisions as tc
 
 sys.path.insert(0, os.path.join(ROOT, "tools"))
 import mktext  # noqa: E402
 
-MODE_PLAY, MODE_DEMO, MODE_MENU, MODE_CONTROLS, MODE_SCORES, MODE_OVER = range(6)
+MODE_PLAY, MODE_DEMO, MODE_MENU, MODE_CONTROLS, MODE_SCORES, MODE_OVER, MODE_STORY = range(7)
 WHITE = (255, 255, 255)
 
 
@@ -66,13 +66,20 @@ def test_menu_navigation_and_screens():
     save_screenshot(cpc, "scores.png")
     press(cpc, sym, cpcmod.KEY_ESC)
     assert mode(cpc, sym) == MODE_MENU
+    press(cpc, sym, cpcmod.KEY_DOWN)                     # the story
+    press(cpc, sym, cpcmod.KEY_SPACE)
+    assert mode(cpc, sym) == MODE_STORY
+    img = sync_game_frame(cpc, sym)
+    save_screenshot(cpc, "story.png")
+    assert len(white_lines(img, 0, 576)) > 100, "the story is written"
+    press(cpc, sym, cpcmod.KEY_ESC)
+    assert mode(cpc, sym) == MODE_MENU
     press(cpc, sym, cpcmod.KEY_DOWN)                     # sound on/off
     sound = peek8(cpc, sym["sound_on"])
     press(cpc, sym, cpcmod.KEY_SPACE)
     assert peek8(cpc, sym["sound_on"]) == sound ^ 1
-    press(cpc, sym, cpcmod.KEY_UP)
-    press(cpc, sym, cpcmod.KEY_UP)
-    press(cpc, sym, cpcmod.KEY_UP)
+    for _ in range(4):
+        press(cpc, sym, cpcmod.KEY_UP)
     assert peek8(cpc, sym["menu_sel"]) == 0
     press(cpc, sym, cpcmod.KEY_SPACE)
     assert mode(cpc, sym) == MODE_PLAY
@@ -87,11 +94,11 @@ def test_esc_goes_back_to_the_menu_and_pause_shows_a_label():
     assert peek8(cpc, sym["paused"]) == 1
     img = sync_game_frame(cpc, sym)
     label = white_lines(img, 608, 724)
-    assert any(200 + 5 <= y < 208 + 5 for y in label), "ΠΑΥΣΗ in the HUD panel"
+    assert any(200 + IMAGE_Y <= y < 208 + IMAGE_Y for y in label), "ΠΑΥΣΗ in the HUD panel"
     press(cpc, sym, ord("h"))
     assert peek8(cpc, sym["paused"]) == 0
     img = sync_game_frame(cpc, sym)
-    assert not any(200 + 5 <= y < 208 + 5 for y in white_lines(img, 608, 724)), "label erased"
+    assert not any(200 + IMAGE_Y <= y < 208 + IMAGE_Y for y in white_lines(img, 608, 724)), "label erased"
     press(cpc, sym, cpcmod.KEY_ESC)
     assert mode(cpc, sym) == MODE_MENU
 
@@ -187,3 +194,16 @@ def test_menu_after_a_game_has_no_track_left_at_the_top():
         assert mode(cpc, sym) == MODE_MENU
         top = [(x, y) for y in range(0, 16) for x in range(0, 576, 4) if max(img.getpixel((x, y))) > 40]
         assert not top, f"track left on the menu at {top[:3]}"
+
+
+def test_story_in_greek():
+    sym = load_symbols()
+    cpc = boot_game(menu=True)
+    frames(cpc, sym, 4)
+    press(cpc, sym, ord("l"))
+    for _ in range(3):
+        press(cpc, sym, cpcmod.KEY_DOWN)
+    press(cpc, sym, cpcmod.KEY_SPACE)
+    assert mode(cpc, sym) == MODE_STORY
+    sync_game_frame(cpc, sym)
+    save_screenshot(cpc, "story_el.png")

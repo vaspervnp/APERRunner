@@ -311,6 +311,7 @@ draw_compiled:
                 inc hl
                 ex de,hl
 .bank:          ld bc,GA_PORT*256           ; SMC: code bank
+                ld (cur_ram),bc
                 out (c),c
 .code:          call 0                      ; SMC
                 MAP_RAM GA_RAM_C5

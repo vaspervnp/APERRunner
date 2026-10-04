@@ -21,9 +21,10 @@ MODE_MENU       equ 2                   ; modes >= MODE_MENU: a still screen
 MODE_CONTROLS   equ 3
 MODE_SCORES     equ 4
 MODE_OVER       equ 5
+MODE_STORY      equ 6
 
 FONT_W          equ 3                   ; bytes per glyph
-MENU_ITEMS      equ 4
+MENU_ITEMS      equ 5
 MENU_Y          equ 104                 ; first option line
 MENU_STEP       equ 16
 MENU_TEXT_X     equ 18                  ; byte column of the options
@@ -245,6 +246,10 @@ menu_frame:
                 cp 2
                 ld a,MODE_SCORES
                 jp z,set_screen
+                ld a,(menu_sel)
+                cp 3
+                ld a,MODE_STORY
+                jp z,set_screen
                 ld a,(sound_on)             ; sound on/off
                 xor 1
                 ld (sound_on),a
@@ -316,6 +321,8 @@ draw_screen:
                 jp z,draw_scores
                 cp MODE_OVER
                 jp z,draw_over
+                cp MODE_STORY
+                jp z,draw_story
                 ; menu
                 MAP_RAM GA_RAM_C7
                 ld hl,gfx_logo_logo
@@ -336,6 +343,10 @@ draw_screen:
                 ld hl,(txt_menu_scores)
                 ld b,MENU_TEXT_X
                 ld c,MENU_Y+MENU_STEP*2
+                call draw_text
+                ld hl,(txt_menu_story)
+                ld b,MENU_TEXT_X
+                ld c,MENU_Y+MENU_STEP*3
                 call draw_text
                 call menu_sound_line
                 ld hl,(txt_menu_hint)
@@ -359,7 +370,7 @@ menu_sound_line:
                 jr nz,.text
                 ld hl,(txt_menu_sound_off)
 .text:          ld b,MENU_TEXT_X
-                ld c,MENU_Y+MENU_STEP*3
+                ld c,MENU_Y+MENU_STEP*4
                 jp draw_text
 
 menu_cursor_draw:
@@ -413,6 +424,46 @@ draw_controls:
 ; pointers to the text pointers (text_ptrs)
 controls_lines: defw txt_controls_left,txt_controls_right,txt_controls_jump,txt_controls_down
                 defw txt_controls_pause,txt_controls_esc,txt_controls_joy,0
+
+; the story: title, then centred lines (empty ones leave a gap)
+STORY_Y         equ 48
+STORY_STEP      equ 12
+
+draw_story:
+                ld hl,(txt_story_title)
+                ld c,24
+                call draw_text_centred
+                ld hl,story_lines
+                ld c,STORY_Y
+.line:          ld e,(hl)
+                inc hl
+                ld d,(hl)
+                inc hl
+                ld a,d
+                or e
+                jr z,.back
+                push hl
+                push bc
+                ex de,hl                    ; HL = the text's pointer
+                ld a,(hl)
+                inc hl
+                ld h,(hl)
+                ld l,a
+                call draw_text_centred
+                pop bc
+                pop hl
+                ld a,c
+                add STORY_STEP
+                ld c,a
+                jr .line
+.back:          ld hl,(txt_controls_back)
+                ld c,STORY_Y+STORY_COUNT*STORY_STEP+12
+                jp draw_text_centred
+; pointers to the text pointers (text_ptrs)
+story_lines:    defw txt_story_1,txt_story_2,txt_story_3,txt_story_4,txt_story_5
+                defw txt_story_6,txt_story_7,txt_story_8,txt_story_9,txt_story_10
+                defw txt_story_11,txt_story_12,txt_story_13,txt_story_14,txt_story_15,0
+STORY_COUNT     equ 15
 
 draw_scores:
                 ld hl,(txt_scores_title)

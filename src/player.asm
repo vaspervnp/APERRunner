@@ -98,6 +98,8 @@ player_update:
                 jr z,.start_arc
                 ld hl,arc_spring
 .start_arc:     ld (arc_ptr),hl
+                ld a,SFX_JUMP
+                ld (sfx_request),a
                 ld a,(player_base)          ; (collide: not descending yet)
                 ld (prev_z),a
                 xor a

@@ -17,9 +17,9 @@ DEBUG   ?= 0
 BUILD   := build
 LOAD    := 4000
 SRC     := $(filter-out src/loader.asm,$(wildcard src/*.asm))
-GFX_IN  := $(wildcard gfx/png/*.png gfx/png/*.json gfx/placeholder/*.png gfx/placeholder/*.json levels/chunks/*.txt text/*.txt) \
+GFX_IN  := $(wildcard gfx/png/*.png gfx/png/*.json gfx/placeholder/*.png gfx/placeholder/*.json levels/chunks/*.txt text/*.txt music/*.txt) \
            assets/loading/loading_cpc.png assets/loading/loading_palette.txt
-GFX_TOOLS := tools/cpcpalette.py tools/assets.py tools/png2cpc.py tools/mklevel.py tools/mktext.py \
+GFX_TOOLS := tools/cpcpalette.py tools/assets.py tools/png2cpc.py tools/mklevel.py tools/mktext.py tools/mkmusic.py \
              tools/scr2cpc.py
 GFX_STAMP := src/data/.stamp
 
@@ -44,6 +44,7 @@ $(GFX_STAMP): $(GFX_IN) $(GFX_TOOLS)
 	$(PYTHON) tools/png2cpc.py
 	$(PYTHON) tools/mklevel.py
 	$(PYTHON) tools/mktext.py
+	$(PYTHON) tools/mkmusic.py
 	$(PYTHON) tools/scr2cpc.py
 	touch $@
 

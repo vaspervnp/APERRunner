@@ -7,13 +7,12 @@ line s + IMAGE_Y, mode 0 pixel x is image x 4*x.
 import os
 import sys
 
-from harness import FRAME_US, ROOT, boot_game, load_symbols, peek8, peek16, save_screenshot, sync_game_frame
+from harness import FRAME_US, IMAGE_Y, ROOT, boot_game, load_symbols, peek8, peek16, save_screenshot, sync_game_frame
 
 sys.path.insert(0, os.path.join(ROOT, "tools"))
 import cpcpalette  # noqa: E402
 import png2cpc  # noqa: E402
 
-IMAGE_Y = 5
 SL_SIZE, SLOTS, SL_STATE = 15, 5, 14
 PANEL_PEN, GLINT_PEN = 1, 14
 BAND = range(56, 168)                   # screen lines the slots can reach
