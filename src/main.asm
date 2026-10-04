@@ -275,6 +275,7 @@ bank5_start:
                 include "data/gfx_player.asm"
                 include "data/gfx_shadows.asm"
                 include "data/chunks.asm"
+                include "chunk_pick.asm"
 bank5_end:
                 assert bank5_end <= #8000
                 save "build/aperb5.bin",bank5_start,bank5_end-bank5_start

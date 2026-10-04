@@ -276,8 +276,17 @@ generate_row:
                 or l
                 jp z,start_bridge
                 call pick_chunk
-                ld a,(spacer_len)           ; and the empty rows after it
-                ld (spacer_left),a
+                ld a,(spacer_len)           ; and the empty rows after it: a
+                ld hl,(pu_gap)              ; power-up overdue gets a clear
+                ld b,a                      ; stretch long enough for it
+                ld a,h
+                or l
+                ld a,b
+                jr nz,.spacer
+                cp PU_CLEAR*2+1
+                jr nc,.spacer
+                ld a,PU_CLEAR*2+1
+.spacer:        ld (spacer_left),a
                 ; fall through
 
 ; --- next row of the current chunk (bank C5) ------------------------------------
@@ -338,6 +347,8 @@ spacer_row:
                 ld c,3
                 call random_below
                 ld (chunk_row.lane_no),a
+                call clear_behind           ; and none in the rows behind
+                ret nz
                 ld e,a
                 ld d,0
                 push ix
@@ -370,12 +381,14 @@ spacer_steps:   defb 64,40,24               ; rows per step: easy, medium, hard
 ; place_powerup: when pu_gap is 0, a power-up on a free lane of this row
 ; (IX = descriptor, HL = the chunk's next row, bank C5): plain rail and no
 ; item here and on the next row (it covers 2 rows), no obstacle in the
-; PU_CLEAR rows ahead of it (rail or ramps). Turbo PU_TURBO_ODDS/256,
+; PU_CLEAR rows ahead of it nor in the PU_CLEAR rows behind it (rail or
+; ramps). Turbo PU_TURBO_ODDS/256,
 ; the other five share the rest. Then 50-150 rows to the next one.
 ; Preserves HL.
 ; -----------------------------------------------------------------------------
 PU_GAP_MIN      equ 50
-PU_CLEAR        equ 8                       ; rows ahead without an obstacle
+PU_GAP_RANGE    equ 70                      ; 50-120 rows, ~50-150 with the wait
+PU_CLEAR        equ 8                       ; rows ahead and behind without an obstacle
 PU_TURBO_ODDS   equ 77                      ; 30%
 
 place_powerup:
@@ -409,6 +422,9 @@ place_powerup:
                 ld a,(iy+D_COLL)
                 or (iy+D_ITEM)
                 jr nz,.next
+                ld a,e                      ; the rows behind
+                call clear_behind
+                jr nz,.next
                 pop hl
                 push hl
                 add hl,de                   ; next row: lane * 3 + collision
@@ -423,15 +439,9 @@ place_powerup:
                 ld a,(.check)               ; and no obstacle in the rows ahead
                 ld c,a
 .ahead:         ld a,(hl)
-                and 15
-                cp COL_RAMP_UP              ; rail or ramp: fine
-                jr nc,.ramp
-                or a
+                call obstacle
                 jr nz,.next
-                jr .clear
-.ramp:          cp COL_GAP
-                jr z,.next
-.clear:         ld a,9                      ; the row above in the chunk
+                ld a,9                      ; the row above in the chunk
                 call add_a_hl
                 dec c
                 jr nz,.ahead
@@ -449,6 +459,45 @@ place_powerup:
                 ret
 .check:         defb 0
 
+; A = lane: Z if none of the PU_CLEAR rows below gen_row has an obstacle
+; there. Preserves A, BC, DE, HL.
+clear_behind:
+                push hl
+                push de
+                push bc
+                ld c,a
+                ld hl,(gen_row)
+                ld b,PU_CLEAR
+.row:           dec hl
+                push hl
+                call desc_addr
+                ld a,D_COLL
+                add a,c
+                call add_a_hl
+                ld a,(hl)
+                pop hl
+                call obstacle
+                jr nz,.done
+                djnz .row
+.done:          ld a,c
+                pop bc
+                pop de
+                pop hl
+                ret
+
+; A = collision byte: Z if the runner passes on the ground (rail, ramps)
+obstacle:
+                and 15
+                ret z
+                cp COL_GAP
+                jr z,.yes
+                cp COL_RAMP_UP
+                jr c,.yes                   ; 1-4: stop, signal, train, nose
+                xor a                       ; ramps
+                ret
+.yes:           or a                        ; NZ
+                ret
+
 ; IY = descriptor + lane, (chunk_row.lane_no) = lane: a power-up there
 put_powerup:
                 call random                 ; the kind
@@ -464,7 +513,7 @@ put_powerup:
                 ld a,(hl)
 .kind:          ld (iy+D_ITEM),a
                 call spawn_item
-                ld c,101
+                ld c,PU_GAP_RANGE+1         ; (finding a safe spot adds some)
                 call random_below
                 add PU_GAP_MIN&#FF
                 ld l,a
@@ -558,78 +607,10 @@ roadbridge_rows:
                 defb IDX_BRIDGES_ROADBRIDGE_4,IDX_BRIDGES_ROADBRIDGE_5
 
 ; --- weighted chunk choice among those allowed at this difficulty/env -------------
-pick_chunk:
+pick_chunk:                                 ; (src/chunk_pick.asm, bank C5)
                 MAP_RAM GA_RAM_C5
-                ld hl,chunk_table           ; pass 1: total weight
-                ld b,CHUNK_COUNT
-                ld c,0
-.sum:           call chunk_weight
-                add a,c
-                ld c,a
-                inc hl
-                inc hl
-                djnz .sum
-                ld a,c
-                or a
-                jr nz,.have
-                inc c                       ; nothing eligible: take chunk 0
-.have:          call random_below
-                ld c,a                      ; C = pick
-                ld hl,chunk_table           ; pass 2: find it
-                ld b,CHUNK_COUNT
-.find:          call chunk_weight
-                or a
-                jr z,.not_this
-                ld e,a
-                ld a,c
-                sub e
-                jr c,.found
-                ld c,a
-.not_this:      inc hl
-                inc hl
-                djnz .find
-                ld hl,chunk_table           ; (rounding safety) chunk 0
-.found:         ld e,(hl)
-                inc hl
-                ld d,(hl)
-                ex de,hl
-                ld a,(hl)
-                ld (chunk_left),a
-                ld de,4
-                add hl,de
-                ld (chunk_ptr),hl
+                call pick_chunk_c5
                 MAP_RAM GA_RAM_C0
-                ret
-
-; HL = chunk table entry -> A = its weight if eligible now, else 0.
-; Preserves BC, HL.
-chunk_weight:
-                push hl
-                push bc
-                ld e,(hl)
-                inc hl
-                ld d,(hl)
-                ex de,hl
-                inc hl                      ; minimum difficulty
-                ld a,(difficulty)
-                cp (hl)
-                jr c,.no
-                inc hl
-                ld c,(hl)                   ; weight
-                inc hl
-                ld a,(hl)                   ; env: 0 any, 1 urban, 2 forest
-                or a
-                jr z,.yes
-                dec a
-                ld b,a
-                ld a,(env)
-                cp b
-                jr nz,.no
-.yes:           ld a,c
-                jr .out
-.no:            xor a
-.out:           pop bc
-                pop hl
                 ret
 
 ; --- busy counters: rows until a car lane / tree spot / side feature is free ------

@@ -109,8 +109,8 @@ def test_five_minute_flight():
 
 def test_power_ups_one_every_50_to_150_rows_turbo_most():
     """The generator places the power-ups (chunks hold coins only): one at a
-    time, 50-150 rows apart, never just before an obstacle (8 clear rows in
-    its lane), turbo ~30%, the other five sharing the rest."""
+    time, 50-150 rows apart, never close to an obstacle (8 clear rows ahead
+    and behind in its lane), turbo ~30%, the other five sharing the rest."""
     from collections import Counter
     sym = load_symbols()
     cpc = boot_game()
@@ -128,8 +128,8 @@ def test_power_ups_one_every_50_to_150_rows_turbo_most():
     rows = sorted(r for r, items in seen.items() if items)
     for r in rows:                              # 8 rows without an obstacle ahead
         lane = lanes[r][0]
-        ahead = [coll[r + k][lane] for k in range(1, 9) if r + k in coll]
-        assert all(c in (0, 5, 6) for c in ahead), (r, lane, ahead)
+        near = [coll[r + k][lane] for k in range(-8, 9) if k and r + k in coll]
+        assert all(c in (0, 5, 6) for c in near), (r, lane, near)
     kinds = Counter(seen[r][0] for r in rows)
     gaps = [b - a for a, b in zip(rows, rows[1:])]
     print(f"    {len(rows)} power-ups in {len(seen)} rows, gaps {min(gaps)}-{max(gaps)}, kinds {dict(kinds)}")

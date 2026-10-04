@@ -268,10 +268,10 @@ draw_compiled:
                 ld c,a
                 ld a,(spr_row)
                 call row_base
+                call spr_clipped            ; hidden (bridge deck): drawn into a
+                or a                        ; ring row nobody sees instead
+                call nz,unseen_base
                 ld a,(spr_wrap)
-                or a
-                jr nz,.fallback
-                call spr_clipped
                 or a
                 jr nz,.fallback
                 ex de,hl
@@ -321,6 +321,39 @@ draw_compiled:
                 ld a,(fc_col)
                 ld c,a
                 jp draw_sprite
+
+; HL = plane 0 address of D1 ring row 17 at column fc_col: never shown
+; (D1 shows rows 0-16), not the row the next coarse step copies or draws.
+; Sets spr_wrap like row_base. Destroys A, DE.
+unseen_base:
+                ld hl,(cur_d1)
+                ld de,ROWS_PER_BLOCK*ROW_BYTES
+                add hl,de
+                ld a,(fc_col)
+                add a,l
+                ld l,a
+                ld a,h
+                adc 0
+                and RING_MASK>>8
+                or D1_BANK_HI
+                ld h,a
+                xor a
+                ld (spr_wrap),a
+                ld a,h                      ; wrap if (H&7)=7 and 256-L < width
+                and 7
+                cp 7
+                ret nz
+                ld a,l
+                or a
+                ret z
+                neg
+                ld e,a
+                ld a,(spr_width)
+                cp e
+                ret c
+                ret z
+                ld (spr_wrap),a
+                ret
 
 ; between the lines of a compiled sprite: HL = next line, its address
 ; written at DE (DE += 2). Destroys A.
