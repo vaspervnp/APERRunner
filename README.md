@@ -91,7 +91,7 @@
 ## Build & εκτέλεση
 
 ```bash
-make            # γραφικά + πίστες + assembly → build/aper.dsk
+make            # γραφικά + πίστες + assembly → build/runner.dsk
 ```
 
 ```bash
@@ -105,10 +105,10 @@ make test       # headless τεστ με cpcemu
 Χειροκίνητα:
 
 ```bash
-caprice32.launcher '--autocmd=run"disc' "$PWD/build/aper.dsk"
+caprice32.launcher '--autocmd=run"disc' "$PWD/build/runner.dsk"
 ```
 
-Σε πραγματικό CPC 6128: γράψε το `aper.dsk` σε δισκέτα (π.χ. HxC/Gotek) και πληκτρολόγησε `RUN"DISC`.
+Σε πραγματικό CPC 6128: γράψε το `runner.dsk` σε δισκέτα (π.χ. HxC/Gotek) και πληκτρολόγησε `RUN"RUNNER` (ή `RUN"DISC`).
 
 ## Δομή
 

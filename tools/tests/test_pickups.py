@@ -202,3 +202,18 @@ def test_magnet_run_keeps_the_frame_budget_and_erases_coins():
     assert flying(cpc, sym) == 0
     save_screenshot(cpc, "magnet_run.png")
     assert tw._check_screen(cpc, sym, Sheets()) > 100
+
+
+def test_a_jump_goes_over_the_items():
+    sc = tc.Scenario(pickups=True)
+    sc.plant_item(8, 1, COIN)
+    sc.plant_item(10, 1, COIN)
+    sc.plant_item(12, 1, COIN)
+    sc.go()
+    for _ in range(300):
+        st = sc.frame()
+        if st["feet"] >= sc.base_row + 7:
+            break
+    sc.tap(cpcmod.KEY_SPACE)
+    sc.past(sc.base_row + 13)
+    assert counters(sc)["coins"] == 0, "in the air: no coins"

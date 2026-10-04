@@ -25,8 +25,8 @@ ITEM_SPRING     equ 5
 ITEM_HELMET     equ 6
 ITEM_TICKET     equ 7
 
-TURBO_SPEED     equ 6
-SLOW_SPEED      equ 2
+TURBO_EXTRA     equ 2                   ; turbo: base speed + 2 lines a frame
+TURBO_MAX       equ 7                   ; (a coarse step every frame at 8)
 COIN_POINTS     equ #10                 ; BCD
 
 MAGNET_LINE     equ 176                 ; screen line where coins take off
@@ -39,7 +39,9 @@ FLY_STEP_Y      equ 24                  ; lines per game frame
 FLY_STEP_X      equ 5                   ; bytes per game frame
 FLY_SAVE_SIZE   equ 2+8*(2+COIN_W)
 LABEL_Y         equ 112                 ; power-up name: top screen line
-LABEL_BUF_SIZE  equ 8*10*FONT_W         ; 10 glyphs at most
+LABEL_BUF_SIZE  equ 8*24*FONT_W         ; a whole playfield line
+LABEL_WAGONS    equ 8                   ; show_label: the hard mode hint (txt_pu_wagons),
+LABEL_GO        equ 12                  ; then 3, 2, 1 (9-11) and GO!
 
 ; -----------------------------------------------------------------------------
 ; pickups_init: no score, no power-ups, no flying coins (new run).
@@ -65,7 +67,9 @@ pickups_init:
 ; -----------------------------------------------------------------------------
 pickups:
                 ld a,(no_pickups)           ; test/debug switch
-                or a
+                ld hl,(arc_ptr)             ; in the air: jumps over the items
+                or h
+                or l
                 ret nz
                 ld a,(probe_lane)
                 ld hl,FEET_PROBE
@@ -175,17 +179,23 @@ tick_powerups:
 
 ; A = lines per game frame for the scroll: turbo, slow or the normal speed
 current_speed:
-                ld hl,(pu_turbo)
-                ld a,h
-                or l
-                ld a,TURBO_SPEED
-                ret nz
                 ld hl,(pu_slow)
                 ld a,h
                 or l
-                ld a,SLOW_SPEED
-                ret nz
                 ld a,(scroll_speed)
+                jr z,.not_slow
+                srl a                       ; slow: half
+                ret
+.not_slow:      ld hl,(pu_turbo)
+                ld b,a
+                ld a,h
+                or l
+                ld a,b
+                ret z
+                add TURBO_EXTRA             ; turbo: faster, at most TURBO_MAX
+                cp TURBO_MAX+1
+                ret c
+                ld a,TURBO_MAX
                 ret
 
 ; -----------------------------------------------------------------------------
@@ -580,6 +590,8 @@ draw_label:                                 ; between the sprite restores and dr
                 ld a,l
                 add LABEL_Y
                 ld c,a
+; C = screen line: label_buf there, centred on the playfield
+blit_label:
                 ld a,(label_w)
                 ld d,a
                 neg
@@ -589,6 +601,15 @@ draw_label:                                 ; between the sprite restores and dr
                 ld e,8
                 ld hl,label_buf
                 jp blit_static
+
+; A = label (item 2-7, LABEL_*), C = screen line: written there at once
+; (the world stands still: the countdown)
+show_label:
+                ld (label_item),a
+                push bc
+                call build_label
+                pop bc
+                jr blit_label
 
 ; label_item's name -> label_buf (8 lines of label_w bytes)
 build_label:

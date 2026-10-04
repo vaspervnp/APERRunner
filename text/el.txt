@@ -3,8 +3,13 @@
 menu_start: ΕΝΑΡΞΗ
 menu_controls: ΧΕΙΡΙΣΜΟΙ
 menu_scores: ΡΕΚΟΡ
-menu_sound_on: ΗΧΟΣ: ΝΑΙ
+menu_skill_0: ΔΥΣΚΟΛΙΑ: ΕΥΚΟΛΟ
+menu_skill_1: ΔΥΣΚΟΛΙΑ: ΜΕΤΡΙΟ
+menu_skill_2: ΔΥΣΚΟΛΙΑ: ΔΥΣΚΟΛΟ
+menu_music_off: ΜΟΥΣΙΚΗ: ΟΧΙ
+menu_music_on: ΜΟΥΣΙΚΗ: ΝΑΙ
 menu_sound_off: ΗΧΟΣ: ΟΧΙ
+menu_sound_on: ΗΧΟΣ: ΝΑΙ
 menu_hint: ↑↓ ΚΑΙ SPACE
 menu_lang: L : ENGLISH
 menu_credit: ATHENS PIRAEUS
@@ -16,6 +21,7 @@ controls_jump: ↑ Q SPACE : ΑΛΜΑ
 controls_down: ↓ Η A : ΚΑΤΩ
 controls_pause: H : ΠΑΥΣΗ
 controls_esc: ESC : ΜΕΝΟΥ
+controls_music: M : ΜΟΥΣΙΚΗ
 controls_joy: Η JOYSTICK
 controls_back: SPACE : ΠΙΣΩ
 scores_title: ΡΕΚΟΡ
@@ -35,6 +41,11 @@ pu_slow: ΑΡΓΑ
 pu_spring: ΥΠΕΡΑΛΜΑ
 pu_helmet: ΚΡΑΝΟΣ
 pu_ticket: 2X ΚΕΡΜΑΤΑ
+pu_wagons: ΠΗΔΑ ΑΝΑΜΕΣΑ ΣΤΑ ΒΑΓΟΝΙΑ!
+pu_3: 3
+pu_2: 2
+pu_1: 1
+pu_go: ΠΑΜΕ!
 menu_story: ΙΣΤΟΡΙΑ
 story_title: Ο ΤΕΛΕΥΤΑΙΟΣ ΣΟΥΒΛΑΤΖΗΣ
 story_1: 6:47 ΤΟ ΠΡΩΙ ΣΤΟ ΚΙΑΤΟ.

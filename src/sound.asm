@@ -9,7 +9,8 @@
 ;
 ; The tune follows game_mode: TUNE_GAME while playing (and in the demo),
 ; TUNE_OVER once on the game over screen, TUNE_MENU on the other screens.
-; sound_on = 0 or a pause silences everything.
+; sound_on = 0 or a pause silences everything; music_on = 0 (M while
+; playing, MUSIC in the menu) only the tunes.
 ;
 ; AY registers are kept in ay_shadow and only the ones that changed are
 ; written (ay_flush). Mixer: tones A-C on, noise only on C when an effect
@@ -57,7 +58,13 @@ sound_tick:
                 jr z,.mute
                 ld a,(paused)
                 or a
-                jr z,ay_flush
+                jr nz,.mute
+                ld a,(music_on)             ; M: music off, effects on
+                or a
+                jr nz,ay_flush
+                ld (ay_shadow+8),a
+                ld (ay_shadow+9),a
+                jr ay_flush
 .mute:          xor a
                 ld (ay_shadow+8),a
                 ld (ay_shadow+9),a

@@ -812,7 +812,8 @@ hb_w:           defb 0
 hb_lines:       defb 0
 hb_stride:      defb 0
 hud_slots:      defs HUD_SLOT_COUNT*SL_SIZE
-hud_buf_score:  defs 12*8
-hud_buf_coins:  defs 12*8
-hud_buf_lives:  defs HUD_LIVES_W*8
-hud_buf_pu:     defs 2*HUD_PU_W*HUD_PU_H
+; slot buffers: below the code (src/main.asm, from hud_buf_score)
+hud_buf_coins   equ hud_buf_score+12*8
+hud_buf_lives   equ hud_buf_coins+12*8
+hud_buf_pu      equ hud_buf_lives+HUD_LIVES_W*8
+HUD_BUF_END     equ hud_buf_pu+2*HUD_PU_W*HUD_PU_H

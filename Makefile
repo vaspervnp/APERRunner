@@ -1,5 +1,5 @@
 # Runner A.P.E.R - build
-#   make        -> build/aper.dsk
+#   make        -> build/runner.dsk
 #   make run    -> Caprice32 (snap) with auto RUN"DISC
 #   make test   -> headless tests with ~/cpcemu
 #   make DEBUG=1 -> border colours show raster time per routine
@@ -28,7 +28,7 @@ BANKS   := $(BUILD)/aperb4.bin $(BUILD)/aperb5.bin $(BUILD)/aperb6.bin $(BUILD)/
 LDR     := $(BUILD)/loader.bin $(BUILD)/loadscr.bin
 LOADER  := src/disc.bas
 SYM     := $(BUILD)/aper.sym
-DSK     := $(BUILD)/aper.dsk
+DSK     := $(BUILD)/runner.dsk
 
 .PHONY: all run test clean gfx placeholders
 
@@ -64,11 +64,13 @@ $(BUILD)/debug-$(DEBUG): | $(BUILD)
 	rm -f $(BUILD)/debug-*
 	touch $@
 
-$(DSK): $(BIN) $(BANKS) $(LDR) $(LOADER)
+$(DSK): $(BIN) $(BANKS) $(LDR) $(LOADER) src/runner.bas
 	rm -f $@
 	$(IDSK) $@ -n
 	cp $(LOADER) $(BUILD)/disc
 	$(IDSK) $@ -i $(BUILD)/disc -t 0
+	cp src/runner.bas $(BUILD)/runner
+	$(IDSK) $@ -i $(BUILD)/runner -t 0
 	$(IDSK) $@ -i $(BUILD)/loader.bin -t 1 -c 8000 -e 8000
 	$(IDSK) $@ -i $(BUILD)/loadscr.bin -t 1 -c 4000
 	$(IDSK) $@ -i $(BIN) -t 1 -c $(LOAD) -e $(LOAD)

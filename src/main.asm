@@ -26,7 +26,11 @@ SHADOW_SAVE_SIZE equ 2+6*(2+7)
 player_save     equ #0040
 shadow_save     equ player_save+PLAYER_SAVE_SIZE
 flyer_saves     equ shadow_save+SHADOW_SAVE_SIZE    ; FLYER_COUNT*FLY_SAVE_SIZE
-label_buf       equ #0880                           ; LABEL_BUF_SIZE (stack: &0C00-&0FFF)
+text_ptrs       equ flyer_saves+FLYER_COUNT*FLY_SAVE_SIZE ; TXT_COUNT*2 (set_language)
+text_buf        equ text_ptrs+TXT_COUNT*2       ; 24
+blank_line      equ text_buf+24                 ; 72 zeros (start)
+label_buf       equ #0880                           ; LABEL_BUF_SIZE (stack: &0D00-&0FFF)
+hud_buf_score   equ label_buf+LABEL_BUF_SIZE        ; HUD slot buffers (src/hud.asm)
 
 VBLS_PER_FRAME  equ 2               ; 25 fps
 DEFAULT_SPEED   equ 4               ; lines per game frame
@@ -62,6 +66,11 @@ start:
                 call crtc_init
                 ld hl,game_palette
                 call set_palette
+                ld hl,blank_line            ; (below the code: not loaded)
+                ld de,blank_line+1
+                ld bc,71
+                ld (hl),0
+                ldir
                 xor a                       ; English
                 call set_language
                 call new_run
@@ -80,6 +89,9 @@ main_loop:
                 call wait_game_frame
                 BORDER #12                  ; bright green: HUD, runner, sprites
                 call hud_update             ; top to bottom, ahead of the beam
+                ld a,(sound_due)            ; then this VSYNC's sound tick
+                or a
+                call nz,sound_late
                 call read_input
                 ld a,(game_mode)            ; menus: a still screen
                 cp MODE_MENU
@@ -136,12 +148,24 @@ new_run:
                 call pickups_init
                 call hud_init
                 xor a
+                ld (gap_hard),a             ; (start_game: the difficulty)
                 ld (game_state),a
                 ld (invuln),a
                 ld (was_airborne),a
                 ld a,LIVES_START
                 ld (lives),a
+                ld a,DEFAULT_SPEED
+                ld (scroll_speed),a
                 ei
+                ret
+
+; sound_late: the sound tick irq0 left for after the HUD (bank C7)
+sound_late:
+                xor a
+                ld (sound_due),a
+                MAP_RAM GA_RAM_C7
+                call sound_tick
+                MAP_RAM GA_RAM_C0
                 ret
 
 ; -----------------------------------------------------------------------------
@@ -220,8 +244,8 @@ paused:         defb 0
 
 end_of_code:
                 assert end_of_code <= #4000
-                assert flyer_saves+FLYER_COUNT*FLY_SAVE_SIZE <= WORLD_RING
-                assert label_buf+LABEL_BUF_SIZE <= #0C00
+                assert blank_line+72 <= WORLD_RING
+                assert HUD_BUF_END <= #0D00
                 save "build/aper.bin",FILE_ADDR,BOOT_STUB_SIZE+end_of_code-LOAD_ADDR
 
 ; =============================================================================

@@ -99,7 +99,28 @@ def test_train_with_cab_last_layout():
     column = [tiles[row[0]] for row in chunk["rows"]]
     assert column[0] == "wagon2_end_bottom" and column[12] == "wagon2_coupler"
     assert column[38] == "wagon2_coupler" and column[39] == "wagon2_end_bottom" and column[50] == "loco2_nose_top"
-    assert all(row[1] == mklevel.COL_TRAIN for row in chunk["rows"])
+    couplers = {12, 25, 38}                      # a gap between wagons (hard mode)
+    assert all(row[1] == (mklevel.COL_GAP if r in couplers else mklevel.COL_TRAIN)
+               for r, row in enumerate(chunk["rows"]))
+
+
+def _train_with_coins(rows):
+    """51-row train in lane 1 with coins on the given rows (bottom first)."""
+    return "\n".join("R2c  ...  ..." if r in rows else "R2.  ...  ..." for r in reversed(range(51))) + "\n"
+
+
+def test_no_coins_between_wagons():
+    _compile(_train_with_coins({14, 16, 18}))
+    try:
+        _compile(_train_with_coins({23, 25, 27}))               # row 25: a coupler
+    except mklevel.LevelError as e:
+        assert "between two wagons" in str(e)
+    else:
+        raise AssertionError("accepted a coin on a coupler")
+    for chunk in mklevel.load_all():
+        for row in chunk["rows"]:
+            for lane in range(3):
+                assert not (row[lane * 3 + 1] == mklevel.COL_GAP and row[lane * 3 + 2] == mklevel.ITEMS["c"]), chunk["name"]
 
 
 def test_short_or_odd_trains_are_rejected():
@@ -181,9 +202,9 @@ def _ramp_chunk(kind, roof_coins, ground_coins, stops):
     rows = []                                   # bottom first
     for r in range(3 + 38):
         obj = "^.." if r < 3 else "R1."
-        if 3 + 2 <= r < 3 + 2 + 2 * roof_coins and r % 2 == 1:
+        if r in (4, 6, 8, 10, 17, 19, 21, 23)[:roof_coins]:   # on the wagon roofs
             obj = "R1c"
-        left = "..c" if r < 2 * ground_coins and r % 2 == 0 else "..."
+        left = "..c" if r in (30, 32, 34, 36)[:ground_coins] else "..."
         right = "S.." if (r - 2) % 10 in (0, 1) and stops and r >= 2 else "..."
         if stops and (r - 7) % 10 in (0, 1) and r >= 7:
             left = "S.."
@@ -215,3 +236,14 @@ def test_ramps_bring_coins_a_third_of_the_time():
             total = sum(c["weight"] for c in group)
             coins = sum(c["weight"] for c in group if c["ramp"] == "coins")
             assert 3 * coins == total, (env, diff, [c["name"] for c in group])
+
+
+def test_chunks_hold_no_power_ups():
+    for chunk in mklevel.load_all():
+        assert all(row[lane * 3 + 2] <= 1 for row in chunk["rows"] for lane in range(3)), chunk["name"]
+    try:
+        _compile("..M  ...  ...\n...  ...  ...\n")
+    except mklevel.LevelError as e:
+        assert "places the power-ups" in str(e)
+    else:
+        raise AssertionError("accepted a power-up in a chunk")

@@ -208,8 +208,18 @@ irq0:
                 ld a,D1_R12_BASE
                 call write_start_addr
 
-                ; sound, 50 times a second: bank C7 (src/sound.asm)
-                push ix
+                ; sound, 50 times a second: bank C7 (src/sound.asm). At the
+                ; VSYNC that starts a game frame the main loop draws the HUD
+                ; first, racing the beam: the sound waits for it (sound_due)
+                ld a,(last_tick)
+                ld b,a
+                ld a,(vbl_tick)
+                sub b
+                cp VBLS_PER_FRAME
+                jr nz,sound_now
+                ld (sound_due),a
+                jp irq_exit
+sound_now:      push ix
                 ld a,(cur_ram)              ; whatever the game had mapped
                 push af
                 ld bc,GA_PORT*256+GA_RAM_C7
@@ -254,6 +264,7 @@ write_start_addr:
 irq_index:      defb 0
 cur_ram:        defw GA_PORT*256+GA_RAM_C0  ; RAM configuration (MAP_RAM)
 sfx_request:    defb 0                  ; effect to play (SFX_*), 0 = none
+sound_due:      defb 0                  ; a sound tick for the main loop (irq0)
 vbl_tick:       defb 0              ; +1 every VSYNC
 next_ready:     defb 0
 next_apply_tick: defb 0

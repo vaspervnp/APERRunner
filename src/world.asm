@@ -35,6 +35,7 @@ COL_TRAIN       equ 3
 COL_NOSE        equ 4
 COL_RAMP_UP     equ 5
 COL_RAMP_DOWN   equ 6
+COL_GAP         equ 7                   ; between two wagons (hard: a gap on the roof)
 
 ITEM_COIN       equ 1
 COIN_W          equ 4                   ; bytes
@@ -84,6 +85,13 @@ world_init:
                 ld (rng),hl
                 ld hl,SEGMENT_MIN
                 ld (seg_left),hl
+                ld hl,PU_GAP_MIN            ; the first power-up
+                ld (pu_gap),hl
+                ld a,SPACER_START           ; an empty start, then denser
+                ld (spacer_len),a
+                ld (spacer_left),a
+                ld hl,spacer_tick
+                call spacer_step
                 ld hl,BRIDGE_GAP_MIN/2
                 ld (bridge_countdown),hl
                 ld a,24
@@ -182,15 +190,42 @@ generate_row:
                 inc hl
                 djnz .clear
 
-                ; difficulty 1..5 grows every 256 rows
-                ld a,(gen_row+1)
+                ; difficulty 1..5 grows every 256 rows (easy), 171 (medium),
+                ; 128 (hard)
+                ld hl,(gen_row)
+                ld d,h
+                ld e,l
+                srl d
+                rr e                        ; DE = rows / 2
+                ld a,(skill)
+                ld b,a
+                inc b
+                ld a,h
+                jr .diff_add
+.diff_more:     add hl,de
+                ld a,h
+                jr c,.diff_max
+.diff_add:      djnz .diff_more
                 inc a
                 cp 6
                 jr c,.diff_ok
-                ld a,5
+.diff_max:      ld a,5
 .diff_ok:       ld (difficulty),a
 
+                ; empty rows between chunks: SPACER_START at first, one less
+                ; every spacer_steps[skill] rows
+                ld hl,spacer_tick
+                dec (hl)
+                call z,spacer_step
+
                 call tick_busy_counters
+                ld hl,(pu_gap)              ; rows until the next power-up
+                ld a,h
+                or l
+                jr z,.pu_due
+                dec hl
+                ld (pu_gap),hl
+.pu_due:
 
                 ; --- environment ---
                 ld a,(trans_left)
@@ -233,11 +268,16 @@ generate_row:
                 ld a,(chunk_left)
                 or a
                 jr nz,chunk_row
+                ld a,(spacer_left)          ; empty rows after a chunk
+                or a
+                jr nz,spacer_row
                 ld hl,(bridge_countdown)    ; chunk boundary: bridge due?
                 ld a,h
                 or l
                 jp z,start_bridge
                 call pick_chunk
+                ld a,(spacer_len)           ; and the empty rows after it
+                ld (spacer_left),a
                 ; fall through
 
 ; --- next row of the current chunk (bank C5) ------------------------------------
@@ -271,12 +311,167 @@ chunk_row:
                 ld (.lane_no),a
                 cp 3
                 jr nz,.lane
+                call place_powerup
                 ld (chunk_ptr),hl
                 ld hl,chunk_left
                 dec (hl)
                 MAP_RAM GA_RAM_C0
                 ret
 .lane_no:       defb 0
+
+; --- empty track between chunks --------------------------------------------------
+spacer_row:
+                dec a
+                ld (spacer_left),a
+                ld b,a
+                ld a,TILE_RAIL_A
+                ld (ix+D_LANES),a
+                ld (ix+D_LANES+1),a
+                ld (ix+D_LANES+2),a
+                ld hl,(pu_gap)              ; a power-up due and PU_CLEAR more
+                ld a,h                      ; empty rows: any lane
+                or l
+                ret nz
+                ld a,b
+                cp PU_CLEAR
+                ret c
+                ld c,3
+                call random_below
+                ld (chunk_row.lane_no),a
+                ld e,a
+                ld d,0
+                push ix
+                pop iy
+                add iy,de
+                MAP_RAM GA_RAM_C5           ; (spawn_item: the sprite table)
+                call put_powerup
+                MAP_RAM GA_RAM_C0
+                ret
+
+; HL = spacer_tick: reloads it, one empty row less (down to 0)
+SPACER_START    equ 24
+spacer_step:
+                push hl
+                ld a,(skill)
+                ld hl,spacer_steps
+                call add_a_hl
+                ld a,(hl)
+                pop hl
+                ld (hl),a
+                ld hl,spacer_len
+                ld a,(hl)
+                or a
+                ret z
+                dec (hl)
+                ret
+spacer_steps:   defb 64,40,24               ; rows per step: easy, medium, hard
+
+; -----------------------------------------------------------------------------
+; place_powerup: when pu_gap is 0, a power-up on a free lane of this row
+; (IX = descriptor, HL = the chunk's next row, bank C5): plain rail and no
+; item here and on the next row (it covers 2 rows), no obstacle in the
+; PU_CLEAR rows ahead of it (rail or ramps). Turbo PU_TURBO_ODDS/256,
+; the other five share the rest. Then 50-150 rows to the next one.
+; Preserves HL.
+; -----------------------------------------------------------------------------
+PU_GAP_MIN      equ 50
+PU_CLEAR        equ 8                       ; rows ahead without an obstacle
+PU_TURBO_ODDS   equ 77                      ; 30%
+
+place_powerup:
+                ld de,(pu_gap)
+                ld a,d
+                or e
+                ret nz
+                ld a,(chunk_left)           ; rows ahead in this chunk, then the
+                dec a                       ; empty ones after it: PU_CLEAR
+                ret z
+                ld c,a
+                ld a,(spacer_len)
+                add a,c
+                cp PU_CLEAR
+                ret c
+                ld a,c                      ; the chunk rows to check
+                cp PU_CLEAR
+                jr c,.rows
+                ld a,PU_CLEAR
+.rows:          ld (.check),a
+                push hl
+                ld c,3
+                call random_below
+                ld b,3                      ; B = lanes to try from lane A
+.try:           ld (chunk_row.lane_no),a
+                ld e,a
+                ld d,0
+                push ix
+                pop iy
+                add iy,de                   ; this row
+                ld a,(iy+D_COLL)
+                or (iy+D_ITEM)
+                jr nz,.next
+                pop hl
+                push hl
+                add hl,de                   ; next row: lane * 3 + collision
+                add hl,de
+                add hl,de
+                inc hl
+                inc hl
+                ld a,(hl)                   ; no item next to it (2 rows)
+                dec hl
+                or a
+                jr nz,.next
+                ld a,(.check)               ; and no obstacle in the rows ahead
+                ld c,a
+.ahead:         ld a,(hl)
+                and 15
+                cp COL_RAMP_UP              ; rail or ramp: fine
+                jr nc,.ramp
+                or a
+                jr nz,.next
+                jr .clear
+.ramp:          cp COL_GAP
+                jr z,.next
+.clear:         ld a,9                      ; the row above in the chunk
+                call add_a_hl
+                dec c
+                jr nz,.ahead
+                jr .found
+.next:          ld a,(chunk_row.lane_no)
+                inc a
+                cp 3
+                jr c,.lane_ok
+                xor a
+.lane_ok:       djnz .try
+                pop hl
+                ret                         ; none free: try the next row
+.found:         call put_powerup
+                pop hl
+                ret
+.check:         defb 0
+
+; IY = descriptor + lane, (chunk_row.lane_no) = lane: a power-up there
+put_powerup:
+                call random                 ; the kind
+                cp PU_TURBO_ODDS
+                ld a,ITEM_TURBO
+                jr c,.kind
+.other:         call random
+                and 7
+                cp 5
+                jr nc,.other
+                ld hl,pu_kinds
+                call add_a_hl
+                ld a,(hl)
+.kind:          ld (iy+D_ITEM),a
+                call spawn_item
+                ld c,101
+                call random_below
+                add PU_GAP_MIN&#FF
+                ld l,a
+                ld h,0
+                ld (pu_gap),hl
+                ret
+pu_kinds:       defb ITEM_MAGNET,ITEM_SLOW,ITEM_SPRING,ITEM_HELMET,ITEM_TICKET
 
 ; A = item, (chunk_row.lane_no) = lane: registers the item overlay
 spawn_item:
@@ -1048,6 +1243,10 @@ draw_overlay_slice:
 gen_state:
 rng:            defw 0
 gen_row:        defw 0
+pu_gap:         defw 0                  ; rows until the next power-up
+spacer_len:     defb 0                  ; empty rows after each chunk
+spacer_left:    defb 0                  ; empty rows still to come
+spacer_tick:    defb 0                  ; rows until spacer_len shrinks
 difficulty:     defb 0
 env:            defb 0
 seg_left:       defw 0

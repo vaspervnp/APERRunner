@@ -5,7 +5,7 @@ import sys
 
 ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
 BUILD = os.path.join(ROOT, "build")
-DSK = os.path.join(BUILD, "aper.dsk")
+DSK = os.path.join(BUILD, "runner.dsk")
 SYM = os.path.join(BUILD, "aper.sym")
 # framebuffer line of screen line 0 (the picture starts 32-j lines after
 # VSYNC, the framebuffer 35 lines after it, j = 0 shows picture line 0 at 32)
@@ -29,8 +29,8 @@ def load_symbols(path=SYM):
     return symbols
 
 
-def boot_game(max_frames=1500, collisions=False, pickups=False, menu=False):
-    """Cold-boots a 6128, inserts build/aper.dsk, RUN"DISC (the loader shows
+def boot_game(max_frames=1500, collisions=False, pickups=False, menu=False, command='RUN"DISC'):
+    """Cold-boots a 6128, inserts build/runner.dsk, RUN"DISC (the loader shows
     the loading screen, loads the banks and the game) and waits until the game's main loop is running, then
     starts a game from the menu (unless `menu`).
     Unless `collisions` is set, the debug switch no_crash is turned on so
@@ -40,7 +40,7 @@ def boot_game(max_frames=1500, collisions=False, pickups=False, menu=False):
     cpc = CPC()
     cpc.run_frames(BOOT_FRAMES)
     cpc.insert_disc(DSK)
-    cpc.type_text('RUN"DISC\n')
+    cpc.type_text(command + "\n")
     for _ in range(max_frames // 25):
         cpc.run_frames(25)
         if (sym["start"] <= cpc.pc < 0x8000 and cpc.read_ram(sym["start"], 1)[0] == 0xF3    # di: code loaded
@@ -53,7 +53,7 @@ def boot_game(max_frames=1500, collisions=False, pickups=False, menu=False):
     raise AssertionError(f"game did not start (PC #{cpc.pc:04X})")
 
 
-def start_from_menu(cpc, sym):
+def start_from_menu(cpc, sym, skip_countdown=True):
     """Menu -> game with SPACE (option 1 is selected); forgets the menu's
     drawing frames in the load statistics."""
     import cpc as cpcmod
@@ -64,6 +64,8 @@ def start_from_menu(cpc, sym):
             break
     cpc.key_up(cpcmod.KEY_SPACE)
     assert peek8(cpc, sym["game_mode"]) == 0, "the game did not start from the menu"
+    if skip_countdown:              # (test_screens checks the countdown)
+        cpc.write_ram(sym["countdown"], bytes([0]))
     cpc.run_frames(10)
     cpc.write_ram(sym["missed_frames"], bytes([0]))
     cpc.write_ram(sym["max_load"], bytes([0]))

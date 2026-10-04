@@ -74,11 +74,24 @@ def test_menu_navigation_and_screens():
     assert len(white_lines(img, 0, 576)) > 100, "the story is written"
     press(cpc, sym, cpcmod.KEY_ESC)
     assert mode(cpc, sym) == MODE_MENU
+    press(cpc, sym, cpcmod.KEY_DOWN)                     # difficulty: easy -> medium -> hard -> easy
+    for skill in (1, 2, 0):
+        press(cpc, sym, cpcmod.KEY_SPACE)
+        frames(cpc, sym, 6)
+        assert peek8(cpc, sym["skill"]) == skill
+    press(cpc, sym, cpcmod.KEY_DOWN)                     # music on/off
+    press(cpc, sym, cpcmod.KEY_SPACE)
+    assert peek8(cpc, sym["music_on"]) == 0
+    frames(cpc, sym, 6)
+    press(cpc, sym, cpcmod.KEY_SPACE)
+    assert peek8(cpc, sym["music_on"]) == 1
+    frames(cpc, sym, 6)
     press(cpc, sym, cpcmod.KEY_DOWN)                     # sound on/off
     sound = peek8(cpc, sym["sound_on"])
     press(cpc, sym, cpcmod.KEY_SPACE)
     assert peek8(cpc, sym["sound_on"]) == sound ^ 1
-    for _ in range(4):
+    frames(cpc, sym, 6)
+    for _ in range(6):
         press(cpc, sym, cpcmod.KEY_UP)
     assert peek8(cpc, sym["menu_sel"]) == 0
     press(cpc, sym, cpcmod.KEY_SPACE)
@@ -207,3 +220,62 @@ def test_story_in_greek():
     assert mode(cpc, sym) == MODE_STORY
     sync_game_frame(cpc, sym)
     save_screenshot(cpc, "story_el.png")
+
+
+def test_difficulty_sets_the_speed_and_the_wagon_gaps():
+    sym = load_symbols()
+    for skill, speed, gaps in ((0, 4, 0), (1, 5, 0), (2, 6, 1)):
+        cpc = boot_game(menu=True)
+        frames(cpc, sym, 4)
+        cpc.write_ram(sym["skill"], bytes([skill]))
+        press(cpc, sym, cpcmod.KEY_SPACE)
+        assert mode(cpc, sym) == MODE_PLAY
+        assert peek8(cpc, sym["scroll_speed"]) == speed
+        assert peek8(cpc, sym["gap_hard"]) == gaps
+    save_screenshot(cpc, "hard.png")
+
+
+def test_m_turns_only_the_music_off():
+    sym = load_symbols()
+    cpc = boot_game()
+    press(cpc, sym, ord("m"))
+    assert peek8(cpc, sym["music_on"]) == 0
+    cpc.write_ram(sym["sfx_request"], bytes([1]))       # a coin effect still plays
+    effect = False
+    for _ in range(6):
+        sync_game_frame(cpc, sym)
+        regs = cpc.psg_regs()
+        assert regs[8] == regs[9] == 0, "no music"
+        effect |= regs[10] > 0
+    assert effect, "effects on"
+    press(cpc, sym, ord("m"))
+    assert peek8(cpc, sym["music_on"]) == 1
+
+
+def test_countdown_before_the_run():
+    """The runner stands still while 3, 2, 1, GO! are written on the track;
+    on hard the wagons hint comes first (a longer countdown)."""
+    sym = load_symbols()
+    for skill in (0, 2):
+        cpc = boot_game(menu=True)
+        frames(cpc, sym, 4)
+        cpc.write_ram(sym["skill"], bytes([skill]))
+        cpc.key_down(cpcmod.KEY_SPACE)
+        while mode(cpc, sym) != MODE_PLAY:
+            sync_game_frame(cpc, sym)
+        cpc.key_up(cpcmod.KEY_SPACE)
+        top = peek16(cpc, sym["scr_top_row"])
+        still = 0
+        while True:
+            sync_game_frame(cpc, sym)
+            if not peek8(cpc, sym["countdown"]):
+                break
+            assert peek16(cpc, sym["scr_top_row"]) == top, "the world waits"
+            still += 1
+            if still == 25:
+                save_screenshot(cpc, f"countdown_{skill}.png")
+        frames(cpc, sym, 20)
+        assert peek16(cpc, sym["scr_top_row"]) > top, "then it runs"
+        print(f"    skill {skill}: {still} frames of countdown")
+        assert (still > 100) == (skill == 2)
+        assert peek8(cpc, sym["missed_frames"]) == 0

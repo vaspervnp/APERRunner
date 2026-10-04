@@ -53,7 +53,7 @@ def _check_desc(desc, row):
     assert desc["left"] < count and desc["left"] % 2 == 0, f"row {row}: left side {desc}"
     assert desc["right"] < count and desc["right"] % 2 == 1, f"row {row}: right side {desc}"
     assert all(t < TRACK_TILES for t in desc["lanes"]), f"row {row}: lane tiles {desc}"
-    assert all((c & 15) <= 6 for c in desc["coll"]), f"row {row}: collision {desc}"
+    assert all((c & 15) <= 7 for c in desc["coll"]), f"row {row}: collision {desc}"
     assert all(i <= 7 for i in desc["items"]), f"row {row}: items {desc}"
 
 
@@ -105,3 +105,69 @@ def test_five_minute_flight():
     assert switches >= 4
     assert {0, 4} <= bridge_tiles, "both bridge types (shadow rows 3 and 10, deck rows 0/4) expected"
     assert len(track_tiles) >= 25
+
+
+def test_power_ups_one_every_50_to_150_rows_turbo_most():
+    """The generator places the power-ups (chunks hold coins only): one at a
+    time, 50-150 rows apart, never just before an obstacle (8 clear rows in
+    its lane), turbo ~30%, the other five sharing the rest."""
+    from collections import Counter
+    sym = load_symbols()
+    cpc = boot_game()
+    cpc.write_ram(sym["scroll_speed"], bytes([6]))
+    seen, coll, lanes = {}, {}, {}
+    for _ in range(6000):
+        sync_game_frame(cpc, sym)
+        top = peek16(cpc, sym["scr_top_row"])
+        for r in range(top - 20, top):
+            if r not in seen:
+                desc = cpc.read_ram(sym["world_ring"] + (r & 63) * sym["row_size"] + 6, 6)
+                coll[r] = [c & 15 for c in desc[:3]]
+                seen[r] = [x for x in desc[3:] if x > 1]
+                lanes[r] = [lane for lane in range(3) if desc[3 + lane] > 1]
+    rows = sorted(r for r, items in seen.items() if items)
+    for r in rows:                              # 8 rows without an obstacle ahead
+        lane = lanes[r][0]
+        ahead = [coll[r + k][lane] for k in range(1, 9) if r + k in coll]
+        assert all(c in (0, 5, 6) for c in ahead), (r, lane, ahead)
+    kinds = Counter(seen[r][0] for r in rows)
+    gaps = [b - a for a, b in zip(rows, rows[1:])]
+    print(f"    {len(rows)} power-ups in {len(seen)} rows, gaps {min(gaps)}-{max(gaps)}, kinds {dict(kinds)}")
+    assert all(len(items) <= 1 for items in seen.values()), "one power-up at a time"
+    assert all(50 <= g <= 200 for g in gaps), gaps          # no safe spot: a little later
+    assert sum(g <= 151 for g in gaps) >= 0.9 * len(gaps), gaps
+    assert set(kinds) == {2, 3, 4, 5, 6, 7}, "every kind turns up"
+    assert kinds.most_common(1)[0][0] == 3, "turbo is the most common"
+    assert 0.2 <= kinds[3] / len(rows) <= 0.4
+
+
+def _obstacle_share(skill, rows_wanted=1600):
+    """(share of rows with an obstacle in the first and the last 300 rows,
+    empty rows left after each chunk 800 rows in)."""
+    sym = load_symbols()
+    cpc = boot_game()
+    cpc.write_ram(sym["skill"], bytes([skill]))
+    cpc.write_ram(sym["scroll_speed"], bytes([6]))
+    seen, gap = {}, None
+    while len(seen) < rows_wanted:
+        sync_game_frame(cpc, sym)
+        top = peek16(cpc, sym["scr_top_row"])
+        for r in range(top - 20, top):
+            if r not in seen and r >= 0:
+                coll = cpc.read_ram(sym["world_ring"] + (r & 63) * sym["row_size"] + 6, 3)
+                seen[r] = any((c & 15) in (1, 2, 3, 4, 7) for c in coll)
+        if gap is None and len(seen) >= 800:
+            gap = peek8(cpc, sym["spacer_len"])
+    rows = sorted(seen)
+    first = [seen[r] for r in rows[:300]]
+    last = [seen[r] for r in rows[-300:]]
+    return sum(first) / 300, sum(last) / 300, gap
+
+
+def test_obstacles_get_denser_and_faster_on_hard():
+    easy_first, easy_last, easy_gap = _obstacle_share(0)
+    hard_first, hard_last, hard_gap = _obstacle_share(2)
+    print(f"    rows with obstacles: easy {easy_first:.0%} -> {easy_last:.0%} (gap at 800: {easy_gap}), "
+          f"hard {hard_first:.0%} -> {hard_last:.0%} (gap at 800: {hard_gap})")
+    assert easy_last > easy_first and hard_last > hard_first
+    assert hard_gap < easy_gap, "the empty stretches shrink faster on hard"

@@ -3,8 +3,13 @@
 menu_start: START
 menu_controls: CONTROLS
 menu_scores: HIGH SCORES
-menu_sound_on: SOUND: ON
+menu_skill_0: DIFFICULTY: EASY
+menu_skill_1: DIFFICULTY: MEDIUM
+menu_skill_2: DIFFICULTY: HARD
+menu_music_off: MUSIC: OFF
+menu_music_on: MUSIC: ON
 menu_sound_off: SOUND: OFF
+menu_sound_on: SOUND: ON
 menu_hint: ↑↓ AND SPACE
 menu_lang: L : ΕΛΛΗΝΙΚΑ
 menu_credit: ATHENS PIRAEUS
@@ -16,6 +21,7 @@ controls_jump: ↑ Q SPACE : JUMP
 controls_down: ↓ OR A : DOWN
 controls_pause: H : PAUSE
 controls_esc: ESC : MENU
+controls_music: M : MUSIC ON/OFF
 controls_joy: OR JOYSTICK
 controls_back: SPACE : BACK
 scores_title: HIGH SCORES
@@ -35,6 +41,11 @@ pu_slow: SLOW
 pu_spring: SUPER JUMP
 pu_helmet: HELMET
 pu_ticket: 2X COINS
+pu_wagons: JUMP BETWEEN WAGONS!
+pu_3: 3
+pu_2: 2
+pu_1: 1
+pu_go: GO!
 menu_story: STORY
 story_title: THE LAST SOUVLAKI MAN
 story_1: 6:47 AM IN KIATO.

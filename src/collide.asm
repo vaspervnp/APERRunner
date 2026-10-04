@@ -61,7 +61,14 @@ cell_at:
 
 ; A = class, B = ramp row -> A = support level S
 support_level:
-                cp COL_TRAIN
+                cp COL_GAP                  ; between two wagons: a roof, or
+                jr nz,.not_gap              ; in hard mode a gap to jump
+                ld a,(gap_hard)
+                or a
+                jr z,.roof
+                xor a
+                ret
+.not_gap:       cp COL_TRAIN
                 jr z,.roof
                 cp COL_NOSE
                 jr z,.roof
@@ -214,6 +221,8 @@ collide:
                 cp COL_TRAIN
                 jr z,.need2
                 cp COL_NOSE
+                jr z,.need2
+                cp COL_GAP
                 jr z,.need2
                 cp COL_SIGNAL
                 ret nz

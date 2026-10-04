@@ -24,9 +24,9 @@ MODE_OVER       equ 5
 MODE_STORY      equ 6
 
 FONT_W          equ 3                   ; bytes per glyph
-MENU_ITEMS      equ 5
-MENU_Y          equ 104                 ; first option line
-MENU_STEP       equ 16
+MENU_ITEMS      equ 7
+MENU_Y          equ 96                  ; first option line
+MENU_STEP       equ 14
 MENU_TEXT_X     equ 18                  ; byte column of the options
 MENU_CURSOR_X   equ MENU_TEXT_X-6
 ATTRACT_FRAMES  equ 400                 ; 16 s on the menu: the demo starts
@@ -37,6 +37,9 @@ NAME_LETTERS    equ 3
 PAUSE_Y         equ 200                 ; pause label in the HUD panel
 KEY_L_LINE      equ 4                   ; keyboard matrix: L
 KEY_L_MASK      equ %00010000
+KEY_M_LINE      equ 4                   ; M: music on/off while playing
+KEY_M_MASK      equ %01000000
+SKILL_HARD      equ 2
 
 ; -----------------------------------------------------------------------------
 ; Mode changes
@@ -52,11 +55,33 @@ set_screen:     ld (game_mode),a
                 ld (paused),a
                 ret
 
-start_game:
+start_game:                                 ; at the chosen difficulty
                 call new_run
+                ld a,(skill)
+                ld hl,skill_speeds
+                call add_a_hl
+                ld a,(hl)
+                ld (scroll_speed),a
+                ld a,(skill)                ; hard: jump between the wagons
+                cp SKILL_HARD
+                ld a,0
+                jr nz,.gaps
+                inc a
+.gaps:          ld (gap_hard),a
+                add a,a                     ; countdown: 3, 2, 1, GO! (and on
+                add a,a                     ; hard the wagons hint before it)
+                add a,a
+                add a,a
+                add a,a
+                add a,a                     ; (hard: 64 more frames)
+                add COUNT_STEP*3+(COUNT_STEP>>1)
+                ld (countdown),a
+                ld a,1
+                ld (count_first),a
                 xor a                       ; MODE_PLAY
                 ld (game_mode),a
                 ret
+skill_speeds:   defb 4,5,6                  ; lines a game frame: easy, medium, hard
 
 start_demo:
                 call new_run
@@ -105,9 +130,21 @@ play_input:
 .to_menu:       call go_menu
                 or 1
                 ret
-.player:        ld a,(keys_pressed)
+.player:        ld a,(countdown)
+                or a
+                jr nz,countdown_frame
+                ld a,(keys_pressed)
                 and KEY_ESC
                 jr nz,.to_menu
+                ld bc,KEY_M_LINE*256+KEY_M_MASK ; M: music on/off
+                ld hl,music_key_down
+                call matrix_edge
+                jr z,.music_ok
+                ld hl,music_on
+                ld a,(hl)
+                xor 1
+                ld (hl),a
+.music_ok:
                 ld a,(keys_pressed)         ; H toggles the pause
                 and KEY_PAUSE
                 jr z,.pause_ok
@@ -117,6 +154,54 @@ play_input:
                 call pause_label
 .pause_ok:      ld a,(paused)
                 or a
+                ret
+
+; the start of a game: the runner stands still, the hint (hard), then
+; 3, 2, 1 and GO! written on the track. NZ while counting.
+COUNT_STEP      equ 20                  ; game frames per number
+COUNT_Y         equ LABEL_Y+24
+
+countdown_frame:
+                dec a
+                ld (countdown),a
+                jr nz,.counting
+                ld a,LABEL_GO               ; GO!: the game runs (Z)
+                ld c,COUNT_Y
+                call show_label
+                xor a
+                ret
+.counting:      ld b,a
+                ld hl,count_first           ; first frame: the runner, and
+                ld a,(hl)                   ; on hard the hint
+                or a
+                jr z,.numbers
+                ld (hl),0
+                push bc
+                call player_draw
+                pop bc
+                ld a,(gap_hard)
+                or a
+                jr z,.numbers
+                push bc
+                ld a,LABEL_WAGONS
+                ld c,LABEL_Y
+                call show_label
+                pop bc
+.numbers:       ld a,b                      ; 60, 40, 20 frames left: 3, 2, 1
+                ld c,LABEL_GO-3
+                cp COUNT_STEP*3
+                jr z,.show
+                inc c
+                cp COUNT_STEP*2
+                jr z,.show
+                inc c
+                cp COUNT_STEP
+                jr nz,.wait
+.show:          ld a,c
+                ld c,COUNT_Y
+                call show_label
+.wait:          call hud_prepare            ; the HUD shows up meanwhile
+                or 1                        ; NZ: no game this frame
                 ret
 
 ; ΠΑΥΣΗ in the HUD panel below the slots (the picture is still while paused)
@@ -158,18 +243,11 @@ set_language:
 ; L on the menu, controls and high score screens: the other language, the
 ; screen drawn again. NZ if switched.
 language_key:
-                ld a,(matrix+KEY_L_LINE)
-                and KEY_L_MASK
+                ld bc,KEY_L_LINE*256+KEY_L_MASK
                 ld hl,lang_key_down
-                ld b,(hl)
-                ld (hl),a
-                ret z                       ; up
-                ld a,b
-                or a
-                jr z,.switch                ; went down now
-                xor a
-                ret
-.switch:        ld a,(language)
+                call matrix_edge
+                ret z
+                ld a,(language)
                 inc a
                 cp LANGUAGES
                 jr c,.set
@@ -177,6 +255,25 @@ language_key:
 .set:           call set_language
                 ld a,1
                 ld (screen_dirty),a
+                or a
+                ret
+
+; B = keyboard matrix line, C = key mask, HL = its "down" flag: NZ if the
+; key went down since the last call
+matrix_edge:
+                push hl
+                ld hl,matrix
+                ld a,b
+                call add_a_hl
+                ld a,(hl)
+                and c
+                pop hl
+                ld b,(hl)
+                ld (hl),a
+                ret z                       ; up
+                ld a,b
+                cp 1                        ; was up (0): C, else NC
+                sbc a,a                     ; -> #FF / 0
                 or a
                 ret
 
@@ -239,21 +336,31 @@ menu_frame:
                 ld a,(menu_sel)
                 or a
                 jp z,start_game
-                dec a
-                ld a,MODE_CONTROLS
-                jp z,set_screen
-                ld a,(menu_sel)
-                cp 2
-                ld a,MODE_SCORES
-                jp z,set_screen
-                ld a,(menu_sel)
+                cp 4
+                jr nc,.option
+                ld hl,menu_modes-1          ; 1-3: controls, scores, story
+                call add_a_hl
+                ld a,(hl)
+                jp set_screen
+.option:        ld hl,skill                 ; 4: difficulty easy/medium/hard
+                jr nz,.flag
+                ld a,(hl)
+                inc a
                 cp 3
-                ld a,MODE_STORY
-                jp z,set_screen
-                ld a,(sound_on)             ; sound on/off
+                jr c,.set
+                xor a
+                jr .set
+.flag:          ld hl,music_on              ; 5: music, 6: all sound
+                cp 5
+                jr z,.toggle
+                ld hl,sound_on
+.toggle:        ld a,(hl)
                 xor 1
-                ld (sound_on),a
-                jp menu_sound_line
+.set:           ld (hl),a
+                ld a,1                      ; the menu drawn again
+                ld (screen_dirty),a
+                ret
+menu_modes:     defb MODE_CONTROLS,MODE_SCORES,MODE_STORY
 
 over_frame:
                 ld a,(over_rank)
@@ -332,23 +439,43 @@ draw_screen:
                 ld e,48
                 call blit_static
                 MAP_RAM GA_RAM_C0
-                ld hl,(txt_menu_start)
-                ld b,MENU_TEXT_X
+                ld hl,menu_lines            ; the options
                 ld c,MENU_Y
-                call draw_text
-                ld hl,(txt_menu_controls)
+.option:        push bc
+                ld e,(hl)                   ; DE = first text pointer
+                inc hl
+                ld d,(hl)
+                inc hl
+                ld a,(hl)                   ; A = its variable (0: none)
+                inc hl
+                ld b,(hl)
+                inc hl
+                push hl
+                ld l,a
+                ld h,b
+                or h
+                jr z,.text                  ; text pointer += 2 * variable
+                ld a,(hl)                   ; (on/off: off first)
+                add a,a
+.text:          ex de,hl
+                call add_a_hl
+                ld a,(hl)
+                inc hl
+                ld h,(hl)
+                ld l,a
+                pop de
+                pop bc
+                push de
+                push bc
                 ld b,MENU_TEXT_X
-                ld c,MENU_Y+MENU_STEP
                 call draw_text
-                ld hl,(txt_menu_scores)
-                ld b,MENU_TEXT_X
-                ld c,MENU_Y+MENU_STEP*2
-                call draw_text
-                ld hl,(txt_menu_story)
-                ld b,MENU_TEXT_X
-                ld c,MENU_Y+MENU_STEP*3
-                call draw_text
-                call menu_sound_line
+                pop bc
+                pop hl
+                ld a,c
+                add MENU_STEP
+                ld c,a
+                cp MENU_Y+MENU_ITEMS*MENU_STEP
+                jr nz,.option
                 ld hl,(txt_menu_hint)
                 ld c,200
                 call draw_text_centred
@@ -363,25 +490,22 @@ draw_screen:
                 call draw_text_centred
                 jp menu_cursor_draw
 
-menu_sound_line:
-                ld hl,(txt_menu_sound_on)
-                ld a,(sound_on)
-                or a
-                jr nz,.text
-                ld hl,(txt_menu_sound_off)
-.text:          ld b,MENU_TEXT_X
-                ld c,MENU_Y+MENU_STEP*4
-                jp draw_text
+; option texts: first text pointer, variable choosing the text (0: none)
+menu_lines:     defw txt_menu_start,0, txt_menu_controls,0, txt_menu_scores,0
+                defw txt_menu_story,0, txt_menu_skill_0,skill
+                defw txt_menu_music_off,music_on, txt_menu_sound_off,sound_on
 
 menu_cursor_draw:
                 ld hl,cursor_text
                 jr menu_cursor
 menu_cursor_erase:
                 ld hl,blank_text
-menu_cursor:    ld a,(menu_sel)             ; line = MENU_Y + sel * 16
+menu_cursor:    ld a,(menu_sel)             ; line = MENU_Y + sel * 14
+                ld b,a
                 add a,a
                 add a,a
                 add a,a
+                sub b
                 add a,a
                 add MENU_Y
                 ld c,a
@@ -423,7 +547,7 @@ draw_controls:
                 jp draw_text_centred
 ; pointers to the text pointers (text_ptrs)
 controls_lines: defw txt_controls_left,txt_controls_right,txt_controls_jump,txt_controls_down
-                defw txt_controls_pause,txt_controls_esc,txt_controls_joy,0
+                defw txt_controls_pause,txt_controls_esc,txt_controls_music,txt_controls_joy,0
 
 ; the story: title, then centred lines (empty ones leave a gap)
 STORY_Y         equ 48
@@ -959,6 +1083,8 @@ lane_danger:
                 jr z,.blocked
                 cp COL_NOSE
                 jr z,.blocked
+                cp COL_GAP
+                jr z,.blocked
                 cp COL_SIGNAL
                 jr nz,.next
                 ld a,(signal_red)
@@ -989,10 +1115,15 @@ menu_sel:       defb 0
 menu_idle:      defw 0
 demo_timer:     defw 0
 demo_near:      defb 0
-sound_on:       defb 1
+sound_on:       defb 1                  ; all sound
+music_on:       defb 1                  ; the tunes (M while playing)
+music_key_down: defb 0
+skill:          defb 0                  ; 0 easy, 1 medium, 2 hard (menu)
+gap_hard:       defb 0                  ; 1: gaps between wagons (hard game)
+countdown:      defb 0                  ; game frames of the start countdown
+count_first:    defb 0
 language:       defb 0                  ; 0 English, 1 Greek (set_language)
 lang_key_down:  defb 0
-text_ptrs:      defs TXT_COUNT*2        ; the language's texts
 over_rank:      defb 0
 name_pos:       defb 0
 name_buf:       defs NAME_LETTERS
@@ -1003,8 +1134,6 @@ bs_w:           defb 0
 bs_x:           defb 0
 bs_y:           defw 0
 bs_lines:       defw 0
-text_buf:       defs 24
-blank_line:     defs 72,0
 
 ; table: score (BCD, low byte first), name (letters 0-25)
 macro HS_ENTRY hi,mid,lo,a,b,c

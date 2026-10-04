@@ -9,7 +9,7 @@ the way). The drawn tiles do not change - collisions only read the descriptors.
 from harness import boot_game, load_symbols, peek8, peek16, sync_game_frame
 import cpc as cpcmod  # noqa: E402  (path set up by harness)
 
-COL_NONE, COL_STOP, COL_SIGNAL, COL_TRAIN, COL_NOSE, COL_RAMP_UP, COL_RAMP_DOWN = range(7)
+COL_NONE, COL_STOP, COL_SIGNAL, COL_TRAIN, COL_NOSE, COL_RAMP_UP, COL_RAMP_DOWN, COL_GAP = range(8)
 STATE_RUN, STATE_CRASHED, STATE_GAME_OVER = range(3)
 MODE_OVER = 5
 AHEAD = 6                       # rows below the top of the screen where planting starts
@@ -265,3 +265,31 @@ def test_signal_lamps_cycle():
         sync_game_frame(cpc, sym)
         seen.add(peek8(cpc, sym["signal_red"]))
     assert seen == {0, 1}
+
+
+
+def _wagons(hard, jump):
+    """Up a ramp onto two wagons joined by a coupler (row 3 + 12)."""
+    sc = Scenario()
+    sc.cpc.write_ram(sc.sym["gap_hard"], bytes([1 if hard else 0]))
+    sc.plant_lane(0, 1, ramp_up() + [COL_TRAIN] * 12 + [COL_GAP] + [COL_TRAIN] * 12)
+    sc.go()
+    if jump:                                     # jump from the roof just before the gap
+        for _ in range(300):
+            st = sc.frame()
+            if st["base"] == 2 and st["feet"] >= sc.base_row + 3 + 12 - 2:
+                break
+        sc.tap(cpcmod.KEY_SPACE)
+    return sc.past(sc.base_row + 3 + 20)
+
+
+def test_gap_between_wagons_is_a_roof_except_in_hard_mode():
+    states = _wagons(hard=False, jump=False)
+    assert states[-1]["crashes"] == 0 and states[-1]["base"] == 2
+    states = _wagons(hard=True, jump=False)
+    assert states[-1]["crashes"] == 1, "walked into the gap"
+
+
+def test_hard_mode_jump_over_the_gap():
+    states = _wagons(hard=True, jump=True)
+    assert states[-1]["crashes"] == 0 and states[-1]["base"] == 2, states[-1]

@@ -1,6 +1,6 @@
 """Phase 0: the disc boots and the program runs its own main loop."""
 
-from harness import boot_game, load_symbols, peek16
+from harness import boot_game, load_symbols, peek8, peek16
 
 
 def test_boot_runs_game_loop():
@@ -36,3 +36,10 @@ def test_loader_shows_the_loading_screen():
                                                           (line & 7) * 0x800 + (line >> 3) * 96 + 96)]
     assert all(cpc.read_ram(0xC000 + a, 1)[0] == screen[a] for a in used[::7]), "picture unpacked at &C000"
     cpc.screenshot(os.path.join(ROOT, "build", "test-artifacts", "loading.png"), aspect=True)
+
+
+def test_run_runner_starts_the_game_too():
+    """RUNNER.BAS on the disc: RUN"RUNNER does RUN"DISC."""
+    sym = load_symbols()
+    cpc = boot_game(menu=True, command='RUN"RUNNER')
+    assert peek8(cpc, sym["game_mode"]) == 2

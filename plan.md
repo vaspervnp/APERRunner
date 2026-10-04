@@ -86,8 +86,8 @@
 | `&0040–&03FF` | Buffers αποθήκευσης sprites: `player_save`, `shadow_save`, `flyer_saves` |
 | `&0400–&07FF` | `WORLD_RING`: 64 περιγραφές σειρών × 16 bytes |
 | `&0800–&087F` | `OVERLAY_LIST`: 16 overlays × 8 bytes |
-| `&0880–&0B6F` | `label_buf`: εικόνα του ονόματος power-up (8 γραμμές × ≤30 bytes) |
-| `&0C00–&0FFF` | στοίβα (από `&1000` προς τα κάτω) |
+| `&0880–&0CA0` | `label_buf` (εικόνα ετικέτας, 8 × ≤72 bytes) και τα buffers των slots του HUD |
+| `&0D00–&0FFF` | στοίβα (από `&1000` προς τα κάτω) |
 | `&1000–&3FFF` | κώδικας + μεταβλητές (μέχρι 12K· σήμερα ~11,5K)· **πρέπει** να τελειώνει κάτω από το &4000 (τρέχει με bank στο παράθυρο) |
 | `&4000–&7FFF` | **Παράθυρο bank**: C4 = tiles, C5 = sprites + chunks, C6 = compiled sprites, C7 = μενού (γραμματοσειρά, λογότυπο, κείμενα). Στη **βασική** RAM εδώ: 4 μαύρες σειρές του μπλοκ B (τα τελευταία 384 bytes κάθε 2K) |
 | `&8000–&BFFF` | Οθόνη: **μπλοκ D1** (πάνω 17 char rows), 16K mode |
@@ -288,7 +288,7 @@ APERRunner/
 │   ├── mkmusic.py           # music/*.txt → src/data/music.asm (περίοδοι AY, ροές νοτών, εφέ)
 │   ├── mklevel.py           # chunks → binary
 │   └── tests/               # headless τεστ με cpcemu
-└── build/                   # (gitignored) aper.dsk, .sym, snapshots
+└── build/                   # (gitignored) runner.dsk, .sym, snapshots
 ```
 
 ---
@@ -303,9 +303,9 @@ APERRunner/
 - [x] **0.3** `Makefile` (`all`, `run`, `test`, `clean`):
   ```
   rasm src/main.asm -ob build/aper.bin -os build/aper.sym -s -sl -twe
-  iDSK build/aper.dsk -n
-  iDSK build/aper.dsk -i build/aper.bin -t 1 -c 1000 -e 1000
-  caprice32.launcher '--autocmd=run"disc' <απόλυτη διαδρομή>/build/aper.dsk
+  iDSK build/runner.dsk -n
+  iDSK build/runner.dsk -i build/aper.bin -t 1 -c 1000 -e 1000
+  caprice32.launcher '--autocmd=run"disc' <απόλυτη διαδρομή>/build/runner.dsk
   ```
   Σημείωση: το launcher του snap προωθεί **μόνο 2 ορίσματα**, γι' αυτό το autocmd δίνεται ως ένα όρισμα `--autocmd=...`.
   Προσωρινή διεύθυνση φόρτωσης `&1000` μέχρι να υπάρξει loader (Φάση 8).
@@ -508,6 +508,22 @@ APERRunner/
   καταχωρητές που άλλαξαν. `ΗΧΟΣ: ΟΧΙ` και παύση = σιωπή. Το πληκτρολόγιο (AY port A) κλείνει τις διακοπές όσο διαβάζεται.
 - **Αποδοχή** (`make test`, 80/80 ✔): `test_sound.py` (μουσική μενού/παιχνιδιού από τους καταχωρητές του AY, βήματα στα 50 Hz,
   σιωπή, εφέ νομίσματος/άλματος/σύγκρουσης, προτεραιότητες, εργαλείο). Φόρτος με μαγνήτη: 11/12.
+
+### Ρυθμίσεις παιχνιδιού (μετά τη Φάση 9)
+- [x] **Δυσκολία** στο μενού (`DIFFICULTY: EASY/MEDIUM/HARD`, `skill`): ταχύτητα 4 / 5 / 6 γραμμές ανά frame (το medium
+  στρογγυλεύεται από +20% σε +25%: ακέραια βήματα, χωρίς τρέμουλο). Turbo = βάση + 2 (έως 7), Slow = μισή βάση.
+- [x] **Κενά βαγονιών** (κλάση `COL_GAP` στους συνδέσμους): οροφή σε easy/medium, **κενό που πηδάς μόνο στο hard**
+  (`gap_hard`). Κανένα νόμισμα στους συνδέσμους (`mklevel`).
+- [x] **Εμπόδια αραιά στην αρχή**: άδειες σειρές μετά από κάθε chunk (`spacer_len`, από 23), μία λιγότερη κάθε 64 / 40 / 24
+  σειρές (easy / medium / hard)· η δυσκολία των chunks ανεβαίνει ×1 / ×1,5 / ×2. Κάθε σειρά έχει πάντα ελεύθερο πέρασμα.
+- [x] **Power-ups από τη γεννήτρια** (όχι στα chunks): ένα κάθε 50–150 σειρές, σε γραμμή χωρίς εμπόδιο για 8 σειρές μπροστά,
+  Turbo 30%, τα άλλα πέντε 14% το καθένα. Στον αέρα ο παίκτης περνά πάνω από νομίσματα και bonus χωρίς να τα παίρνει.
+- [x] **Countdown** στην αρχή: ο παίκτης ακίνητος, στο hard πρώτα «JUMP BETWEEN WAGONS!», μετά 3, 2, 1, GO! πάνω στην πίστα.
+- [x] **Μουσική**: `MUSIC: ON/OFF` στο μενού και **M** στο παιχνίδι (κλείνει μόνο τη μουσική)· `SOUND` κλείνει τα πάντα.
+  Στο VSYNC που ξεκινά game frame ο ήχος τρέχει αμέσως μετά το HUD (`sound_due`), στο άλλο μέσα στο irq0.
+- [x] Δισκέτα `build/runner.dsk` με `RUNNER.BAS` (`RUN"RUNNER` → `RUN"DISC`).
+- Μνήμη: `text_ptrs`, `text_buf`, `blank_line` στο `&02F2–&03FF`, buffers του HUD στο `&0B00–&0CA0`, στοίβα `&0D00–&0FFF`.
+- **Αποδοχή** (`make test`, 91/91 ✔).
 
 ### Φάση 10 — Βελτιστοποίηση & συμβατότητα
 - [ ] **10.1** Προφίλ με border colours· στόχος χαμένα frames = 0 στη μέγιστη ταχύτητα με μαγνήτη ενεργό.
