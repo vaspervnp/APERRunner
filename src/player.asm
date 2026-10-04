@@ -8,7 +8,7 @@
 ; its feet stay centred on the lane. A shadow marks the ground while airborne.
 ; =============================================================================
 
-FOOT_Y          equ 256                 ; screen line of the feet at z = 0
+FOOT_Y          equ 248                 ; screen line of the feet at z = 0
 LANE_CENTRE1    equ COL_LANE1+LANE_BYTES/2
 MOVE_STEPS      equ 4
 
@@ -221,10 +221,10 @@ jump_frames_down:
 ; build_clip_table: row_clip for the picture rows the runner can reach:
 ; bridge decks hide it (their shadow rows do not).
 ; -----------------------------------------------------------------------------
-CLIP_FIRST_ROW  equ 22
+CLIP_FIRST_ROW  equ 26                  ; the runner's top: line 216 at most
 
 build_clip_table:
-                ld hl,(scr_top_row)
+                ld hl,(cur_top_row)
                 ld de,-CLIP_FIRST_ROW
                 add hl,de                   ; world row of picture row 22
                 ld ix,row_clip+CLIP_FIRST_ROW
@@ -252,7 +252,7 @@ build_clip_table:
 
 ; -----------------------------------------------------------------------------
 ; player_restore: removes the runner/shadow drawn last frame.
-; player_draw: draws them. Needs build_row_table for this frame.
+; player_draw: draws them.
 ; -----------------------------------------------------------------------------
 player_restore:
                 ld hl,player_save           ; restore in reverse drawing order
@@ -299,10 +299,17 @@ player_draw:
 
 .runner:        call player_sprite
                 ld (player_frame),a
+                push af
                 ld hl,gfx_player_table
                 call table_entry
                 push hl
                 pop ix
+                pop af                      ; its compiled code (bank C6)
+                MAP_RAM GA_RAM_C6
+                ld hl,gfx_player_code_table
+                call table_entry
+                MAP_RAM GA_RAM_C5
+                ld (.code),hl
                 ; bottom line = FOOT_Y - 2z, top = bottom - height + 1
                 ld a,(player_z)
                 add a,a
@@ -324,11 +331,14 @@ player_draw:
                 ld c,a
                 ld (player_column),a
                 ld iy,player_save
-                call draw_sprite
+                ld de,(.code)
+                ld a,GA_RAM_C6
+                call draw_compiled
                 xor a
                 ld (spr_clip_on),a
                 MAP_RAM GA_RAM_C0
                 ret
+.code:          defw 0
 
 ; --- state ---------------------------------------------------------------------
 player_state:
@@ -347,6 +357,4 @@ player_top:     defw 0                  ; last drawn top screen line
 player_column:  defb 0                  ; last drawn column
 PLAYER_STATE_SIZE equ $-player_state
 
-PLAYER_SAVE_SIZE equ 2+24*(2+9)
-player_save:    defs PLAYER_SAVE_SIZE
-shadow_save:    defs 2+6*(2+7)
+; player_save / shadow_save: src/main.asm (below the code)

@@ -4,7 +4,7 @@ from harness import boot_game, load_symbols, peek8, peek16, save_screenshot, syn
 from world_model import F_BRIDGE, F_FOREST, F_OVERLAY, Sheets, read_desc, screen_row, visible_rows
 
 TRACK_TILES = 39
-TEST_SPRITE_ROWS = range(29, 34)     # picture rows the HUD test sprite can touch
+HUD_PANEL = range(76, 91)            # bytes where the HUD draws its elements
 RUNNER_ROWS = range(28, 34)          # picture rows the runner (and its shadow) can touch
 
 
@@ -24,9 +24,13 @@ def _check_screen(cpc, sym, sheets):
         desc = read_desc(cpc, sym, row)
         below = read_desc(cpc, sym, row - 1)
         for column, width, pens in sheets.expected(desc):
-            if column == 72:
-                if index in TEST_SPRITE_ROWS:
-                    continue
+            if column == 72:                 # HUD: only the frame around the panel
+                got = screen_row(cpc, bank, ring, column, width)
+                keep = [x for x in range(48) if 72 + x // 2 not in HUD_PANEL]
+                assert [[line[x] for x in keep] for line in got] == [[line[x] for x in keep] for line in pens], \
+                    f"world row {row}: HUD frame differs"
+                checked += 1
+                continue
             elif width == 14:
                 if index in RUNNER_ROWS:
                     continue
@@ -79,7 +83,7 @@ def test_five_minute_flight():
             for _ in range(8):
                 cpc.run_frames(125)                  # 2.5 s
                 top = peek16(cpc, sym["scr_top_row"])
-                assert sym["start"] <= cpc.pc < sym["end_of_code"] or cpc.pc < 0x40, f"PC #{cpc.pc:04X}"
+                assert sym["start"] <= cpc.pc < 0x8000 or cpc.pc < 0x40, f"PC #{cpc.pc:04X}"   # code, banks
                 for row in range(top - 33, top):     # the top row may be mid-generation
                     desc = read_desc(cpc, sym, row)
                     _check_desc(desc, row)

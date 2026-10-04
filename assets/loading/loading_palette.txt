@@ -1,0 +1,16 @@
+ 0 fw  0 #000000 Black
+ 1 fw  1 #000080 Blue
+ 2 fw  2 #0000FF Bright Blue
+ 3 fw  5 #8000FF Mauve
+ 4 fw  4 #800080 Magenta
+ 5 fw  3 #800000 Red
+ 6 fw  6 #FF0000 Bright Red
+ 7 fw 15 #FF8000 Orange
+ 8 fw 16 #FF8080 Pink
+ 9 fw 24 #FFFF00 Bright Yellow
+10 fw 25 #FFFF80 Pastel Yellow
+11 fw  9 #008000 Green
+12 fw 18 #00FF00 Bright Green
+13 fw 13 #808080 White
+14 fw 26 #FFFFFF Bright White
+15 fw 11 #0080FF Sky Blue

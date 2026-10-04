@@ -303,6 +303,10 @@ def hud_frame(name, w, h):
     if name.startswith("bar"):
         f = Frame(w, h, YELLOW if name == "bar_full" else BLUE)
         return f
+    if name.startswith("d") and name[1:].isdigit():    # digit: bar of its value's height
+        f = Frame(w, h, BLUE)
+        f.rect(0, 6 - int(name[1:]) * 6 // 9, 2, 6, WHITE)
+        return f
     f = Frame(w, h)
     pen = {"ic_coin": YELLOW, "ic_magnet": BRED, "ic_turbo": ORANGE, "ic_slow": GREEN,
            "ic_spring": GREY, "ic_helmet": BBLUE, "ic_ticket": WHITE, "ic_life": PINK,
@@ -357,6 +361,11 @@ def make_frame(sheet, name, w, h):
         return item_frame(name, w, h)
     if sheet == "hud":
         return hud_frame(name, w, h)
+    if sheet in ("font", "logo"):                       # a white box / a framed panel
+        f = Frame(w, h, None if sheet == "font" else BLUE)
+        if sheet == "font" and name != "space":
+            f.rect(0, 0, w - 2, h - 2, WHITE)
+        return f
     raise KeyError(sheet)
 
 

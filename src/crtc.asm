@@ -124,6 +124,8 @@ publish_scroll:
                 ld (next_d1),hl
                 ld hl,(scr_d2)
                 ld (next_d2),hl
+                ld hl,(scr_top_row)
+                ld (next_top),hl
                 ld a,(last_tick)
                 add VBLS_PER_FRAME
                 ld (next_apply_tick),a
@@ -183,6 +185,8 @@ irq0:
                 ld (cur_d1),hl
                 ld hl,(next_d2)
                 ld (cur_d2),hl
+                ld hl,(next_top)
+                ld (cur_top_row),hl
 .keep:
                 CRTC_N R_VTOTAL,B_ROWS-1
                 ld a,(cur_j)
@@ -236,6 +240,8 @@ next_apply_tick: defb 0
 next_j:         defb 0
 next_d1:        defw 0
 next_d2:        defw 0
+next_top:       defw 0
 cur_j:          defb 0
+cur_top_row:    defw 0              ; world row in D1 row 0 of the picture shown
 cur_d1:         defw 0
 cur_d2:         defw 0

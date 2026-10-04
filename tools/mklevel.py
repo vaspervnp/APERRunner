@@ -25,7 +25,18 @@ is the first one the player meets). Each lane cell has 3 characters:
           'J' spring  'H' helmet  'X' ticket x2
 
 A row has coins in one lane at most (never side by side in 2 or 3 lanes),
-and coins come in runs of at least MIN_COIN_RUN consecutive rows of a lane.
+and coins come in runs of MIN_COIN_RUN to MAX_COIN_RUN consecutive rows of
+a lane.
+
+A chunk with a ramp up says how it rewards or forces the ramp:
+
+    # ramp: coins    most coins (RAMP_ROOF_SHARE) on the train roofs
+    # ramp: blocked  buffer stops in every other lane along the train, one
+                     per BLOCK_ROWS rows at least (where the third lane is
+                     open: a row always has a lane without obstacles)
+
+Each ramp chunk comes as a pair "<name>_coins" / "<name>_blocked" with
+weights 1:2, so a ramp brings coins a third of the time.
 
 Trains are long: a locomotive of LOCO_ROWS rows and at least MIN_WAGONS
 wagons of WAGON_ROWS rows, joined by 1-row couplers. A T/R run must be
@@ -56,6 +67,10 @@ WAGON_ROWS = 12
 LOCO_ROWS = 12
 MIN_WAGONS = 2
 MIN_COIN_RUN = 3
+MAX_COIN_RUN = 10
+RAMP_ROOF_SHARE = 0.6
+BLOCK_ROWS = 12
+RAMP_KINDS = ("coins", "blocked")
 
 
 def train_length(wagons):
@@ -193,10 +208,45 @@ def compile_chunk(path):
         rows.append(row)
     for lane in range(3):
         for start, length, obj, _ in _runs([cell[2] * 2 for cell in columns[lane]]):
-            if obj == "c" and length < MIN_COIN_RUN:
+            if obj == "c" and not MIN_COIN_RUN <= length <= MAX_COIN_RUN:
                 raise LevelError(f"{path}: line {grid[start][0]}: {length} coin(s) in lane {lane + 1} - "
-                                 f"coins come in runs of at least {MIN_COIN_RUN}")
-    return {"name": name, "env": ENVS[env], "diff": diff, "weight": weight, "rows": rows}
+                                 f"coins come in runs of {MIN_COIN_RUN} to {MAX_COIN_RUN}")
+    ramp = check_ramp(path, header, columns)
+    return {"name": name, "env": ENVS[env], "diff": diff, "weight": weight, "rows": rows, "ramp": ramp}
+
+
+def check_ramp(path, header, columns):
+    """The "ramp" header of a chunk with a ramp up (None without one)."""
+    ramp_lanes = [lane for lane in range(3) if any(cell[0] == "^" for cell in columns[lane])]
+    kind = header.get("ramp")
+    if not ramp_lanes:
+        if kind:
+            raise LevelError(f"{path}: 'ramp: {kind}' without a ramp up")
+        return None
+    if kind not in RAMP_KINDS:
+        raise LevelError(f"{path}: a chunk with a ramp up needs 'ramp: coins' or 'ramp: blocked'")
+    coins = [(lane, r) for lane in range(3) for r, cell in enumerate(columns[lane]) if cell[2] == "c"]
+    if kind == "coins":
+        roof = [c for c in coins if columns[c[0]][c[1]][0] in "TR"]
+        if len(roof) < RAMP_ROOF_SHARE * len(coins) or not coins:
+            raise LevelError(f"{path}: 'ramp: coins' needs at least {RAMP_ROOF_SHARE:.0%} of the coins on "
+                             f"the train roofs ({len(roof)} of {len(coins)})")
+        return kind
+    for lane in ramp_lanes:                      # blocked: stops next to the train
+        column = columns[lane]
+        first = min(r for r, cell in enumerate(column) if cell[0] == "^")
+        last = max(r for r, cell in enumerate(column) if cell[0] in "TR")
+        for other in range(3):
+            third = 3 - lane - other            # stops only where it stays open
+            free = [r for r in range(first, last + 1)
+                    if columns[other][r][0] not in "TR^v" and columns[third][r][0] not in "TRSF"]
+            if other == lane or len(free) < BLOCK_ROWS:
+                continue
+            stops = sum(1 for r in free if columns[other][r][0] == "S") // 2
+            if stops < len(free) // BLOCK_ROWS:
+                raise LevelError(f"{path}: 'ramp: blocked' needs a buffer stop every {BLOCK_ROWS} rows in "
+                                 f"lane {other + 1} next to the train ({stops} for {len(free)} rows)")
+    return kind
 
 
 def asm_source(chunks):
@@ -220,6 +270,19 @@ def load_all():
     names = [c["name"] for c in chunks]
     if len(set(names)) != len(names):
         raise LevelError("chunk names must be unique")
+    by_name = {c["name"]: c for c in chunks}
+    for c in chunks:                             # ramp pairs, weights 1:2
+        if c["ramp"] is None:
+            continue
+        suffix = "_" + c["ramp"]
+        if not c["name"].endswith(suffix):
+            raise LevelError(f"chunk {c['name']}: a 'ramp: {c['ramp']}' chunk is named <name>{suffix}")
+        base = c["name"][:-len(suffix)]
+        coins, blocked = by_name.get(base + "_coins"), by_name.get(base + "_blocked")
+        if not coins or not blocked:
+            raise LevelError(f"chunk {base}: ramp chunks come in pairs {base}_coins / {base}_blocked")
+        if blocked["weight"] != 2 * coins["weight"] or (coins["env"], coins["diff"]) != (blocked["env"], blocked["diff"]):
+            raise LevelError(f"chunk {base}: _blocked has twice the weight of _coins, same env and diff")
     return chunks
 
 

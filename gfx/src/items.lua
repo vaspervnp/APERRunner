@@ -134,6 +134,30 @@ local function bar(full)
   return c
 end
 
+-- digits 0-9: 3x7 white on the panel, in a 4x8 cell (gap right and below)
+local DIGITS = {
+  { "###", "#.#", "#.#", "#.#", "#.#", "#.#", "###" },
+  { ".#.", "##.", ".#.", ".#.", ".#.", ".#.", "###" },
+  { "###", "..#", "..#", "###", "#..", "#..", "###" },
+  { "###", "..#", "..#", ".##", "..#", "..#", "###" },
+  { "#.#", "#.#", "#.#", "###", "..#", "..#", "..#" },
+  { "###", "#..", "#..", "###", "..#", "..#", "###" },
+  { "###", "#..", "#..", "###", "#.#", "#.#", "###" },
+  { "###", "..#", "..#", "..#", ".#.", ".#.", ".#." },
+  { "###", "#.#", "#.#", "###", "#.#", "#.#", "###" },
+  { "###", "#.#", "#.#", "###", "..#", "..#", "###" },
+}
+
+local function digit(d)
+  local c = Canvas(4, 8, BLUE)
+  for y, row in ipairs(DIGITS[d + 1]) do
+    for x = 1, 3 do
+      if row:sub(x, x) == "#" then c:px(x - 1, y - 1, WHITE) end
+    end
+  end
+  return c
+end
+
 -- --- sheets ---------------------------------------------------------------------------
 local items = {}
 for i = 0, 3 do items[#items + 1] = { name = "coin" .. i, canvas = coin(i) } end
@@ -149,4 +173,5 @@ for _, name in ipairs({ "ic_coin", "ic_magnet", "ic_turbo", "ic_slow", "ic_sprin
 end
 hud[#hud + 1] = { name = "bar_full", canvas = bar(true) }
 hud[#hud + 1] = { name = "bar_empty", canvas = bar(false) }
+for d = 0, 9 do hud[#hud + 1] = { name = "d" .. d, canvas = digit(d) } end
 build_sheet("hud", hud)

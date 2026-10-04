@@ -6,6 +6,8 @@
 ; extra banks, mapped at &4000 when needed:
 ;   C4 - tiles (track, sides, bridges, HUD)      -> build/aperb4.bin
 ;   C5 - sprites (scenery, items, player) + track chunks -> build/aperb5.bin
+;   C6 - compiled sprites (runner)              -> build/aperb6.bin
+;   C7 - menus: font, logo, texts               -> build/aperb7.bin
 ; DISC (BASIC) loads both banks, then APER.BIN at &4000 (BASIC only loads
 ; above HIMEM) and calls it: a stub moves the code down to &1000.
 ; =============================================================================
@@ -14,11 +16,20 @@
 DEBUG           equ 0
                 endif
 
-LOAD_ADDR       equ #1000           ; temporary until the loader exists (Phase 8)
+LOAD_ADDR       equ #1000
 STACK_TOP       equ LOAD_ADDR
 
+; sprite save buffers below the code (the code must end below &4000: it runs
+; while banks are mapped there). &0400-&087F: world ring and overlays.
+PLAYER_SAVE_SIZE equ 2+24*(2+9)
+SHADOW_SAVE_SIZE equ 2+6*(2+7)
+player_save     equ #0040
+shadow_save     equ player_save+PLAYER_SAVE_SIZE
+flyer_saves     equ shadow_save+SHADOW_SAVE_SIZE    ; FLYER_COUNT*FLY_SAVE_SIZE
+label_buf       equ #0880                           ; LABEL_BUF_SIZE (stack: &0C00-&0FFF)
+
 VBLS_PER_FRAME  equ 2               ; 25 fps
-DEFAULT_SPEED   equ 2               ; lines per game frame
+DEFAULT_SPEED   equ 4               ; lines per game frame
 
                 include "hw.asm"
 
@@ -51,7 +62,10 @@ start:
                 call crtc_init
                 ld hl,game_palette
                 call set_palette
+                xor a                       ; English
+                call set_language
                 call new_run
+                call go_menu
 
                 xor a
                 ld (missed_frames),a
@@ -64,20 +78,18 @@ start:
 
 main_loop:
                 call wait_game_frame
+                BORDER #12                  ; bright green: HUD, runner, sprites
+                call hud_update             ; top to bottom, ahead of the beam
                 call read_input
-                ld a,(keys_pressed)         ; H toggles the pause
-                and KEY_PAUSE
-                jr z,.pause_ok
-                ld a,(paused)
-                xor 1
-                ld (paused),a
-.pause_ok:      ld a,(paused)
-                or a
+                ld a,(game_mode)            ; menus: a still screen
+                cp MODE_MENU
+                jr c,.playing
+                call screen_frame
+                jr .frame_done
+.playing:       call play_input             ; ESC, pause, demo keys
                 jr nz,main_loop
 
                 ; sprites first: the beam is still above the bottom of the picture
-                BORDER #12                  ; bright green: runner + sprites
-                call build_row_table
                 call restore_flyers         ; reverse drawing order
                 call player_restore
                 call game_state_update
@@ -90,19 +102,12 @@ main_loop:
                 call pickups                ; erases picked-up items: no sprite on screen now
                 call magnet
                 call tick_powerups
+                call draw_label             ; a power-up's name on the track
 .not_playing:   call move_flyers
                 call effects
                 call build_clip_table
                 call player_draw
                 call draw_flyers
-                ld hl,test_sprite_save      ; screen-fixed test item in the HUD
-                call restore_sprite
-                ld ix,test_sprite
-                ld iy,test_sprite_save
-                ld hl,(test_sprite_y)
-                ld a,(test_sprite_x)
-                ld c,a
-                call draw_sprite
                 ; then the scroll for the next game frame (off-screen rows only)
                 BORDER #0C                  ; bright red: scroll work
                 ld a,(game_state)           ; the world stops while crashed
@@ -111,7 +116,8 @@ main_loop:
                 jr nz,.scroll
                 call current_speed          ; turbo / slow / normal
 .scroll:        call scroll_step
-                BORDER #14                  ; black
+                call hud_prepare            ; next frame's HUD contents
+.frame_done:    BORDER #14                  ; black
                 call measure_load
                 ld hl,(frame_counter)
                 inc hl
@@ -127,6 +133,7 @@ new_run:
                 call scroll_init
                 call player_init
                 call pickups_init
+                call hud_init
                 xor a
                 ld (game_state),a
                 ld (invuln),a
@@ -196,26 +203,10 @@ measure_load:
                 include "player.asm"
                 include "collide.asm"
                 include "pickups.asm"
+                include "hud.asm"
+                include "screens.asm"
+                include "data/gfx_hud_icons.asm"
                 include "data/palette.asm"
-
-; 4x12 screen-fixed test item (HUD icon size): red frame, bright yellow
-; (pen 7) inside, transparent corners. Replaced by the HUD in phase 7.
-TEST_SPRITE_W   equ 4
-TEST_SPRITE_H   equ 12
-test_sprite:    defb TEST_SPRITE_W,TEST_SPRITE_H
-                repeat TEST_SPRITE_H,ln
-                repeat TEST_SPRITE_W,bx
-                if (ln==1 || ln==TEST_SPRITE_H) && (bx==1 || bx==TEST_SPRITE_W)
-                defb #FF,#00
-                elseif ln==1 || ln==TEST_SPRITE_H || bx==1 || bx==TEST_SPRITE_W
-                defb #00,#F3
-                else
-                defb #00,#FC
-                endif
-                rend
-                rend
-test_sprite_save: defb 0
-                defs 1+TEST_SPRITE_H*(2+TEST_SPRITE_W)
 
 ; --- variables (fixed labels, read by tools/tests) ---------------------------
 frame_counter:  defw 0              ; game frames
@@ -225,11 +216,11 @@ frame_load:     defb 0              ; see measure_load
 max_load:       defb 0
 scroll_speed:   defb DEFAULT_SPEED
 paused:         defb 0
-test_sprite_x:  defb 80             ; byte column (in the HUD: nothing else draws there)
-test_sprite_y:  defw 232            ; screen line
 
 end_of_code:
-                assert end_of_code < B_ROWS_ADDR
+                assert end_of_code <= #4000
+                assert flyer_saves+FLYER_COUNT*FLY_SAVE_SIZE <= WORLD_RING
+                assert label_buf+LABEL_BUF_SIZE <= #0C00
                 save "build/aper.bin",FILE_ADDR,BOOT_STUB_SIZE+end_of_code-LOAD_ADDR
 
 ; =============================================================================
@@ -258,8 +249,31 @@ bank5_start:
                 include "data/gfx_items.asm"
                 include "data/gfx_player.asm"
                 include "data/gfx_shadows.asm"
-                include "data/gfx_hud_icons.asm"
                 include "data/chunks.asm"
 bank5_end:
                 assert bank5_end <= #8000
                 save "build/aperb5.bin",bank5_start,bank5_end-bank5_start
+
+; =============================================================================
+; Bank C6 (compiled sprites: code that runs mapped at &4000)
+; =============================================================================
+                bank
+                org #4000
+bank6_start:
+                include "data/gfx_player_code.asm"
+bank6_end:
+                assert bank6_end <= #8000
+                save "build/aperb6.bin",bank6_start,bank6_end-bank6_start
+
+; =============================================================================
+; Bank C7 (menus: font, logo, texts)
+; =============================================================================
+                bank
+                org #4000
+bank7_start:
+                include "data/gfx_font.asm"
+                include "data/gfx_logo.asm"
+                include "data/text.asm"
+bank7_end:
+                assert bank7_end <= #8000
+                save "build/aperb7.bin",bank7_start,bank7_end-bank7_start

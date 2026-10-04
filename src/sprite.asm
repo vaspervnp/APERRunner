@@ -3,8 +3,8 @@
 ;
 ; Screen line s (0..264) is shown by picture line s + cur_j, which lives in
 ; picture row (s+j)>>3 (rows 0-16 = D1, 17-33 = D2) at plane (s+j)&7.
-; row_table holds plane-0 addresses of the 34 picture rows for the state that
-; irq0 applied at the start of this game frame.
+; row_base gives plane-0 addresses for the state that irq0 applied at the
+; start of this game frame.
 ;
 ; A sprite line can only cross the end of a 2K plane when its row offset is
 ; in the last 256 bytes, so the wrap check is done once per char row and
@@ -18,73 +18,41 @@
 PICTURE_ROWS    equ ROWS_PER_BLOCK*2
 
 ; -----------------------------------------------------------------------------
-; build_row_table: row_table[r] for r = 0..33 from cur_d1/cur_d2.
-; Destroys A, BC, DE, HL.
-; -----------------------------------------------------------------------------
-build_row_table:
-                ld hl,(cur_d1)              ; unchanged since the last build?
-                ld de,(row_table_d1)
-                or a
-                sbc hl,de
-                jr nz,.build
-                ld hl,(cur_d2)
-                ld de,(row_table_d2)
-                or a
-                sbc hl,de
-                ret z
-.build:         ld hl,(cur_d1)
-                ld (row_table_d1),hl
-                ld hl,(cur_d2)
-                ld (row_table_d2),hl
-                ld de,row_table
-                ld hl,(cur_d1)
-                ld c,D1_BANK_HI
-                call .block
-                ld hl,(cur_d2)
-                ld c,D2_BANK_HI
-.block:         ld b,ROWS_PER_BLOCK
-.row:           ld a,l
-                ld (de),a
-                inc de
-                ld a,h
-                or c
-                ld (de),a
-                inc de
-                ld a,l
-                add ROW_BYTES
-                ld l,a
-                ld a,h
-                adc 0
-                and RING_MASK>>8
-                ld h,a
-                djnz .row
-                ret
-
-; -----------------------------------------------------------------------------
-; row_base: HL = plane 0 address of picture row A at column C.
-; Sets spr_wrap to non-zero if a line of spr_width bytes crosses a plane end.
-; Destroys A, DE.
+; row_base: HL = plane 0 address of picture row A (0-33) at column C, from
+; the scroll state shown (cur_d1/cur_d2). Sets spr_wrap to non-zero if a
+; line of spr_width bytes crosses a plane end. Destroys A, DE.
 ; -----------------------------------------------------------------------------
 row_base:
-                add a,a
-                ld l,a
-                ld h,0
-                ld de,row_table
+                cp ROWS_PER_BLOCK
+                jr nc,.d2
+                ld hl,(cur_d1)
+                ld e,D1_BANK_HI
+                jr .block
+.d2:            sub ROWS_PER_BLOCK
+                ld hl,(cur_d2)
+                ld e,D2_BANK_HI
+.block:         push bc
+                ld b,e                      ; B = bank
+                add a,a                     ; + row * 96
+                ld e,a
+                ld d,0
+                push hl
+                ld hl,row_offsets
                 add hl,de
                 ld e,(hl)
                 inc hl
                 ld d,(hl)
-                ld a,e
-                add a,c
+                pop hl
+                add hl,de
+                ld a,c                      ; + column, inside the ring
+                add a,l
                 ld l,a
-                ld a,d
+                ld a,h
                 adc 0
                 and RING_MASK>>8
+                or b
                 ld h,a
-                ld a,d
-                and #C0
-                or h
-                ld h,a
+                pop bc
                 ; wrap if (H&7)=7 and 256-L < width
                 xor a
                 ld (spr_wrap),a
@@ -248,6 +216,144 @@ draw_sprite:
                 jp .row
 
 ; -----------------------------------------------------------------------------
+; draw_compiled: like draw_sprite, with the sprite's compiled code (png2cpc
+; kind "compiled": saves and draws without reading the sprite data).
+;   IX = sprite (width, height for the save buffer; bank C5 mapped: the data
+;   is used if it falls back), IY = save buffer, HL = screen line, C = column,
+;   DE = compiled code, A = bank that holds the code (GA_RAM_C5/C6...).
+; Falls back to draw_sprite when a line would cross a plane end or a row is
+; clipped. The code may be in a bank: C5 is mapped again afterwards.
+; Destroys everything except IX, IY.
+; -----------------------------------------------------------------------------
+FC_MAX_ROWS     equ 4
+
+draw_compiled:
+                ld (.bank+1),a              ; SMC
+                ld (.code+1),de             ; SMC
+                ld a,c
+                ld (fc_col),a
+                ld a,(ix+0)
+                ld (spr_width),a
+                ld a,(ix+1)
+                ld (fc_lines),a
+                push hl                     ; (for the fallback)
+                ld a,(cur_j)                ; picture line -> row, plane
+                add a,l
+                ld l,a
+                jr nc,.nc
+                inc h
+.nc:            ld a,l
+                and 7
+                ld (fc_plane),a
+                ld b,a
+                srl h
+                rr l
+                srl l
+                srl l
+                ld a,l
+                ld (spr_row),a
+                ld a,(fc_lines)             ; char rows: (plane + lines - 1) / 8 + 1
+                add a,b
+                dec a
+                rrca
+                rrca
+                rrca
+                and #1F
+                inc a
+                ld b,a
+                ld hl,fc_bases
+                ld (fc_base_ptr),hl
+.check:         push bc                     ; every row: base, no wrap, not clipped
+                ld a,(fc_col)
+                ld c,a
+                ld a,(spr_row)
+                call row_base
+                ld a,(spr_wrap)
+                or a
+                jr nz,.fallback
+                call spr_clipped
+                or a
+                jr nz,.fallback
+                ex de,hl
+                ld hl,(fc_base_ptr)
+                ld (hl),e
+                inc hl
+                ld (hl),d
+                inc hl
+                ld (fc_base_ptr),hl
+                ld hl,spr_row
+                inc (hl)
+                pop bc
+                djnz .check
+                pop hl
+                ld a,(spr_width)            ; save buffer header
+                ld (iy+0),a
+                ld a,(fc_lines)
+                ld (iy+1),a
+                ld hl,fc_bases+2
+                ld (fc_base_ptr),hl
+                ld hl,(fc_bases)            ; first line
+                ld a,(fc_plane)
+                add a,a
+                add a,a
+                add a,a
+                or h
+                ld h,a
+                ld (fc_line),hl
+                push iy
+                pop de
+                inc de
+                inc de
+                ex de,hl
+                ld (hl),e
+                inc hl
+                ld (hl),d
+                inc hl
+                ex de,hl
+.bank:          ld bc,GA_PORT*256           ; SMC: code bank
+                out (c),c
+.code:          call 0                      ; SMC
+                MAP_RAM GA_RAM_C5
+                ret
+.fallback:      pop bc
+                pop hl
+                ld a,(fc_col)
+                ld c,a
+                jp draw_sprite
+
+; between the lines of a compiled sprite: HL = next line, its address
+; written at DE (DE += 2). Destroys A.
+compiled_next_line:
+                ld hl,fc_plane
+                inc (hl)
+                ld a,(hl)
+                cp 8
+                jr z,.next_row
+                ld hl,(fc_line)
+                ld a,h
+                add 8
+                ld h,a
+                jr .store
+.next_row:      ld (hl),0
+                push de
+                ld hl,(fc_base_ptr)
+                ld e,(hl)
+                inc hl
+                ld d,(hl)
+                inc hl
+                ld (fc_base_ptr),hl
+                ex de,hl
+                pop de
+.store:         ld (fc_line),hl
+                ex de,hl
+                ld (hl),e
+                inc hl
+                ld (hl),d
+                inc hl
+                ex de,hl
+                ret
+
+; -----------------------------------------------------------------------------
 ; restore_sprite: HL = save buffer filled by draw_sprite (width 0 = empty).
 ; Destroys A, BC, DE, HL.
 ; -----------------------------------------------------------------------------
@@ -339,8 +445,11 @@ spr_src:        defw 0
 spr_save:       defw 0
 spr_clip_on:    defb 0                  ; 1 = honour row_clip (runner and shadow)
 spr_hidden:     defb 0                  ; current char row is hidden
+fc_col:         defb 0                  ; compiled sprites
+fc_lines:       defb 0
+fc_plane:       defb 0
+fc_line:        defw 0
+fc_base_ptr:    defw 0
+fc_bases:       defs FC_MAX_ROWS*2
 
-row_table:      defs PICTURE_ROWS*2
-row_table_d1:   defw #FFFF                  ; ring offsets row_table was built for
-row_table_d2:   defw #FFFF
 row_clip:       defs PICTURE_ROWS           ; non-zero: sprites are not drawn in that picture row

@@ -1,0 +1,37 @@
+# English screen texts (tools/mktext.py -> src/data/text.asm), the default
+# language. Same names as text/el.txt. Capitals only. Line: name: text
+menu_start: START
+menu_controls: CONTROLS
+menu_scores: HIGH SCORES
+menu_sound_on: SOUND: ON
+menu_sound_off: SOUND: OFF
+menu_hint: ↑↓ AND SPACE
+menu_lang: L : ΕΛΛΗΝΙΚΑ
+menu_credit: ATHENS PIRAEUS
+menu_credit2: ELECTRIC RAILWAYS
+controls_title: CONTROLS
+controls_left: ← OR O : LEFT
+controls_right: → OR P : RIGHT
+controls_jump: ↑ Q SPACE : JUMP
+controls_down: ↓ OR A : DOWN
+controls_pause: H : PAUSE
+controls_esc: ESC : MENU
+controls_joy: OR JOYSTICK
+controls_back: SPACE : BACK
+scores_title: HIGH SCORES
+over_title: GAME OVER
+over_score: SCORE
+over_coins: COINS
+over_dist: DISTANCE
+over_record: NEW HIGH SCORE!
+over_name: NAME:
+over_name_hint: ↑↓ LETTER  SPACE OK
+over_continue: SPACE : CONTINUE
+pause: PAUSE
+demo: DEMO
+pu_magnet: MAGNET
+pu_turbo: TURBO
+pu_slow: SLOW
+pu_spring: SUPER JUMP
+pu_helmet: HELMET
+pu_ticket: 2X COINS

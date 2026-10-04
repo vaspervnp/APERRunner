@@ -11,6 +11,7 @@ import cpc as cpcmod  # noqa: E402  (path set up by harness)
 
 COL_NONE, COL_STOP, COL_SIGNAL, COL_TRAIN, COL_NOSE, COL_RAMP_UP, COL_RAMP_DOWN = range(7)
 STATE_RUN, STATE_CRASHED, STATE_GAME_OVER = range(3)
+MODE_OVER = 5
 AHEAD = 6                       # rows below the top of the screen where planting starts
 
 
@@ -209,6 +210,16 @@ def test_lane_change_into_a_train_crashes():
     sc.tap(cpcmod.KEY_RIGHT)
     states = sc.run(6)
     assert states[-1]["crashes"] == 1
+    # thrown back to the middle of the lane it came from
+    centre = 15 + 7 + 14                              # LANE_CENTRE1 + LANE_BYTES: lane 1
+    for st in states + sc.run(60):
+        if st["crashes"]:
+            assert st["lane"] == 1
+            assert peek8(sc.cpc, sc.sym["player_centre"]) == centre
+    sc.tap(cpcmod.KEY_LEFT)                           # lane changes work as before
+    sc.run(6)
+    assert sc.state()["lane"] == 0
+    assert peek8(sc.cpc, sc.sym["player_centre"]) == centre - 14
 
 
 def test_roof_hop_between_parallel_trains():
@@ -234,7 +245,7 @@ def test_protected_after_a_crash():
     assert states[-1]["crashes"] == 1
 
 
-def test_game_over_starts_a_new_run():
+def test_game_over_shows_the_score_screen():
     sc = Scenario()
     sc.cpc.write_ram(sc.sym["lives"], bytes([1]))
     sc.plant_lane(0, 1, stop())
@@ -242,9 +253,8 @@ def test_game_over_starts_a_new_run():
     sc.until_front(sc.base_row)
     states = sc.run(50)
     assert any(s["state"] == STATE_GAME_OVER for s in states)
-    states = sc.run(90)
-    assert states[-1]["state"] == STATE_RUN and states[-1]["lives"] == 3
-    assert states[-1]["top"] < 60, "a new world starts from row 0"
+    sc.run(90)
+    assert peek8(sc.cpc, sc.sym["game_mode"]) == MODE_OVER
 
 
 def test_signal_lamps_cycle():

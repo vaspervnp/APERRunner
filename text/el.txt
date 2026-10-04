@@ -1,0 +1,37 @@
+# Greek screen texts (tools/mktext.py -> src/data/text.asm). Same names as
+# text/en.txt. Capitals only; accents are ignored. Line: name: text
+menu_start: ΕΝΑΡΞΗ
+menu_controls: ΧΕΙΡΙΣΜΟΙ
+menu_scores: ΡΕΚΟΡ
+menu_sound_on: ΗΧΟΣ: ΝΑΙ
+menu_sound_off: ΗΧΟΣ: ΟΧΙ
+menu_hint: ↑↓ ΚΑΙ SPACE
+menu_lang: L : ENGLISH
+menu_credit: ATHENS PIRAEUS
+menu_credit2: ELECTRIC RAILWAYS
+controls_title: ΧΕΙΡΙΣΜΟΙ
+controls_left: ← Η O : ΑΡΙΣΤΕΡΑ
+controls_right: → Η P : ΔΕΞΙΑ
+controls_jump: ↑ Q SPACE : ΑΛΜΑ
+controls_down: ↓ Η A : ΚΑΤΩ
+controls_pause: H : ΠΑΥΣΗ
+controls_esc: ESC : ΜΕΝΟΥ
+controls_joy: Η JOYSTICK
+controls_back: SPACE : ΠΙΣΩ
+scores_title: ΡΕΚΟΡ
+over_title: ΤΕΛΟΣ ΠΑΙΧΝΙΔΙΟΥ
+over_score: ΣΚΟΡ
+over_coins: ΝΟΜΙΣΜΑΤΑ
+over_dist: ΑΠΟΣΤΑΣΗ
+over_record: ΝΕΟ ΡΕΚΟΡ!
+over_name: ΟΝΟΜΑ:
+over_name_hint: ↑↓ ΓΡΑΜΜΑ  SPACE ΟΚ
+over_continue: SPACE : ΣΥΝΕΧΕΙΑ
+pause: ΠΑΥΣΗ
+demo: DEMO
+pu_magnet: ΜΑΓΝΗΤΗΣ
+pu_turbo: ΤΟΥΡΜΠΟ
+pu_slow: ΑΡΓΑ
+pu_spring: ΥΠΕΡΑΛΜΑ
+pu_helmet: ΚΡΑΝΟΣ
+pu_ticket: 2X ΚΕΡΜΑΤΑ

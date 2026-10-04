@@ -16,13 +16,16 @@ DEBUG   ?= 0
 
 BUILD   := build
 LOAD    := 4000
-SRC     := $(wildcard src/*.asm)
-GFX_IN  := $(wildcard gfx/png/*.png gfx/png/*.json gfx/placeholder/*.png gfx/placeholder/*.json levels/chunks/*.txt)
-GFX_TOOLS := tools/cpcpalette.py tools/assets.py tools/png2cpc.py tools/mklevel.py
+SRC     := $(filter-out src/loader.asm,$(wildcard src/*.asm))
+GFX_IN  := $(wildcard gfx/png/*.png gfx/png/*.json gfx/placeholder/*.png gfx/placeholder/*.json levels/chunks/*.txt text/*.txt) \
+           assets/loading/loading_cpc.png assets/loading/loading_palette.txt
+GFX_TOOLS := tools/cpcpalette.py tools/assets.py tools/png2cpc.py tools/mklevel.py tools/mktext.py \
+             tools/scr2cpc.py
 GFX_STAMP := src/data/.stamp
 
 BIN     := $(BUILD)/aper.bin
-BANKS   := $(BUILD)/aperb4.bin $(BUILD)/aperb5.bin
+BANKS   := $(BUILD)/aperb4.bin $(BUILD)/aperb5.bin $(BUILD)/aperb6.bin $(BUILD)/aperb7.bin
+LDR     := $(BUILD)/loader.bin $(BUILD)/loadscr.bin
 LOADER  := src/disc.bas
 SYM     := $(BUILD)/aper.sym
 DSK     := $(BUILD)/aper.dsk
@@ -40,6 +43,8 @@ $(GFX_STAMP): $(GFX_IN) $(GFX_TOOLS)
 	$(PYTHON) tools/cpcpalette.py
 	$(PYTHON) tools/png2cpc.py
 	$(PYTHON) tools/mklevel.py
+	$(PYTHON) tools/mktext.py
+	$(PYTHON) tools/scr2cpc.py
 	touch $@
 
 placeholders:
@@ -49,19 +54,27 @@ placeholders:
 $(BIN) $(BANKS) $(SYM) &: $(SRC) $(GFX_STAMP) $(BUILD)/debug-$(DEBUG) | $(BUILD)
 	$(RASM) src/main.asm -os $(SYM) -s -sl -sq -twe -DDEBUG=$(DEBUG)
 
+# loader + packed loading screen
+$(LDR) &: src/loader.asm src/lib/dzx0_standard.asm $(GFX_STAMP) | $(BUILD)
+	$(RASM) src/loader.asm -twe
+
 # rebuild when DEBUG changes
 $(BUILD)/debug-$(DEBUG): | $(BUILD)
 	rm -f $(BUILD)/debug-*
 	touch $@
 
-$(DSK): $(BIN) $(BANKS) $(LOADER)
+$(DSK): $(BIN) $(BANKS) $(LDR) $(LOADER)
 	rm -f $@
 	$(IDSK) $@ -n
 	cp $(LOADER) $(BUILD)/disc
 	$(IDSK) $@ -i $(BUILD)/disc -t 0
+	$(IDSK) $@ -i $(BUILD)/loader.bin -t 1 -c 8000 -e 8000
+	$(IDSK) $@ -i $(BUILD)/loadscr.bin -t 1 -c 4000
 	$(IDSK) $@ -i $(BIN) -t 1 -c $(LOAD) -e $(LOAD)
 	$(IDSK) $@ -i $(BUILD)/aperb4.bin -t 1 -c 4000
 	$(IDSK) $@ -i $(BUILD)/aperb5.bin -t 1 -c 4000
+	$(IDSK) $@ -i $(BUILD)/aperb6.bin -t 1 -c 4000
+	$(IDSK) $@ -i $(BUILD)/aperb7.bin -t 1 -c 4000
 
 # The snap launcher forwards only two arguments, so autocmd uses the long form.
 run: $(DSK)

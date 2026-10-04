@@ -26,18 +26,20 @@ ITEM_HELMET     equ 6
 ITEM_TICKET     equ 7
 
 TURBO_SPEED     equ 6
-SLOW_SPEED      equ 1
+SLOW_SPEED      equ 2
 COIN_POINTS     equ #10                 ; BCD
 
-MAGNET_LINE     equ 160                 ; screen line where coins take off
+MAGNET_LINE     equ 176                 ; screen line where coins take off
 FLYER_COUNT          equ 8
 FLY_SIZE        equ 4
 FLY_ACTIVE      equ 0
 FLY_X           equ 1                   ; byte column
 FLY_Y           equ 2                   ; (2) top screen line
-FLY_STEP_Y      equ 20                  ; lines per game frame
-FLY_STEP_X      equ 4                   ; bytes per game frame
+FLY_STEP_Y      equ 24                  ; lines per game frame
+FLY_STEP_X      equ 5                   ; bytes per game frame
 FLY_SAVE_SIZE   equ 2+8*(2+COIN_W)
+LABEL_Y         equ 112                 ; power-up name: top screen line
+LABEL_BUF_SIZE  equ 8*10*FONT_W         ; 10 glyphs at most
 
 ; -----------------------------------------------------------------------------
 ; pickups_init: no score, no power-ups, no flying coins (new run).
@@ -48,6 +50,13 @@ pickups_init:
                 ld bc,PICKUP_STATE_SIZE-1
                 ld (hl),0
                 ldir
+                ld hl,flyer_saves           ; width 0 = nothing to restore
+                ld de,flyer_saves+1         ; (flyer_saves: src/main.asm)
+                ld bc,FLYER_COUNT*FLY_SAVE_SIZE-1
+                ld (hl),0
+                ldir
+                xor a
+                ld (label_wait),a
                 ret
 
 ; -----------------------------------------------------------------------------
@@ -93,6 +102,9 @@ pickups:
 ; activate_powerup: A = item 2..7.
 ; -----------------------------------------------------------------------------
 activate_powerup:
+                push af
+                call make_label             ; its name in the middle of the screen
+                pop af
                 cp ITEM_HELMET
                 jr nz,.timed
                 ld (helmet),a               ; non-zero: one crash absorbed
@@ -224,7 +236,7 @@ collect_coin:
 
 ; -----------------------------------------------------------------------------
 ; erase_item: HL = world row, A = lane, C = rows: redraws the lane's track
-; tile in those rows (those on screen). Needs build_row_table for this frame.
+; tile in those rows (those on screen). 
 ; -----------------------------------------------------------------------------
 erase_item:
                 ld (.lane),a
@@ -234,7 +246,7 @@ erase_item:
 .row:           push bc
                 push hl
                 ex de,hl                    ; picture row = top - world row
-                ld hl,(scr_top_row)
+                ld hl,(cur_top_row)
                 or a
                 sbc hl,de
                 ld a,h
@@ -243,12 +255,9 @@ erase_item:
                 ld a,l
                 cp PICTURE_ROWS
                 jr nc,.next
-                add a,a                     ; DE = plane 0 address of the row
-                ld hl,row_table
-                call add_a_hl
-                ld e,(hl)
-                inc hl
-                ld d,(hl)
+                ld c,0                      ; DE = plane 0 address of the row
+                call row_base
+                ex de,hl
                 ld a,(.lane)                ; column of the lane
                 ld b,a
                 add a,a
@@ -345,7 +354,7 @@ magnet:
                 ld a,l
                 ld (.picture_row),a
                 ex de,hl
-                ld hl,(scr_top_row)
+                ld hl,(cur_top_row)
                 or a
                 sbc hl,de
                 ld (.world_row),hl
@@ -493,6 +502,133 @@ move_flyers:
 .target_x:      defb 0
 
 ; -----------------------------------------------------------------------------
+; Power-up name: written once on the track, centred on the playfield. It is
+; part of the picture from then on: it scrolls down with the rows (copy_row
+; takes it on to D2) and costs nothing afterwards. make_label (pickup frame)
+; only takes note; draw_label does the work in two frames without a coarse
+; step (the light ones): it builds the picture in label_buf, then copies it
+; LABEL_Y lines down, plus the lines the world moved since the pickup.
+; -----------------------------------------------------------------------------
+make_label:                                 ; A = item 2..7
+                ld (label_item),a
+                call world_line
+                ld (label_line),hl
+                ld a,1
+                ld (label_wait),a
+                ret
+
+draw_label:                                 ; between the sprite restores and draws
+                ld a,(label_wait)
+                or a
+                ret z
+                call current_speed          ; a coarse step ahead: not now
+                ld b,a
+                ld a,(scr_j)
+                cp b
+                ret c
+                ld a,(label_wait)
+                dec a
+                jr nz,.copy
+                inc a                       ; 1: build
+                inc a
+                ld (label_wait),a
+                jr build_label
+.copy:          xor a                       ; 2: copy
+                ld (label_wait),a
+                call world_line             ; lines moved since the pickup
+                ld de,(label_line)
+                or a
+                sbc hl,de
+                ld a,l
+                add LABEL_Y
+                ld c,a
+                ld a,(label_w)
+                ld d,a
+                neg
+                add 72                      ; centred on the playfield
+                srl a
+                ld b,a
+                ld e,8
+                ld hl,label_buf
+                jp blit_static
+
+; label_item's name -> label_buf (8 lines of label_w bytes)
+build_label:
+                ld a,(label_item)
+                sub ITEM_MAGNET
+                add a,a
+                ld hl,txt_pu_magnet         ; txt_pu_* in item order
+                call add_a_hl
+                ld a,(hl)
+                inc hl
+                ld h,(hl)
+                ld l,a
+                MAP_RAM GA_RAM_C7
+                push hl
+                ld b,0                      ; B = glyphs
+.count:         ld a,(hl)
+                cp TXT_END
+                jr z,.counted
+                inc b
+                inc hl
+                jr .count
+.counted:       pop hl
+                ld a,b
+                add a,a
+                add a,b
+                ld (label_w),a              ; bytes = 3 * glyphs
+                sub FONT_W
+                ld (.skip),a                ; to the glyph's next line
+                ld de,label_buf
+.glyph:         ld a,(hl)
+                cp TXT_END
+                jr z,.built
+                push hl
+                push de
+                ld hl,gfx_font_table
+                call table_entry            ; HL = 8 lines of 3 bytes
+                pop de
+                push de
+                ld a,8
+.line:          ldi
+                ldi
+                ldi
+                ex de,hl
+                ld bc,(.skip)               ; (high byte: .skip+1 = 0)
+                add hl,bc
+                ex de,hl
+                dec a
+                jr nz,.line
+                pop de
+                inc de
+                inc de
+                inc de
+                pop hl
+                inc hl
+                jr .glyph
+.built:         MAP_RAM GA_RAM_C0
+                ret
+.skip:          defw 0
+
+; HL = position of the picture shown, in lines (grows as the world moves)
+world_line:
+                ld hl,(cur_top_row)
+                add hl,hl
+                add hl,hl
+                add hl,hl
+                ld a,(cur_j)
+                ld e,a
+                ld d,0
+                or a
+                sbc hl,de
+                ret
+
+label_item:     defb 0
+label_w:        defb 0
+label_line:     defw 0
+label_wait:     defb 0
+
+; -----------------------------------------------------------------------------
 ; restore_flyers / draw_flyers: like the runner, around the frame's work.
 ; Restored in reverse drawing order.
 ; -----------------------------------------------------------------------------
@@ -510,129 +646,45 @@ restore_flyers:
                 ret
 
 draw_flyers:
+                MAP_RAM GA_RAM_C5
                 ld a,(anim_tick)            ; spinning coin: coin0..coin3
                 rra
                 and 3
                 ld (.frame),a
                 ld hl,gfx_coin_code_table
                 call table_entry
-                ld (draw_coin.call+1),hl    ; SMC: compiled frame
+                ld (.code),hl
+                ld a,(.frame)
+                ld hl,gfx_items_table
+                call table_entry
+                ld (.sprite),hl
                 ld ix,flyers
                 ld iy,flyer_saves
                 ld b,FLYER_COUNT
 .slot:          push bc
                 ld a,(ix+FLY_ACTIVE)
                 or a
-                call nz,draw_coin
-                ld de,FLY_SIZE
+                jr z,.next
+                push ix
+                ld l,(ix+FLY_Y)
+                ld h,(ix+FLY_Y+1)
+                ld c,(ix+FLY_X)
+                ld ix,(.sprite)
+                ld de,(.code)
+                ld a,GA_RAM_C5              ; (code in main RAM)
+                call draw_compiled
+                pop ix
+.next:          ld de,FLY_SIZE
                 add ix,de
                 ld de,FLY_SAVE_SIZE
                 add iy,de
                 pop bc
                 djnz .slot
-                ret
-.frame:         defb 0
-
-; IX = flyer, IY = its save buffer. Compiled coin (gfx_coin_code) unless a
-; line would cross a plane end: then the generic draw_sprite.
-draw_coin:
-                ld l,(ix+FLY_Y)             ; picture line -> row, plane
-                ld h,(ix+FLY_Y+1)
-                ld a,(cur_j)
-                add a,l
-                ld l,a
-                jr nc,.nc
-                inc h
-.nc:            ld a,l
-                and 7
-                ld (fc_plane),a
-                srl h
-                rr l
-                srl l
-                srl l
-                ld a,l
-                ld (.row),a
-                ld a,COIN_W
-                ld (spr_width),a
-                ld c,(ix+FLY_X)
-                call row_base               ; first char row
-                ld a,(spr_wrap)
-                or a
-                jr nz,.generic
-                push hl
-                ld a,(.row)                 ; second char row
-                inc a
-                ld c,(ix+FLY_X)
-                call row_base
-                ld (fc_base1),hl
-                pop hl
-                ld a,(spr_wrap)
-                or a
-                jr nz,.generic
-                ld a,(fc_plane)             ; first line
-                add a,a
-                add a,a
-                add a,a
-                or h
-                ld h,a
-                ld (fc_line),hl
-                ld (iy+0),COIN_W            ; save buffer header + first address
-                ld (iy+1),8
-                push iy
-                pop de
-                inc de
-                inc de
-                ex de,hl
-                ld (hl),e
-                inc hl
-                ld (hl),d
-                inc hl
-                ex de,hl
-.call:          jp 0                        ; SMC: gfx_coin_code_coinN
-
-.generic:       MAP_RAM GA_RAM_C5
-                ld a,(draw_flyers.frame)
-                ld hl,gfx_items_table
-                call table_entry
-                push ix
-                ld c,(ix+FLY_X)
-                ld e,(ix+FLY_Y)
-                ld d,(ix+FLY_Y+1)
-                push hl
-                pop ix
-                ex de,hl
-                call draw_sprite
-                pop ix
                 MAP_RAM GA_RAM_C0
                 ret
-.row:           defb 0
-
-; between the lines of a compiled sprite: HL = next line, its address
-; written at DE (DE += 2). Destroys A.
-compiled_next_line:
-                ld hl,fc_plane
-                inc (hl)
-                ld a,(hl)
-                cp 8
-                jr z,.next_row
-                ld hl,(fc_line)
-                ld a,h
-                add 8
-                ld h,a
-                jr .store
-.next_row:      ld (hl),0
-                ld hl,(fc_base1)
-.store:         ld (fc_line),hl
-                ex de,hl
-                ld (hl),e
-                inc hl
-                ld (hl),d
-                inc hl
-                ex de,hl
-                ret
-fc_plane:       defb 0
-fc_line:        defw 0
-fc_base1:       defw 0
+.frame:         defb 0
+.sprite:        defw 0
+.code:          defw 0
 
                 include "data/gfx_coin_code.asm"
 
@@ -651,6 +703,5 @@ pu_helmet:      defw 0                  ; (unused: the helmet has no timer)
 pu_ticket:      defw 0
 PU_TIMER_COUNT       equ ($-pu_timers)/2
 flyers:         defs FLYER_COUNT*FLY_SIZE
-flyer_saves:    defs FLYER_COUNT*FLY_SAVE_SIZE   ; width 0 = nothing to restore
 PICKUP_STATE_SIZE equ $-pickup_state
 no_pickups:     defb 0                  ; debug: items are never picked up

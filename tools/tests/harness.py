@@ -26,9 +26,10 @@ def load_symbols(path=SYM):
     return symbols
 
 
-def boot_game(max_frames=1500, collisions=False, pickups=False):
-    """Cold-boots a 6128, inserts build/aper.dsk, RUN"DISC (loads the banks
-    and the game) and waits until the game's main loop is running.
+def boot_game(max_frames=1500, collisions=False, pickups=False, menu=False):
+    """Cold-boots a 6128, inserts build/aper.dsk, RUN"DISC (the loader shows
+    the loading screen, loads the banks and the game) and waits until the game's main loop is running, then
+    starts a game from the menu (unless `menu`).
     Unless `collisions` is set, the debug switch no_crash is turned on so
     tests about other things are not interrupted by crashes. Likewise
     no_pickups keeps power-ups (speed changes!) out unless `pickups` is set."""
@@ -39,11 +40,30 @@ def boot_game(max_frames=1500, collisions=False, pickups=False):
     cpc.type_text('RUN"DISC\n')
     for _ in range(max_frames // 25):
         cpc.run_frames(25)
-        if sym["start"] <= cpc.pc < sym["end_of_code"] and peek16(cpc, sym["frame_counter"]) > 2:
+        if (sym["start"] <= cpc.pc < 0x8000 and cpc.read_ram(sym["start"], 1)[0] == 0xF3    # di: code loaded
+                and peek16(cpc, sym["frame_counter"]) > 2):
+            if not menu:
+                start_from_menu(cpc, sym)
             cpc.write_ram(sym["no_crash"], bytes([0 if collisions else 1]))
             cpc.write_ram(sym["no_pickups"], bytes([0 if pickups else 1]))
             return cpc
     raise AssertionError(f"game did not start (PC #{cpc.pc:04X})")
+
+
+def start_from_menu(cpc, sym):
+    """Menu -> game with SPACE (option 1 is selected); forgets the menu's
+    drawing frames in the load statistics."""
+    import cpc as cpcmod
+    cpc.key_down(cpcmod.KEY_SPACE)
+    for _ in range(50):
+        cpc.run_frames(2)
+        if peek8(cpc, sym["game_mode"]) == 0:
+            break
+    cpc.key_up(cpcmod.KEY_SPACE)
+    assert peek8(cpc, sym["game_mode"]) == 0, "the game did not start from the menu"
+    cpc.run_frames(10)
+    cpc.write_ram(sym["missed_frames"], bytes([0]))
+    cpc.write_ram(sym["max_load"], bytes([0]))
 
 
 def peek16(cpc, addr):

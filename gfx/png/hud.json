@@ -106,6 +106,96 @@
     "spriteSourceSize": { "x": 0, "y": 0, "w": 48, "h": 8 },
     "sourceSize": { "w": 48, "h": 8 },
     "duration": 100
+   },
+   {
+    "filename": "d0",
+    "frame": { "x": 576, "y": 0, "w": 48, "h": 8 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 48, "h": 8 },
+    "sourceSize": { "w": 48, "h": 8 },
+    "duration": 100
+   },
+   {
+    "filename": "d1",
+    "frame": { "x": 624, "y": 0, "w": 48, "h": 8 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 48, "h": 8 },
+    "sourceSize": { "w": 48, "h": 8 },
+    "duration": 100
+   },
+   {
+    "filename": "d2",
+    "frame": { "x": 672, "y": 0, "w": 48, "h": 8 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 48, "h": 8 },
+    "sourceSize": { "w": 48, "h": 8 },
+    "duration": 100
+   },
+   {
+    "filename": "d3",
+    "frame": { "x": 720, "y": 0, "w": 48, "h": 8 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 48, "h": 8 },
+    "sourceSize": { "w": 48, "h": 8 },
+    "duration": 100
+   },
+   {
+    "filename": "d4",
+    "frame": { "x": 768, "y": 0, "w": 48, "h": 8 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 48, "h": 8 },
+    "sourceSize": { "w": 48, "h": 8 },
+    "duration": 100
+   },
+   {
+    "filename": "d5",
+    "frame": { "x": 816, "y": 0, "w": 48, "h": 8 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 48, "h": 8 },
+    "sourceSize": { "w": 48, "h": 8 },
+    "duration": 100
+   },
+   {
+    "filename": "d6",
+    "frame": { "x": 864, "y": 0, "w": 48, "h": 8 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 48, "h": 8 },
+    "sourceSize": { "w": 48, "h": 8 },
+    "duration": 100
+   },
+   {
+    "filename": "d7",
+    "frame": { "x": 912, "y": 0, "w": 48, "h": 8 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 48, "h": 8 },
+    "sourceSize": { "w": 48, "h": 8 },
+    "duration": 100
+   },
+   {
+    "filename": "d8",
+    "frame": { "x": 960, "y": 0, "w": 48, "h": 8 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 48, "h": 8 },
+    "sourceSize": { "w": 48, "h": 8 },
+    "duration": 100
+   },
+   {
+    "filename": "d9",
+    "frame": { "x": 1008, "y": 0, "w": 48, "h": 8 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 48, "h": 8 },
+    "sourceSize": { "w": 48, "h": 8 },
+    "duration": 100
    }
  ],
  "meta": {
@@ -113,7 +203,7 @@
   "version": "1.3.18.5-dev",
   "image": "hud.png",
   "format": "I8",
-  "size": { "w": 576, "h": 8 },
+  "size": { "w": 1056, "h": 8 },
   "scale": "1",
   "frameTags": [
    { "name": "hud_bg", "from": 0, "to": 0, "direction": "forward", "color": "#000000ff" },
@@ -127,7 +217,17 @@
    { "name": "ic_life", "from": 8, "to": 8, "direction": "forward", "color": "#000000ff" },
    { "name": "ic_dist", "from": 9, "to": 9, "direction": "forward", "color": "#000000ff" },
    { "name": "bar_full", "from": 10, "to": 10, "direction": "forward", "color": "#000000ff" },
-   { "name": "bar_empty", "from": 11, "to": 11, "direction": "forward", "color": "#000000ff" }
+   { "name": "bar_empty", "from": 11, "to": 11, "direction": "forward", "color": "#000000ff" },
+   { "name": "d0", "from": 12, "to": 12, "direction": "forward", "color": "#000000ff" },
+   { "name": "d1", "from": 13, "to": 13, "direction": "forward", "color": "#000000ff" },
+   { "name": "d2", "from": 14, "to": 14, "direction": "forward", "color": "#000000ff" },
+   { "name": "d3", "from": 15, "to": 15, "direction": "forward", "color": "#000000ff" },
+   { "name": "d4", "from": 16, "to": 16, "direction": "forward", "color": "#000000ff" },
+   { "name": "d5", "from": 17, "to": 17, "direction": "forward", "color": "#000000ff" },
+   { "name": "d6", "from": 18, "to": 18, "direction": "forward", "color": "#000000ff" },
+   { "name": "d7", "from": 19, "to": 19, "direction": "forward", "color": "#000000ff" },
+   { "name": "d8", "from": 20, "to": 20, "direction": "forward", "color": "#000000ff" },
+   { "name": "d9", "from": 21, "to": 21, "direction": "forward", "color": "#000000ff" }
   ],
   "layers": [
    { "name": "hud", "opacity": 255, "blendMode": "normal" }

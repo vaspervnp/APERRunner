@@ -77,14 +77,15 @@ def test_powerups_start_and_expire():
 
 
 def test_turbo_and_slow_change_the_speed():
-    sc = tc.Scenario(speed=2, pickups=True)
+    sc = tc.Scenario(speed=4, pickups=True)
     sc.plant_item(2, 1, TURBO)
     sc.plant_item(40, 1, SLOW)
     sc.go()
     sc.past(sc.base_row + 3)
 
     def position():
-        return peek16(sc.cpc, sc.sym["scr_top_row"]) * 8 - peek8(sc.cpc, sc.sym["scr_j"])
+        """The picture shown (the next one may still be in the making)."""
+        return peek16(sc.cpc, sc.sym["cur_top_row"]) * 8 - peek8(sc.cpc, sc.sym["cur_j"])
 
     def lines_per_frame():
         start = position()
@@ -97,10 +98,10 @@ def test_turbo_and_slow_change_the_speed():
     st = counters(sc)
     assert st[SLOW] > 0 and st[TURBO] == 0, "slow cancels turbo"
     sc.run(1)
-    assert lines_per_frame() == 1
+    assert lines_per_frame() == 2
     poke16(sc, "pu_slow", 2)
     sc.run(3)
-    assert lines_per_frame() == 2
+    assert lines_per_frame() == 4, "back to the normal speed"
 
 
 def test_turbo_doubles_the_distance_points():

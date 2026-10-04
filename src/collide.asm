@@ -12,7 +12,7 @@
 ; level is only allowed if the jump was at least that high.
 ;
 ; Game states: RUN, CRASHED (crash animation, scroll stopped), GAME_OVER
-; (then a new run starts; phase 8 adds the score screen).
+; (then the score screen, src/screens.asm).
 ; =============================================================================
 
 STATE_RUN       equ 0
@@ -42,7 +42,7 @@ cell_at:
                 srl l
                 srl l
                 ex de,hl                    ; world row = top - picture row
-                ld hl,(scr_top_row)
+                ld hl,(cur_top_row)
                 or a
                 sbc hl,de
                 ld (probe_row),hl
@@ -265,6 +265,28 @@ crash:
                 ld (state_timer),a
                 ld hl,0
                 ld (arc_ptr),hl
+                ld a,(move_steps_left)      ; hit while changing lanes: back
+                or a                        ; to the lane without the obstacle
+                jr z,.centre
+                ld a,(probe_lane)
+                ld b,a
+                ld a,(player_lane)          ; (the lane moved to)
+                cp b
+                jr nz,.centre               ; hit in the lane left: go on to it
+                ld a,(move_dir)
+                ld b,a
+                ld a,(player_lane)
+                sub b
+                ld (player_lane),a
+.centre:        ld a,(player_lane)          ; on the lane's centre
+                ld (probe_lane),a
+                ld b,a
+                ld a,LANE_CENTRE1
+                inc b
+                jr .times_test
+.times:         add LANE_BYTES
+.times_test:    djnz .times
+                ld (player_centre),a
                 xor a
                 ld (was_airborne),a
                 ld (move_steps_left),a
@@ -318,7 +340,7 @@ game_state_update:
                 ld (state_timer),a
                 or 1
                 ret
-.new_run:       call new_run
+.new_run:       call game_finished      ; score screen (or the menu after a demo)
                 or 1
                 ret
 

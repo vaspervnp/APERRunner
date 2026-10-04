@@ -53,11 +53,15 @@ scroll_init:
 ; -----------------------------------------------------------------------------
 scroll_step:
                 ld b,a
+                xor a
+                ld (scr_coarse),a
                 ld a,(scr_j)
                 sub b
                 jr nc,.fine_only
                 add 8
                 ld (scr_j),a
+                ld a,1
+                ld (scr_coarse),a
                 call coarse_step
                 jp publish_scroll
 .fine_only:     ld (scr_j),a
@@ -112,3 +116,4 @@ scr_j:          defb 0
 scr_d1:         defw 0
 scr_d2:         defw 0
 scr_top_row:    defw 0              ; world row number shown in D1 row 0
+scr_coarse:     defb 0              ; the last scroll_step made a coarse step

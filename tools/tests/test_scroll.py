@@ -1,18 +1,15 @@
 """Phase 1: overscan + vertical hardware scroll + screen-fixed sprites.
 
 Pictures are read from the emulator framebuffer (one row per scanline,
-4 framebuffer pixels per mode 0 pixel). The test world (src/testworld.asm)
-is made of tiles; the 4x12 test sprite (pen 7 inside) is fixed at screen
-line 232 in the HUD column (bytes 80-83).
+4 framebuffer pixels per mode 0 pixel). Screen-fixed elements on the
+scrolling screen are tested with the HUD (test_hud.py) and the runner.
 """
 
-from harness import (boot_game, is_bright_yellow, load_symbols, peek8,
-                     save_screenshot, sync_game_frame)
+from harness import boot_game, load_symbols, peek8, sync_game_frame
 
 PLAYFIELD_RIGHT = 576    # framebuffer x where the HUD starts
-SPRITE_X = 655           # framebuffer x through the test sprite (in the HUD)
-HUD_X = 600              # framebuffer x inside the HUD panel, left of the sprite
-COMPARE_LINES = range(40, 224)   # below the moving top edge, above the sprite
+HUD_X = 600              # framebuffer x in the HUD frame, left of the panel
+COMPARE_LINES = range(40, 224)   # below the moving top edge, above the runner
 SPEEDS = range(1, 7)
 
 
@@ -37,10 +34,6 @@ def _shift_between(before, after):
         if all(after[y + shift] == before[y] for y in COMPARE_LINES):
             return shift
     return None
-
-
-def _sprite_lines(img):
-    return [y for y in range(img.height) if is_bright_yellow(img.getpixel((SPRITE_X, y)))]
 
 
 def _set_speed(cpc, sym, speed):
@@ -72,23 +65,6 @@ def test_scroll_moves_exactly_speed_lines_per_game_frame():
             moved = _shift_between(before, after)
             assert moved == speed, f"speed {speed}, frame {i}: moved {moved} lines"
             before = after
-
-
-def test_sprite_stays_fixed_while_scrolling():
-    sym = load_symbols()
-    cpc = boot_game()
-    expected = None
-    for speed in (1, 3, 6):
-        _set_speed(cpc, sym, speed)
-        sync_game_frame(cpc, sym)
-        for i in range(48):                          # crosses many ring wraps
-            img = sync_game_frame(cpc, sym)
-            lines = _sprite_lines(img)
-            if expected is None:
-                expected = lines
-                save_screenshot(cpc, "scroll_sprite.png")
-            assert lines == expected, f"speed {speed}, frame {i}: sprite at {lines[:1]}..{lines[-1:]}"
-    assert len(expected) == 10, f"sprite interior should be 10 lines, got {len(expected)}"
 
 
 def test_hud_panel_is_static():

@@ -1,0 +1,524 @@
+{
+ "frames": [
+  {
+   "filename": "space",
+   "frame": {
+    "x": 0,
+    "y": 0,
+    "w": 6,
+    "h": 8
+   }
+  },
+  {
+   "filename": "a",
+   "frame": {
+    "x": 6,
+    "y": 0,
+    "w": 6,
+    "h": 8
+   }
+  },
+  {
+   "filename": "b",
+   "frame": {
+    "x": 12,
+    "y": 0,
+    "w": 6,
+    "h": 8
+   }
+  },
+  {
+   "filename": "c",
+   "frame": {
+    "x": 18,
+    "y": 0,
+    "w": 6,
+    "h": 8
+   }
+  },
+  {
+   "filename": "d",
+   "frame": {
+    "x": 24,
+    "y": 0,
+    "w": 6,
+    "h": 8
+   }
+  },
+  {
+   "filename": "e",
+   "frame": {
+    "x": 30,
+    "y": 0,
+    "w": 6,
+    "h": 8
+   }
+  },
+  {
+   "filename": "f",
+   "frame": {
+    "x": 36,
+    "y": 0,
+    "w": 6,
+    "h": 8
+   }
+  },
+  {
+   "filename": "g",
+   "frame": {
+    "x": 42,
+    "y": 0,
+    "w": 6,
+    "h": 8
+   }
+  },
+  {
+   "filename": "h",
+   "frame": {
+    "x": 48,
+    "y": 0,
+    "w": 6,
+    "h": 8
+   }
+  },
+  {
+   "filename": "i",
+   "frame": {
+    "x": 54,
+    "y": 0,
+    "w": 6,
+    "h": 8
+   }
+  },
+  {
+   "filename": "j",
+   "frame": {
+    "x": 60,
+    "y": 0,
+    "w": 6,
+    "h": 8
+   }
+  },
+  {
+   "filename": "k",
+   "frame": {
+    "x": 66,
+    "y": 0,
+    "w": 6,
+    "h": 8
+   }
+  },
+  {
+   "filename": "l",
+   "frame": {
+    "x": 72,
+    "y": 0,
+    "w": 6,
+    "h": 8
+   }
+  },
+  {
+   "filename": "m",
+   "frame": {
+    "x": 78,
+    "y": 0,
+    "w": 6,
+    "h": 8
+   }
+  },
+  {
+   "filename": "n",
+   "frame": {
+    "x": 84,
+    "y": 0,
+    "w": 6,
+    "h": 8
+   }
+  },
+  {
+   "filename": "o",
+   "frame": {
+    "x": 90,
+    "y": 0,
+    "w": 6,
+    "h": 8
+   }
+  },
+  {
+   "filename": "p",
+   "frame": {
+    "x": 96,
+    "y": 0,
+    "w": 6,
+    "h": 8
+   }
+  },
+  {
+   "filename": "q",
+   "frame": {
+    "x": 102,
+    "y": 0,
+    "w": 6,
+    "h": 8
+   }
+  },
+  {
+   "filename": "r",
+   "frame": {
+    "x": 108,
+    "y": 0,
+    "w": 6,
+    "h": 8
+   }
+  },
+  {
+   "filename": "s",
+   "frame": {
+    "x": 114,
+    "y": 0,
+    "w": 6,
+    "h": 8
+   }
+  },
+  {
+   "filename": "t",
+   "frame": {
+    "x": 120,
+    "y": 0,
+    "w": 6,
+    "h": 8
+   }
+  },
+  {
+   "filename": "u",
+   "frame": {
+    "x": 126,
+    "y": 0,
+    "w": 6,
+    "h": 8
+   }
+  },
+  {
+   "filename": "v",
+   "frame": {
+    "x": 132,
+    "y": 0,
+    "w": 6,
+    "h": 8
+   }
+  },
+  {
+   "filename": "w",
+   "frame": {
+    "x": 138,
+    "y": 0,
+    "w": 6,
+    "h": 8
+   }
+  },
+  {
+   "filename": "x",
+   "frame": {
+    "x": 144,
+    "y": 0,
+    "w": 6,
+    "h": 8
+   }
+  },
+  {
+   "filename": "y",
+   "frame": {
+    "x": 150,
+    "y": 0,
+    "w": 6,
+    "h": 8
+   }
+  },
+  {
+   "filename": "z",
+   "frame": {
+    "x": 156,
+    "y": 0,
+    "w": 6,
+    "h": 8
+   }
+  },
+  {
+   "filename": "n0",
+   "frame": {
+    "x": 162,
+    "y": 0,
+    "w": 6,
+    "h": 8
+   }
+  },
+  {
+   "filename": "n1",
+   "frame": {
+    "x": 168,
+    "y": 0,
+    "w": 6,
+    "h": 8
+   }
+  },
+  {
+   "filename": "n2",
+   "frame": {
+    "x": 174,
+    "y": 0,
+    "w": 6,
+    "h": 8
+   }
+  },
+  {
+   "filename": "n3",
+   "frame": {
+    "x": 180,
+    "y": 0,
+    "w": 6,
+    "h": 8
+   }
+  },
+  {
+   "filename": "n4",
+   "frame": {
+    "x": 186,
+    "y": 0,
+    "w": 6,
+    "h": 8
+   }
+  },
+  {
+   "filename": "n5",
+   "frame": {
+    "x": 192,
+    "y": 0,
+    "w": 6,
+    "h": 8
+   }
+  },
+  {
+   "filename": "n6",
+   "frame": {
+    "x": 198,
+    "y": 0,
+    "w": 6,
+    "h": 8
+   }
+  },
+  {
+   "filename": "n7",
+   "frame": {
+    "x": 204,
+    "y": 0,
+    "w": 6,
+    "h": 8
+   }
+  },
+  {
+   "filename": "n8",
+   "frame": {
+    "x": 210,
+    "y": 0,
+    "w": 6,
+    "h": 8
+   }
+  },
+  {
+   "filename": "n9",
+   "frame": {
+    "x": 216,
+    "y": 0,
+    "w": 6,
+    "h": 8
+   }
+  },
+  {
+   "filename": "gamma",
+   "frame": {
+    "x": 222,
+    "y": 0,
+    "w": 6,
+    "h": 8
+   }
+  },
+  {
+   "filename": "delta",
+   "frame": {
+    "x": 228,
+    "y": 0,
+    "w": 6,
+    "h": 8
+   }
+  },
+  {
+   "filename": "theta",
+   "frame": {
+    "x": 234,
+    "y": 0,
+    "w": 6,
+    "h": 8
+   }
+  },
+  {
+   "filename": "lambda",
+   "frame": {
+    "x": 240,
+    "y": 0,
+    "w": 6,
+    "h": 8
+   }
+  },
+  {
+   "filename": "xi",
+   "frame": {
+    "x": 246,
+    "y": 0,
+    "w": 6,
+    "h": 8
+   }
+  },
+  {
+   "filename": "pi",
+   "frame": {
+    "x": 252,
+    "y": 0,
+    "w": 6,
+    "h": 8
+   }
+  },
+  {
+   "filename": "sigma",
+   "frame": {
+    "x": 258,
+    "y": 0,
+    "w": 6,
+    "h": 8
+   }
+  },
+  {
+   "filename": "phi",
+   "frame": {
+    "x": 264,
+    "y": 0,
+    "w": 6,
+    "h": 8
+   }
+  },
+  {
+   "filename": "psi",
+   "frame": {
+    "x": 270,
+    "y": 0,
+    "w": 6,
+    "h": 8
+   }
+  },
+  {
+   "filename": "omega",
+   "frame": {
+    "x": 276,
+    "y": 0,
+    "w": 6,
+    "h": 8
+   }
+  },
+  {
+   "filename": "dot",
+   "frame": {
+    "x": 282,
+    "y": 0,
+    "w": 6,
+    "h": 8
+   }
+  },
+  {
+   "filename": "colon",
+   "frame": {
+    "x": 288,
+    "y": 0,
+    "w": 6,
+    "h": 8
+   }
+  },
+  {
+   "filename": "minus",
+   "frame": {
+    "x": 294,
+    "y": 0,
+    "w": 6,
+    "h": 8
+   }
+  },
+  {
+   "filename": "excl",
+   "frame": {
+    "x": 300,
+    "y": 0,
+    "w": 6,
+    "h": 8
+   }
+  },
+  {
+   "filename": "quest",
+   "frame": {
+    "x": 306,
+    "y": 0,
+    "w": 6,
+    "h": 8
+   }
+  },
+  {
+   "filename": "slash",
+   "frame": {
+    "x": 312,
+    "y": 0,
+    "w": 6,
+    "h": 8
+   }
+  },
+  {
+   "filename": "left",
+   "frame": {
+    "x": 318,
+    "y": 0,
+    "w": 6,
+    "h": 8
+   }
+  },
+  {
+   "filename": "right",
+   "frame": {
+    "x": 324,
+    "y": 0,
+    "w": 6,
+    "h": 8
+   }
+  },
+  {
+   "filename": "up",
+   "frame": {
+    "x": 330,
+    "y": 0,
+    "w": 6,
+    "h": 8
+   }
+  },
+  {
+   "filename": "down",
+   "frame": {
+    "x": 336,
+    "y": 0,
+    "w": 6,
+    "h": 8
+   }
+  }
+ ],
+ "meta": {
+  "app": "tools/mkplaceholders.py",
+  "size": {
+   "w": 342,
+   "h": 8
+  }
+ }
+}

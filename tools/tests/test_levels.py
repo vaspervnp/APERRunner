@@ -139,7 +139,7 @@ def test_coins_are_sparse():
     assert coins <= 0.24 * rows, f"{coins} coins in {rows} rows"
 
 
-def test_coins_come_in_runs_of_three_or_more():
+def test_coins_come_in_runs_of_three_to_ten():
     coin = mklevel.ITEMS["c"]
     for chunk in mklevel.load_all():
         for lane in range(3):
@@ -149,16 +149,58 @@ def test_coins_come_in_runs_of_three_or_more():
                 if has:
                     run += 1
                     continue
-                assert run == 0 or run >= 3, f"{chunk['name']}: lane {lane + 1}: run of {run} ending at row {r}"
+                assert run == 0 or 3 <= run <= 10, f"{chunk['name']}: lane {lane + 1}: run of {run} ending at row {r}"
                 run = 0
 
 
-def test_short_coin_runs_are_rejected():
+def test_short_and_long_coin_runs_are_rejected():
     _compile("..c  ...  ...\n..c  ...  ...\n..c  ...  ...\n")
-    for text in ("..c  ...  ...\n", "..c  ...  ...\n..c  ...  ...\n...  ...  ...\n"):
+    _compile("..c  ...  ...\n" * 10)
+    for text in ("..c  ...  ...\n", "..c  ...  ...\n..c  ...  ...\n...  ...  ...\n", "..c  ...  ...\n" * 11):
         try:
             _compile(text)
         except mklevel.LevelError as e:
-            assert "runs of at least 3" in str(e)
+            assert "runs of 3 to 10" in str(e)
         else:
             raise AssertionError(f"accepted {text!r}")
+
+
+def _ramp_chunk(kind, roof_coins, ground_coins, stops):
+    """Lane 2: ramp + 38-row train; lane 1 coins on the ground, lane 3 stops."""
+    rows = []                                   # bottom first
+    for r in range(3 + 38):
+        obj = "^.." if r < 3 else "R1."
+        if 3 + 2 <= r < 3 + 2 + roof_coins:
+            obj = "R1c"
+        left = "..c" if r < ground_coins else "..."
+        right = "S.." if (r - 2) % 10 in (0, 1) and stops and r >= 2 else "..."
+        if stops and (r - 7) % 10 in (0, 1) and r >= 7:
+            left = "S.."
+        rows.append(f"{left}  {obj}  {right}")
+    return f"# ramp: {kind}\n" + "\n".join(reversed(rows)) + "\n"
+
+
+def test_ramp_chunks_say_how_they_reward_the_ramp():
+    for text, error in ((_ramp_chunk("coins", 0, 3, False).replace("# ramp: coins\n", ""), "needs 'ramp: coins'"),
+                        (_ramp_chunk("coins", 4, 4, False), "of the coins on the train roofs"),
+                        (_ramp_chunk("blocked", 0, 0, False), "a buffer stop every 12 rows")):
+        try:
+            _compile(text)
+        except mklevel.LevelError as e:
+            assert error in str(e), str(e)
+        else:
+            raise AssertionError(f"accepted: {error}")
+    assert _compile(_ramp_chunk("coins", 8, 3, False))["ramp"] == "coins"
+    assert _compile(_ramp_chunk("blocked", 0, 0, True))["ramp"] == "blocked"
+
+
+def test_ramps_bring_coins_a_third_of_the_time():
+    chunks = mklevel.load_all()
+    ramps = [c for c in chunks if c["ramp"]]
+    assert ramps
+    for env in mklevel.ENVS.values():
+        for diff in range(1, 6):
+            group = [c for c in ramps if c["env"] == env and c["diff"] == diff]
+            total = sum(c["weight"] for c in group)
+            coins = sum(c["weight"] for c in group if c["ramp"] == "coins")
+            assert 3 * coins == total, (env, diff, [c["name"] for c in group])
