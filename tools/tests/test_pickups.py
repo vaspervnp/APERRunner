@@ -172,11 +172,11 @@ def test_magnet_far_lane_is_out_of_reach():
 
 
 def test_magnet_run_keeps_the_frame_budget_and_erases_coins():
-    """A real run at top speed with the magnet always on: no missed frames,
+    """A real run at top speed (7) with the magnet always on: no missed frames,
     coins fly in, and every picked-up item is erased from the screen."""
     sym = load_symbols()
     cpc = boot_game(pickups=True)
-    cpc.write_ram(sym["scroll_speed"], bytes([6]))
+    cpc.write_ram(sym["scroll_speed"], bytes([7]))           # top speed: hard + turbo
     cpc.write_ram(sym["max_load"], bytes([0]))
     missed = peek8(cpc, sym["missed_frames"])
     most = 0

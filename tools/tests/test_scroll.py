@@ -9,8 +9,8 @@ from harness import boot_game, load_symbols, peek8, sync_game_frame
 
 PLAYFIELD_RIGHT = 576    # framebuffer x where the HUD starts
 HUD_X = 600              # framebuffer x in the HUD frame, left of the panel
-COMPARE_LINES = range(40, 224)   # below the moving top edge, above the runner
-SPEEDS = range(1, 7)
+COMPARE_LINES = range(40, 200)   # below the top edge, above the runner (7 lines down too)
+SPEEDS = range(1, 8)                 # up to 7: hard + turbo
 
 
 def _steady(p):
