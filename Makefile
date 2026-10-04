@@ -6,6 +6,7 @@
 #   make gfx    -> palette, graphics and track chunks (src/data/) from gfx/png
 #                  (or gfx/placeholder) and levels/chunks
 #   make placeholders -> regenerate stand-in art in gfx/placeholder/
+#   make docs   -> docs/manual_*.pdf and the disc cover (Edge/Chromium headless)
 #   make loading -> loading screen from the painted art (assets/loading/loading_art.jpg)
 #   make loading-blender -> loading screen from the Blender scene instead
 
@@ -32,7 +33,7 @@ LOADER  := src/disc.bas
 SYM     := $(BUILD)/aper.sym
 DSK     := $(BUILD)/runner.dsk
 
-.PHONY: all run test clean gfx placeholders screenshots loading loading-blender
+.PHONY: all run test clean gfx placeholders screenshots loading loading-blender docs
 
 all: $(DSK)
 
@@ -52,6 +53,10 @@ $(GFX_STAMP): $(GFX_IN) $(GFX_TOOLS)
 
 placeholders:
 	$(PYTHON) tools/mkplaceholders.py
+
+# player's manuals (PDF) and the disc cover (EDGE = chromium binary)
+docs:
+	$(PYTHON) tools/mkdocs.py
 
 # loading screen: the painted art -> CPC inks, or the Blender render
 # (BLENDER = blender.exe on WSL) -> CPC inks

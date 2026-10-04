@@ -478,16 +478,19 @@ draw_screen:
                 cp MENU_Y+MENU_ITEMS*MENU_STEP
                 jr nz,.option
                 ld hl,(txt_menu_hint)
-                ld c,200
+                ld c,198
                 call draw_text_centred
                 ld hl,(txt_menu_lang)
-                ld c,216
+                ld c,212
                 call draw_text_centred
                 ld hl,(txt_menu_credit)
-                ld c,232
+                ld c,226
                 call draw_text_centred
                 ld hl,(txt_menu_credit2)
-                ld c,244
+                ld c,236
+                call draw_text_centred
+                ld hl,(txt_menu_credit3)
+                ld c,252
                 call draw_text_centred
                 jp menu_cursor_draw
 

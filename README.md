@@ -1,157 +1,164 @@
 # Runner A.P.E.R
 
-**Runner A.P.E.R** (*Athens Piraeus Electric Railways*) — ένα top-down endless runner για **Amstrad CPC 6128**,
-γραμμένο σε **Z80 assembly**.
+**Runner A.P.E.R** (*Athens Piraeus Electric Railways*) is a top-down endless runner for the **Amstrad CPC 6128**,
+written in **Z80 assembly**.
 
-Τρέξε πάνω στις τρεις γραμμές του ηλεκτρικού, μάζεψε νομίσματα, πήδα πάνω από στοπ, ανέβα στις
-οροφές των τρένων από τις ράμπες και πρόσεχε τα κόκκινα φανάρια — από τη λεωφόρο της πόλης μέχρι το δάσος.
+Run along the three tracks of the electric railway, collect coins, jump over buffer stops, climb onto train roofs
+from the ramps and watch out for red signals, from the city avenue all the way to the forest.
 
-> **Κατάσταση**: πλήρες παιχνίδι (Φάσεις 0–10). Μένει ο έλεγχος σε CPC 6128+ (CRTC 3/4). Δες το [plan.md](plan.md) για την αρχιτεκτονική και την πρόοδο.
+> **Status**: complete game (Phases 0–10). The check on a CPC 6128+ (CRTC 3/4) is still open. See [plan.md](plan.md)
+> (in Greek) for the architecture and the progress.
+
+**Player's manual:** [English](docs/manual_en.md) ([PDF](docs/manual_en.pdf)) ·
+[Ελληνικά](docs/manual_el.md) ([PDF](docs/manual_el.pdf)) · **Disc cover:** [docs/cover](docs/cover/)
 
 | | | |
 |---|---|---|
-| ![Φόρτωση](docs/screenshots/01_loading.png) | ![Μενού](docs/screenshots/02_menu.png) | ![Πόλη](docs/screenshots/08_city.png) |
-| ![Power-up](docs/screenshots/09_power_up.png) | ![Δάσος](docs/screenshots/10_forest.png) | ![Hard](docs/screenshots/07_hard_countdown.png) |
-| ![Ιστορία](docs/screenshots/03_story.png) | ![Μενού στα ελληνικά](docs/screenshots/06_menu_greek.png) | ![Τέλος](docs/screenshots/11_game_over.png) |
+| ![Loading](docs/screenshots/01_loading.png) | ![Menu](docs/screenshots/02_menu.png) | ![City](docs/screenshots/08_city.png) |
+| ![Power-up](docs/screenshots/09_power_up.png) | ![Forest](docs/screenshots/10_forest.png) | ![Hard](docs/screenshots/07_hard_countdown.png) |
+| ![Story](docs/screenshots/03_story.png) | ![Menu in Greek](docs/screenshots/06_menu_greek.png) | ![Game over](docs/screenshots/11_game_over.png) |
 
 ---
 
-## Χαρακτηριστικά
+## Features
 
-- **Mode 0, overscan 192×272**, 16 χρώματα, ομαλό **κάθετο hardware scroll** (ανά γραμμή), σταθερές άκρες εικόνας.
-- **25 fps** σταθερά, χωρίς χαμένα frames ακόμα και στη μέγιστη ταχύτητα.
-- **3 επίπεδα δυσκολίας**: EASY / MEDIUM / HARD (ταχύτητα 4 / 5 / 6 γραμμές ανά frame· στο HARD πηδάς και τα κενά
-  ανάμεσα στα βαγόνια). Τα εμπόδια ξεκινούν αραιά και πυκνώνουν με τον χρόνο — γρηγορότερα στα δύσκολα επίπεδα.
-- **HUD στο πλάι** (1/4 της οθόνης): σκορ, νομίσματα, ζωές, ενεργά power-ups με μπάρα χρόνου.
-- **3 γραμμές τρένου** με τρένα (3 τύποι βαγονιών, 3 τύποι μηχανών), ράμπες, στοπ και φανάρια.
-- **5 επίπεδα ύψους**: ο δρομέας «μεγαλώνει» όσο πιο ψηλά βρίσκεται — από το έδαφος μέχρι το ψηλότερο
-  άλμα πάνω από την οροφή του τρένου.
-- **Περιβάλλοντα**: αστικό (λεωφόρος 3+3 λωρίδων με αυτοκίνητα, λεωφορεία, περίπτερα) και δάσος,
-  με **πεζογέφυρες** και **γέφυρες αυτοκινήτων** από πάνω.
-- **Loading screen**, **μενού**, **ιστορία**, **παύση**, **countdown** πριν από κάθε τρέξιμο, **οθόνη τέλους** με
-  πίνακα ρεκόρ και όνομα 3 γραμμάτων, **demo** όταν μείνεις στο μενού.
-- **Αγγλικά και ελληνικά** (αλλαγή με `L` στο μενού).
-- **Ήχος AY** από το interrupt (50 φορές το δευτερόλεπτο): τρία πρωτότυπα κομμάτια (παιχνίδι, μενού, τέλος) και εφέ
-  (νόμισμα, άλμα, power-up, σύγκρουση, φανάρι). Μουσική και ήχος ανοίγουν/κλείνουν χωριστά.
+- **Mode 0, 192×272 overscan**, 16 colours, smooth **vertical hardware scroll** (line by line), steady picture edges.
+- A steady **25 fps**, with no dropped frames even at top speed.
+- **3 difficulty levels**: EASY / MEDIUM / HARD (speed 4 / 5 / 6 lines per frame; on HARD you also jump the gaps
+  between wagons). Obstacles start sparse and get denser over time, faster on the harder levels.
+- **Side HUD** (1/4 of the screen): score, coins, lives, active power-ups with a time bar.
+- **3 railway tracks** with trains (3 wagon types, 3 locomotive types), ramps, buffer stops and signals.
+- **5 height levels**: the runner "grows" the higher he is, from the ground up to the highest jump above a train roof.
+- **Environments**: city (a 3+3 lane avenue with cars, buses and kiosks) and forest, with **footbridges** and
+  **road bridges** overhead.
+- **Loading screen**, **menu**, **story**, **pause**, a **countdown** before every run, a **game over screen** with a
+  high score table and 3-letter names, and a **demo** when you stay in the menu.
+- **English and Greek** (switch with `L` in the menu).
+- **AY sound** from the interrupt (50 times a second): three original tunes (game, menu, game over) and effects
+  (coin, jump, power-up, crash, signal). Music and sound can be switched on and off separately.
 
-## Πώς παίζεται
+## How to play
 
-Ο δρομέας βρίσκεται στο κάτω μέρος της οθόνης και η πίστα έρχεται από πάνω. Άλλαξε γραμμή για να
-αποφύγεις εμπόδια, πήδα για να τα περάσεις, μάζεψε όσα περισσότερα νομίσματα μπορείς. Όσο είσαι στον αέρα
-περνάς **πάνω** από νομίσματα και power-ups χωρίς να τα παίρνεις. Τα εμπόδια πυκνώνουν όσο τρέχεις.
-Έχεις **3 ζωές**.
+The runner is at the bottom of the screen and the track comes from the top. Change lane to avoid obstacles, jump to
+clear them, and collect as many coins as you can. While you are in the air you pass **over** coins and power-ups
+without taking them. Obstacles get denser the longer you run. You have **3 lives**.
 
-### Χειρισμοί
+### Controls
 
-| Ενέργεια | Πληκτρολόγιο | Joystick |
+| Action | Keyboard | Joystick |
 |---|---|---|
-| Αριστερή γραμμή | `←` ή `O` | αριστερά |
-| Δεξιά γραμμή | `→` ή `P` | δεξιά |
-| Άλμα | `↑`, `Q` ή `SPACE` | πάνω / FIRE |
-| Γρήγορη προσγείωση | `↓` ή `A` | κάτω |
-| Παύση | `H` | — |
-| Μουσική on/off | `M` | — |
-| Έξοδος στο μενού | `ESC` | — |
-| Γλώσσα (μενού) | `L` | — |
+| Left lane | `←` or `O` | left |
+| Right lane | `→` or `P` | right |
+| Jump | `↑`, `Q` or `SPACE` | up / FIRE |
+| Fast landing | `↓` or `A` | down |
+| Pause | `H` | — |
+| Music on/off | `M` | — |
+| Back to the menu | `ESC` | — |
+| Language (menu) | `L` | — |
 
-### Ύψη
+### Heights
 
-| Ύψος | Τι σημαίνει |
+| Height | Meaning |
 |---|---|
-| 1 | Στο έδαφος |
-| 2 | Άλμα από το έδαφος — περνάς πάνω από στοπ |
-| 3 | Πάνω στην οροφή του τρένου |
-| 4 | Άλμα πάνω από τρένο / από την οροφή |
-| 5 | Το ψηλότερο άλμα πάνω στο τρένο |
+| 1 | On the ground |
+| 2 | Jump from the ground: you clear buffer stops |
+| 3 | On a train roof |
+| 4 | Jump over a train / from the roof |
+| 5 | The highest jump above a train |
 
-### Συλλεκτικά
+### Pick-ups
 
-Ένα power-up κάθε 50–150 σειρές, πάντα με 8 ελεύθερες σειρές μπροστά του· το όνομά του γράφεται πάνω στην πίστα.
+One power-up every 50–150 rows, always with 8 clear rows around it; its name is written on the track.
 
-| Αντικείμενο | Εφέ |
+| Item | Effect |
 |---|---|
-| 🪙 Νόμισμα | +πόντοι |
-| ⏩ Turbo | Πιο γρήγορα (+2 γραμμές ανά frame), διπλή απόσταση στο σκορ — το πιο συχνό (30%) |
-| 🐢 Χελώνα | Στη μισή ταχύτητα για λίγο |
-| 🧲 Μαγνήτης | Τραβά τα νομίσματα των διπλανών γραμμών |
-| 🦘 Ελατήρια | Υπερ-άλμα: από το έδαφος πάνω από τρένα |
-| ⛑️ Κράνος | Ασπίδα για μία σύγκρουση |
-| 🎫 Εισιτήριο ×2 | Διπλοί πόντοι νομισμάτων |
+| 🪙 Coin | +points |
+| ⏩ Turbo | Faster (+2 lines per frame), distance counts double; the most common (30%) |
+| 🐢 Slow | Half speed for a while |
+| 🧲 Magnet | Pulls in the coins of the neighbouring lanes |
+| 🦘 Super jump | From the ground over trains |
+| ⛑️ Helmet | A shield for one crash |
+| 🎫 2× coins | Coins are worth double |
 
-### Εμπόδια
+### Obstacles
 
-| Εμπόδιο | Πώς το περνάς |
+| Obstacle | How to get past |
 |---|---|
-| Βαγόνι | Άλλαξε γραμμή, ανέβα από ράμπα ή πήδα με ελατήρια |
-| Κενό ανάμεσα σε βαγόνια | Μόνο στο HARD: πήδα το όσο τρέχεις στις οροφές |
-| Μηχανή (μέτωπο) | Μην τη συναντήσεις από μπροστά στο έδαφος! |
-| Ράμπα | Σε ανεβάζει στην οροφή / σε κατεβάζει |
-| Στοπ | Πήδα ή άλλαξε γραμμή |
-| Φανάρι | Πράσινο: περνάς. Κόκκινο: άλλαξε γραμμή |
+| Wagon | Change lane, climb a ramp or jump with the super jump |
+| Gap between wagons | HARD only: jump it while running on the roofs |
+| Locomotive (front) | Never meet one head-on at ground level! |
+| Ramp | Takes you up onto the roof / back down |
+| Buffer stop | Jump or change lane |
+| Signal | Green: go on. Red: change lane |
 
-### Σκορ
-`σκορ = απόσταση (× 2 με Turbo) + νομίσματα × 10 (× 2 με Εισιτήριο)`. Τα 8 καλύτερα σκορ μπαίνουν στον πίνακα ρεκόρ,
-που **σώζεται στη δισκέτα** (αρχείο `SCORES`) — η δισκέτα να μην είναι προστατευμένη από εγγραφή.
+### Score
+`score = distance (× 2 with Turbo) + coins × 10 (× 2 with 2× coins)`. The 8 best scores go into the high score table,
+which is **saved to the disc** (file `SCORES`), so the disc must not be write-protected.
 
 ---
 
-## Απαιτήσεις
+## Requirements
 
-- **Amstrad CPC 6128** (128K) ή emulator.
-- Για build:
-  - [rasm](https://github.com/EdouardBERGE/rasm) — assembler (v3.2.5+, στο `PATH`)
-  - [iDSK](https://github.com/cpcsdk/idsk) — εργαλείο εικόνων δισκέτας (`~/idsk/iDSK`)
-  - [Caprice32](https://github.com/ColinPitrat/caprice32) — emulator (snap: `caprice32.launcher`)
-  - Python 3 + Pillow — μετατροπή γραφικών και πιστών (`tools/`)
-  - `~/cpcemu` — headless emulator για αυτόματα τεστ
+- An **Amstrad CPC 6128** (128K) or an emulator.
+- To build:
+  - [rasm](https://github.com/EdouardBERGE/rasm): assembler (v3.2.5+, on the `PATH`)
+  - [iDSK](https://github.com/cpcsdk/idsk): disc image tool (`~/idsk/iDSK`)
+  - [Caprice32](https://github.com/ColinPitrat/caprice32): emulator (snap: `caprice32.launcher`)
+  - Python 3 + Pillow: graphics and track converters (`tools/`)
+  - `~/cpcemu`: headless emulator for the automated tests
+  - Microsoft Edge (Windows, from WSL): the PDF manuals and the cover (`make docs`)
 
-## Build & εκτέλεση
+## Build & run
 
 ```bash
-make            # γραφικά + πίστες + assembly → build/runner.dsk
+make            # graphics + tracks + assembly -> build/runner.dsk
 ```
 
 ```bash
-make run        # άνοιγμα στο Caprice32 με αυτόματο RUN"DISC
+make run        # open in Caprice32 with an automatic RUN"DISC
 ```
 
 ```bash
-make test       # headless τεστ με cpcemu
+make test       # headless tests with cpcemu
 ```
 
 ```bash
-make screenshots    # docs/screenshots/*.png από τον headless emulator
+make screenshots    # docs/screenshots/*.png from the headless emulator
 ```
 
-Χειροκίνητα:
+```bash
+make docs       # docs/manual_*.pdf and the disc cover (docs/cover/)
+```
+
+By hand:
 
 ```bash
 caprice32.launcher '--autocmd=run"disc' "$PWD/build/runner.dsk"
 ```
 
-Σε πραγματικό CPC 6128: γράψε το `runner.dsk` σε δισκέτα (π.χ. HxC/Gotek) και πληκτρολόγησε `RUN"RUNNER` (ή `RUN"DISC`).
-Χρειάζεται 128K (τα γραφικά, ο ήχος και τα κείμενα είναι στα banks C4–C7).
+On a real CPC 6128: write `runner.dsk` to a disc (e.g. HxC/Gotek) and type `RUN"RUNNER` (or `RUN"DISC`).
+128K is required (the graphics, the sound and the texts live in banks C4–C7).
 
-## Δομή
+## Layout
 
 ```
-src/       Z80 κώδικας (rasm)
-gfx/       γραφικά Aseprite και εξαγωγές PNG
-assets/    loading screen (Blender)
-levels/    κομμάτια πίστας (chunks) σε κείμενο — δες tools/mklevel.py για τη μορφή
-music/     κομμάτια και ηχητικά εφέ σε κείμενο — δες tools/mkmusic.py
-text/      κείμενα οθονών, αγγλικά και ελληνικά (tools/mktext.py)
-tools/     converters (png2cpc, scr2cpc, mklevel, mkmusic, mktext), screenshots και τεστ
-docs/      screenshots
-prompts/   prompts για Aseprite MCP και Blender MCP
-build/     παραγόμενα αρχεία (.dsk, .sym)
+src/       Z80 code (rasm)
+gfx/       Aseprite graphics and PNG exports
+assets/    loading screen (painted art, Blender scene)
+levels/    track chunks as text (see tools/mklevel.py for the format)
+music/     tunes and sound effects as text (see tools/mkmusic.py)
+text/      screen texts, English and Greek (tools/mktext.py)
+tools/     converters (png2cpc, scr2cpc, mklevel, mkmusic, mktext, art2loading), docs, screenshots and tests
+docs/      manuals (EN/EL, Markdown and PDF), disc cover, screenshots
+prompts/   prompts for the Aseprite MCP and the Blender MCP
+build/     generated files (.dsk, .sym)
 ```
 
-## Γραφικά
+## Graphics
 
-- [prompts/aseprite_graphics.md](prompts/aseprite_graphics.md) — όλα τα tiles/sprites/fonts/οθόνες.
-- [prompts/blender_loading_screen.md](prompts/blender_loading_screen.md) — το loading screen.
+- [prompts/aseprite_graphics.md](prompts/aseprite_graphics.md): all tiles, sprites, fonts and screens.
+- [prompts/blender_loading_screen.md](prompts/blender_loading_screen.md): the loading screen.
 
-## Ευχαριστίες
+## Thanks
 
-Εμπνευσμένο από τον ηλεκτρικό σιδηρόδρομο Αθηνών–Πειραιώς (Γραμμή 1).
+Inspired by the Athens–Piraeus electric railway (Line 1).
