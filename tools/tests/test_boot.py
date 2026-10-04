@@ -30,7 +30,7 @@ def test_loader_shows_the_loading_screen():
     cpc.run_frames(BOOT_FRAMES)
     cpc.insert_disc(DSK)
     cpc.type_text('RUN"DISC\n')
-    cpc.run_frames(250)                                  # banks loading
+    cpc.run_frames(300)                                  # banks loading
     assert 0x8000 <= cpc.pc or cpc.pc < 0x4000, f"PC #{cpc.pc:04X}: still loading"
     used = [a for line in range(rows * 8) for a in range((line & 7) * 0x800 + (line >> 3) * 96,
                                                           (line & 7) * 0x800 + (line >> 3) * 96 + 96)]

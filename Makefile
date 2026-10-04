@@ -6,7 +6,8 @@
 #   make gfx    -> palette, graphics and track chunks (src/data/) from gfx/png
 #                  (or gfx/placeholder) and levels/chunks
 #   make placeholders -> regenerate stand-in art in gfx/placeholder/
-#   make loading -> Blender render + quantize of the loading screen (assets/loading/)
+#   make loading -> loading screen from the painted art (assets/loading/loading_art.jpg)
+#   make loading-blender -> loading screen from the Blender scene instead
 
 RASM    ?= rasm
 IDSK    ?= iDSK
@@ -31,7 +32,7 @@ LOADER  := src/disc.bas
 SYM     := $(BUILD)/aper.sym
 DSK     := $(BUILD)/runner.dsk
 
-.PHONY: all run test clean gfx placeholders screenshots loading
+.PHONY: all run test clean gfx placeholders screenshots loading loading-blender
 
 all: $(DSK)
 
@@ -52,9 +53,13 @@ $(GFX_STAMP): $(GFX_IN) $(GFX_TOOLS)
 placeholders:
 	$(PYTHON) tools/mkplaceholders.py
 
-# loading screen: Blender render (BLENDER = blender.exe on WSL) -> CPC inks
-BLENDER ?= blender
+# loading screen: the painted art -> CPC inks, or the Blender render
+# (BLENDER = blender.exe on WSL) -> CPC inks
 loading:
+	$(PYTHON) tools/art2loading.py
+
+BLENDER ?= blender
+loading-blender:
 	$(BLENDER) -b --factory-startup -P tools/blender/loading_scene.py -- assets/loading
 	$(PYTHON) tools/quantize_loading.py
 

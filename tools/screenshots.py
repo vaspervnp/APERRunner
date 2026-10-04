@@ -52,7 +52,7 @@ def main():
     cpc.run_frames(BOOT_FRAMES)
     cpc.insert_disc(DSK)
     cpc.type_text('RUN"DISC\n')
-    cpc.run_frames(250)
+    cpc.run_frames(300)
     shot(cpc, "01_loading.png")
 
     cpc = boot_game(menu=True)

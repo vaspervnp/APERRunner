@@ -465,6 +465,10 @@ APERRunner/
   Workbench flat + περιγράμματα, διάφανος ουρανός, 1536×672 (`loading_4x.png`, `loading_scene.blend`).
   `tools/quantize_loading.py`: box filter → 384×168 → 192×168, ουρανός ηλιοβασιλέματος με Bayer dither, ήλιος, σιλουέτα
   Ακρόπολης, σκηνή στο πλησιέστερο ink χωρίς dither, λογότυπο από πάνω. Ink 15 = OLIVE (έδαφος).
+  **Τελική εικόνα**: ζωγραφιά (`assets/loading/loading_art.jpg`, από μοντέλο εικόνας με βάση το render) →
+  `tools/art2loading.py` (`make loading`): σβήνει τη δική της επιγραφή, 192×168 (συμπίεση κάθετα), κορεσμός ×1,8, κάθε pixel
+  μείγμα δύο inks με Bayer dither (ελεύθερο στον ουρανό, λιγότερο στη σκηνή), το λογότυπο του παιχνιδιού από πάνω.
+  Το Blender μένει ως `make loading-blender`.
 - [x] **8.2** Loader σε assembly (`src/loader.asm` → `LOADER.BIN` στο &8000, καλείται από το `DISC`): firmware ενεργό, mode 0,
   inks μαύρα, CRTC R1=48/R2=50/R6=21/R7=28 (πλήρες πλάτος, 21 σειρές, κεντραρισμένη), φόρτωση + αποσυμπίεση ZX0 στο &C000, inks της
   εικόνας, φόρτωση banks C4–C7 και `APER.BIN` με CAS IN (buffer &9800), άλμα στο &4000 (το stub κλείνει το firmware).
