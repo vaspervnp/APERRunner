@@ -6,6 +6,7 @@
 #   make gfx    -> palette, graphics and track chunks (src/data/) from gfx/png
 #                  (or gfx/placeholder) and levels/chunks
 #   make placeholders -> regenerate stand-in art in gfx/placeholder/
+#   make loading -> Blender render + quantize of the loading screen (assets/loading/)
 
 RASM    ?= rasm
 IDSK    ?= iDSK
@@ -30,7 +31,7 @@ LOADER  := src/disc.bas
 SYM     := $(BUILD)/aper.sym
 DSK     := $(BUILD)/runner.dsk
 
-.PHONY: all run test clean gfx placeholders screenshots
+.PHONY: all run test clean gfx placeholders screenshots loading
 
 all: $(DSK)
 
@@ -50,6 +51,12 @@ $(GFX_STAMP): $(GFX_IN) $(GFX_TOOLS)
 
 placeholders:
 	$(PYTHON) tools/mkplaceholders.py
+
+# loading screen: Blender render (BLENDER = blender.exe on WSL) -> CPC inks
+BLENDER ?= blender
+loading:
+	$(BLENDER) -b --factory-startup -P tools/blender/loading_scene.py -- assets/loading
+	$(PYTHON) tools/quantize_loading.py
 
 # src/main.asm SAVEs the main binary and one file per bank
 $(BIN) $(BANKS) $(SYM) &: $(SRC) $(GFX_STAMP) $(BUILD)/debug-$(DEBUG) | $(BUILD)

@@ -13,4 +13,4 @@
 12 fw 18 #00FF00 Bright Green
 13 fw 13 #808080 White
 14 fw 26 #FFFFFF Bright White
-15 fw 11 #0080FF Sky Blue
+15 fw 12 #808000 Yellow

@@ -457,10 +457,14 @@ APERRunner/
   ένα power-up που λήγει σβήνει και τα επόμενα μετακινούνται. Μαγνήτης + Turbo: `max_load` 11/12, 0 χαμένα frames.
 
 ### Φάση 8 — Οθόνες & ροή
-- [~] **8.1** Loading screen: ροή `assets/loading/loading_cpc.png` (192×168, 16 inks) + `loading_palette.txt` → `tools/scr2cpc.py`
-  → `src/data/loading.bin` (μνήμη &C000, γραμμές 96 bytes) → ZX0 (`inczx0` του rasm) → `LOADSCR.BIN` (2,5K).
-  **Προσωρινή εικόνα** από `tools/mkloading.py` (ηλιοβασίλεμα, Ακρόπολη, 3 γραμμές σε προοπτική, λογότυπο): το Blender MCP δεν
-  απαντούσε. Μένει: render με `prompts/blender_loading_screen.md` (κάδρο 192×168, δηλ. 1536×672) → quantize → ίδια αρχεία.
+- [x] **8.1** Loading screen: ροή `assets/loading/loading_cpc.png` (192×168, 16 inks) + `loading_palette.txt` → `tools/scr2cpc.py`
+  → `src/data/loading.bin` (μνήμη &C000, γραμμές 96 bytes) → ZX0 (`inczx0` του rasm) → `LOADSCR.BIN`.
+  Σκηνή στο Blender από script (`tools/blender/loading_scene.py`, CLI `blender -b --factory-startup -P … -- assets/loading`,
+  γιατί το MCP έληγε σε timeout): 3 γραμμές με ηλεκτροδότηση, πράσινος συρμός, ο δρομέας στον αέρα πάνω από το πρώτο βαγόνι με
+  τόξο νομισμάτων, λεωφόρος με αυτοκίνητα και πολυκατοικίες αριστερά, πεύκα δεξιά, πεζογέφυρα, γερανοί του Πειραιά.
+  Workbench flat + περιγράμματα, διάφανος ουρανός, 1536×672 (`loading_4x.png`, `loading_scene.blend`).
+  `tools/quantize_loading.py`: box filter → 384×168 → 192×168, ουρανός ηλιοβασιλέματος με Bayer dither, ήλιος, σιλουέτα
+  Ακρόπολης, σκηνή στο πλησιέστερο ink χωρίς dither, λογότυπο από πάνω. Ink 15 = OLIVE (έδαφος).
 - [x] **8.2** Loader σε assembly (`src/loader.asm` → `LOADER.BIN` στο &8000, καλείται από το `DISC`): firmware ενεργό, mode 0,
   inks μαύρα, CRTC R1=48/R2=50/R6=21/R7=28 (πλήρες πλάτος, 21 σειρές, κεντραρισμένη), φόρτωση + αποσυμπίεση ZX0 στο &C000, inks της
   εικόνας, φόρτωση banks C4–C7 και `APER.BIN` με CAS IN (buffer &9800), άλμα στο &4000 (το stub κλείνει το firmware).
@@ -548,7 +552,7 @@ APERRunner/
   χαρακτηριστικά, χειρισμούς και screenshots. `tools/screenshots.py` (`make screenshots`) βγάζει τις 11 εικόνες του
   `docs/screenshots/` από τον headless emulator: φόρτωση, μενού (αγγλικά/ελληνικά), ιστορία, χειρισμοί, ρεκόρ, πόλη,
   power-up, δάσος, countdown στο hard, τέλος με νέο ρεκόρ.
-- [ ] Ανοιχτά για την έκδοση: τελική εικόνα φόρτωσης από το Blender (8.1), έλεγχος σε 6128+ (10.4).
+- [ ] Ανοιχτά για την έκδοση: έλεγχος σε 6128+ (10.4).
 - [ ] **11.2** Μελλοντικά: καμπύλες γραμμών, κινούμενα τρένα (αντίθετη φορά), διακλαδώσεις, κινούμενη κίνηση στη λεωφόρο, νυχτερινό περιβάλλον, σταθμοί (Πειραιάς, Φάληρο, Μοναστηράκι, Κηφισιά).
 
 ---

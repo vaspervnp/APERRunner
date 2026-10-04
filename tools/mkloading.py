@@ -19,8 +19,8 @@ W, H = 192, 168
 OUT = os.path.join(ROOT, "assets", "loading", "loading_cpc.png")
 
 # ink -> firmware colour
-LOADING_PALETTE = [0, 1, 2, 5, 4, 3, 6, 15, 16, 24, 25, 9, 18, 13, 26, 11]
-BLACK, BLUE, BBLUE, MAUVE, MAGENTA, RED, BRED, ORANGE, PINK, YELLOW, PYELLOW, GREEN, BGREEN, GREY, WHITE, SKY = range(16)
+LOADING_PALETTE = [0, 1, 2, 5, 4, 3, 6, 15, 16, 24, 25, 9, 18, 13, 26, 12]
+BLACK, BLUE, BBLUE, MAUVE, MAGENTA, RED, BRED, ORANGE, PINK, YELLOW, PYELLOW, GREEN, BGREEN, GREY, WHITE, OLIVE = range(16)
 BAYER = [[0, 8, 2, 10], [12, 4, 14, 6], [3, 11, 1, 9], [15, 7, 13, 5]]
 HORIZON = 100
 
@@ -110,7 +110,7 @@ def draw():
         put(r, y, BLACK)
     for y in range(131, 137):
         for x in range(lerp_x(96 - 12, y), lerp_x(96 + 12, y) + 1):
-            put(x, y, SKY)
+            put(x, y, OLIVE)
     for k in range(5):
         cx, cy = 78 + k * 9, 118 - int(10 * math.sin(math.pi * k / 4))
         for y in range(cy - 3, cy + 4):
