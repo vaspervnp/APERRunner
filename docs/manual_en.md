@@ -14,7 +14,8 @@
 2. Insert the **RUNNER** disc, side A, into the drive.
 3. Type `RUN"RUNNER` and press **RETURN**. (`RUN"DISC` works too.)
 
-The loading screen appears while the game loads. After a few seconds the main menu comes up.
+First the REVIVE8BIT screen appears: press **SPACE** to go on, or wait 10 seconds. Then the loading screen appears while
+the game loads. After a few seconds the main menu comes up.
 
 > Your high scores are saved on the disc. Do **not** write-protect it if you want to keep your records.
 

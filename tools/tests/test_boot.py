@@ -38,8 +38,35 @@ def test_loader_shows_the_loading_screen():
     cpc.screenshot(os.path.join(ROOT, "build", "test-artifacts", "loading.png"), aspect=True)
 
 
+def test_run_runner_shows_the_revive8bit_screen_first():
+    """RUNNER.BAS: REVIVE8B.SCR with its inks; SPACE (or 10 s) goes on to DISC."""
+    import os
+    from harness import BOOT_FRAMES, DSK, ROOT
+    from cpc import CPC
+    import cpc as cpcmod
+    with open(os.path.join(ROOT, "assets", "revive8b.scr"), "rb") as f:
+        scr = f.read()
+
+    def shown(cpc):
+        return all(cpc.read_ram(0xC000 + a, 1)[0] == scr[a] for a in range(0, 16384, 97))
+
+    cpc = CPC()
+    cpc.run_frames(BOOT_FRAMES)
+    cpc.insert_disc(DSK)
+    cpc.type_text('RUN"RUNNER\n')
+    cpc.run_frames(300)
+    assert shown(cpc), "REVIVE8B.SCR at &C000"
+    cpc.run_frames(100)
+    assert shown(cpc), "still waiting"
+    cpc.key_down(cpcmod.KEY_SPACE)
+    cpc.run_frames(10)
+    cpc.key_up(cpcmod.KEY_SPACE)
+    cpc.run_frames(75)
+    assert not shown(cpc), "SPACE: on to the game"
+
+
 def test_run_runner_starts_the_game_too():
     """RUNNER.BAS on the disc: RUN"RUNNER does RUN"DISC."""
     sym = load_symbols()
-    cpc = boot_game(menu=True, command='RUN"RUNNER')
+    cpc = boot_game(menu=True, command='RUN"RUNNER', max_frames=2500)   # after the 10 s splash
     assert peek8(cpc, sym["game_mode"]) == 2

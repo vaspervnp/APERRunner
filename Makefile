@@ -1,6 +1,6 @@
 # Runner A.P.E.R - build
 #   make        -> build/runner.dsk
-#   make run    -> Caprice32 (snap) with auto RUN"DISC
+#   make run    -> Caprice32 (snap) with auto RUN"RUNNER (splash, then the game)
 #   make test   -> headless tests with ~/cpcemu
 #   make DEBUG=1 -> border colours show raster time per routine
 #   make gfx    -> palette, graphics and track chunks (src/data/) from gfx/png
@@ -81,7 +81,7 @@ $(BUILD)/debug-$(DEBUG): | $(BUILD)
 	rm -f $(BUILD)/debug-*
 	touch $@
 
-$(DSK): $(BIN) $(BANKS) $(LDR) $(LOADER) src/runner.bas
+$(DSK): $(BIN) $(BANKS) $(LDR) $(LOADER) src/runner.bas assets/revive8b.scr
 	rm -f $@
 	$(IDSK) $@ -n
 	printf 'APR0\r\n\032' > $(BUILD)/scores
@@ -90,6 +90,8 @@ $(DSK): $(BIN) $(BANKS) $(LDR) $(LOADER) src/runner.bas
 	$(IDSK) $@ -i $(BUILD)/disc -t 0
 	cp src/runner.bas $(BUILD)/runner
 	$(IDSK) $@ -i $(BUILD)/runner -t 0
+	cp assets/revive8b.scr $(BUILD)/revive8b.scr
+	$(IDSK) $@ -i $(BUILD)/revive8b.scr -t 1 -c C000
 	$(IDSK) $@ -i $(BUILD)/loader.bin -t 1 -c 8000 -e 8000
 	$(IDSK) $@ -i $(BUILD)/loadscr.bin -t 1 -c 4000
 	$(IDSK) $@ -i $(BIN) -t 1 -c $(LOAD) -e $(LOAD)
@@ -100,7 +102,7 @@ $(DSK): $(BIN) $(BANKS) $(LDR) $(LOADER) src/runner.bas
 
 # The snap launcher forwards only two arguments, so autocmd uses the long form.
 run: $(DSK)
-	$(EMU) '--autocmd=run"disc' $(abspath $(DSK))
+	$(EMU) '--autocmd=run"runner' $(abspath $(DSK))
 
 test: $(DSK)
 	CPCEMU=$(CPCEMU) $(PYTHON) tools/tests/run_tests.py

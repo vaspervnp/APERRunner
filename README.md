@@ -115,7 +115,7 @@ make            # graphics + tracks + assembly -> build/runner.dsk
 ```
 
 ```bash
-make run        # open in Caprice32 with an automatic RUN"DISC
+make run        # open in Caprice32 with an automatic RUN"RUNNER
 ```
 
 ```bash
@@ -136,7 +136,8 @@ By hand:
 caprice32.launcher '--autocmd=run"disc' "$PWD/build/runner.dsk"
 ```
 
-On a real CPC 6128: write `runner.dsk` to a disc (e.g. HxC/Gotek) and type `RUN"RUNNER` (or `RUN"DISC`).
+On a real CPC 6128: write `runner.dsk` to a disc (e.g. HxC/Gotek) and type `RUN"RUNNER`: the REVIVE8BIT screen
+(`assets/revive8b.scr`) first, then the game after SPACE or 10 seconds. `RUN"DISC` goes straight to the game.
 128K is required (the graphics, the sound and the texts live in banks C4–C7).
 
 ## Layout

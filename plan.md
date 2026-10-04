@@ -560,6 +560,8 @@ APERRunner/
   χειρισμοί, δυσκολία, ύψη, power-ups με διάρκειες, εμπόδια, σκορ, συμβουλές) → `tools/mkdocs.py` (`make docs`: μικρό
   Markdown → HTML με στυλ εποχής → PDF A5 από headless Edge/Chromium). Εξώφυλλο δισκέτας `docs/cover/cover.html`
   (πίσω, ράχη, μπρος· 235×145 mm) → `cover.pdf`, `cover.png`, `front.png`. Στο μενού: «REVIVE8BIT-2026-VASPER».
+- [x] **11.4** Οθόνη REVIVE8BIT στο `RUNNER.BAS`: inks μαύρα, `LOAD"REVIVE8B.SCR",&C000` (`assets/revive8b.scr`), inks του
+  `assets/revive8b.txt`, μετά `RUN"DISC` με SPACE ή σε 10 s (`TIME`). Το `RUN"DISC` πάει κατευθείαν στο παιχνίδι.
 - [ ] Ανοιχτά για την έκδοση: έλεγχος σε 6128+ (10.4).
 - [ ] **11.2** Μελλοντικά: καμπύλες γραμμών, κινούμενα τρένα (αντίθετη φορά), διακλαδώσεις, κινούμενη κίνηση στη λεωφόρο, νυχτερινό περιβάλλον, σταθμοί (Πειραιάς, Φάληρο, Μοναστηράκι, Κηφισιά).
 
