@@ -76,6 +76,18 @@ def test_powerups_start_and_expire():
         assert counters(sc)[item] == 0, item
 
 
+def test_power_up_on_a_roof_is_taken_from_the_roof():
+    """A power-up on a wagon roof: up the ramp, along the roof, taken."""
+    sc = tc.Scenario(speed=4, pickups=True)
+    sc.plant_lane(0, 1, tc.ramp_up() + [tc.COL_TRAIN] * 24 + tc.ramp_down())
+    sc.plant_item(16, 1, TURBO)
+    sc.go()
+    states = sc.past(sc.base_row + 18)
+    assert all(st["crashes"] == 0 for st in states)
+    assert max(st["base"] for st in states) == 2, "on the roof"
+    assert counters(sc)[TURBO] > 0, "taken on the roof"
+
+
 def test_turbo_and_slow_change_the_speed():
     sc = tc.Scenario(speed=4, pickups=True)
     sc.plant_item(2, 1, TURBO)

@@ -57,6 +57,44 @@ def _check_desc(desc, row):
     assert all(i <= 7 for i in desc["items"]), f"row {row}: items {desc}"
 
 
+def test_trains_vary_in_lane_livery_and_length():
+    """Every chunk gets a random lane order and livery: over a long run the
+    trains turn up in all three lanes, in all three liveries, 2-4 wagons long."""
+    import sys
+    import os
+    from collections import Counter
+    from harness import ROOT
+    sys.path.insert(0, os.path.join(ROOT, "tools"))
+    import assets
+    names = assets.TRACK_TILES
+    sym = load_symbols()
+    cpc = boot_game()
+    cpc.write_ram(sym["scroll_speed"], bytes([6]))
+    seen = {}
+    for _ in range(4000):
+        sync_game_frame(cpc, sym)
+        top = peek16(cpc, sym["scr_top_row"])
+        for r in range(top - 20, top):
+            if r not in seen:
+                seen[r] = read_desc(cpc, sym, r)["lanes"]
+    lanes, liveries, lengths = Counter(), Counter(), Counter()
+    for lane in range(3):
+        run = 0
+        for r in sorted(seen):
+            name = names[seen[r][lane]] if seen[r][lane] < len(names) else ""
+            if name.startswith(("wagon", "loco")):
+                lanes[lane] += 1
+                liveries[name[4] if name.startswith("loco") else name[5]] += 1
+                run += name.endswith("coupler")
+            elif run:
+                lengths[run] += 1
+                run = 0
+    print(f"    train rows by lane {dict(lanes)}, by livery {dict(liveries)}, wagons {dict(lengths)}")
+    assert all(lanes[lane] > 0.15 * sum(lanes.values()) for lane in range(3)), lanes
+    assert all(liveries[t] > 0.15 * sum(liveries.values()) for t in "123"), liveries
+    assert {2, 3, 4} <= set(lengths), lengths
+
+
 def test_rows_on_screen_match_their_descriptors():
     sym = load_symbols()
     sheets = Sheets()
@@ -110,7 +148,8 @@ def test_five_minute_flight():
 def test_power_ups_one_every_50_to_150_rows_turbo_most():
     """The generator places the power-ups (chunks hold coins only): one at a
     time, 50-150 rows apart, never close to an obstacle (8 clear rows ahead
-    and behind in its lane), turbo ~30%, the other five sharing the rest."""
+    and behind in its lane; on a roof the train goes on 8 rows both ways),
+    turbo ~30%, the other five sharing the rest."""
     from collections import Counter
     sym = load_symbols()
     cpc = boot_game()
@@ -126,19 +165,27 @@ def test_power_ups_one_every_50_to_150_rows_turbo_most():
                 seen[r] = [x for x in desc[3:] if x > 1]
                 lanes[r] = [lane for lane in range(3) if desc[3 + lane] > 1]
     rows = sorted(r for r, items in seen.items() if items)
-    for r in rows:                              # 8 rows without an obstacle ahead
+    roofs = 0
+    for r in rows:                              # 8 rows without an obstacle around it
         lane = lanes[r][0]
         near = [coll[r + k][lane] for k in range(-8, 9) if k and r + k in coll]
-        assert all(c in (0, 5, 6) for c in near), (r, lane, near)
+        if coll[r][lane] == 3:                  # on a wagon roof: the train goes on
+            roofs += 1
+            assert coll.get(r + 1, [3] * 3)[lane] == 3, (r, lane, "over a coupler")
+            assert all(c in (3, 5, 6, 7) for c in near), (r, lane, near)
+        else:
+            assert all(c in (0, 5, 6) for c in near), (r, lane, near)
     kinds = Counter(seen[r][0] for r in rows)
     gaps = [b - a for a, b in zip(rows, rows[1:])]
-    print(f"    {len(rows)} power-ups in {len(seen)} rows, gaps {min(gaps)}-{max(gaps)}, kinds {dict(kinds)}")
+    print(f"    {len(rows)} power-ups in {len(seen)} rows ({roofs} on roofs), gaps {min(gaps)}-{max(gaps)}, "
+          f"kinds {dict(kinds)}")
+    assert roofs >= 2, "power-ups on the train roofs too"
     assert all(len(items) <= 1 for items in seen.values()), "one power-up at a time"
     assert all(50 <= g <= 200 for g in gaps), gaps          # no safe spot: a little later
     assert sum(g <= 151 for g in gaps) >= 0.9 * len(gaps), gaps
     assert set(kinds) == {2, 3, 4, 5, 6, 7}, "every kind turns up"
     assert kinds.most_common(1)[0][0] == 3, "turbo is the most common"
-    assert 0.2 <= kinds[3] / len(rows) <= 0.4
+    assert 0.18 <= kinds[3] / len(rows) <= 0.45            # 30% of ~50 samples
 
 
 def _obstacle_share(skill, rows_wanted=1600):

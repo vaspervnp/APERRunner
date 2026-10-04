@@ -163,8 +163,11 @@ def convert(asset):
         pen = assets.PANEL_PEN if kind == "panel" else 0
         entries = [(name, [[pen if p is None else p for p in row] for row in rows])
                    for name, rows in entries]
-    encoded = [(name, tile_bytes(name, rows) if kind in ("tile", "panel", "tile0") else sprite_bytes(rows), rows)
-               for name, rows in entries]
+    if kind == "header":                       # drawn by compiled code: the size only
+        encoded = [(name, [len(rows[0]) // 2, len(rows)], rows) for name, rows in entries]
+    else:
+        encoded = [(name, tile_bytes(name, rows) if kind in ("tile", "panel", "tile0") else sprite_bytes(rows), rows)
+                   for name, rows in entries]
     return kind, encoded
 
 

@@ -12,6 +12,8 @@ An asset converts frames of a sheet into src/data/gfx_<asset>.asm:
   kind "tile0"  - the same with black (pen 0): text on the menu screens
   kind "compiled" - masked sprite as code (see png2cpc.compiled_source):
                   saves the background and draws, no data reads
+  kind "header" - width (bytes) and height only, for sprites drawn by
+                  their compiled code
   mirror        - also emit horizontally mirrored copies (<frame>_m)
 """
 
@@ -92,7 +94,7 @@ ASSETS = {
     "forest": ("forest", "tile", None, True),
     "forest_ov": ("forest_ov", "sprite", None, False),
     "bridges": ("bridges", "tile", None, False),
-    "player": ("player", "sprite", None, False),
+    "player": ("player", "header", None, False),        # width, height (drawn by player_code)
     "shadows": ("shadows", "sprite", None, False),
     "items": ("items", "sprite", None, False),
     "hud_bg": ("hud", "tile", ["hud_bg"], False),

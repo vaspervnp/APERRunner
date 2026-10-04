@@ -135,7 +135,8 @@ The track takes up three quarters of the screen. The panel on the right shows:
 
 ## Power-ups
 
-A power-up turns up every 50 to 150 rows, never right in front of an obstacle. When you take one, its name appears in
+A power-up turns up every 50 to 150 rows, never right in front of an obstacle. Some sit on the train roofs:
+take the ramp to reach them. When you take one, its name appears in
 the middle of the screen.
 
 ![A power-up](screenshots/09_power_up.png)

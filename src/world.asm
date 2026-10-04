@@ -289,44 +289,13 @@ generate_row:
 .spacer:        ld (spacer_left),a
                 ; fall through
 
-; --- next row of the current chunk (bank C5) ------------------------------------
+; --- next row of the current chunk (src/chunk_pick.asm, bank C5) ------------------
 chunk_row:
                 MAP_RAM GA_RAM_C5
-                ld hl,(chunk_ptr)
-                xor a
-                ld (.lane_no),a
-.lane:          ld a,(.lane_no)
-                ld e,a
-                ld d,0
-                push ix
-                pop iy
-                add iy,de
-                ld a,(hl)                   ; tile
-                ld (iy+D_LANES),a
-                inc hl
-                ld a,(hl)                   ; collision
-                ld (iy+D_COLL),a
-                inc hl
-                ld a,(hl)                   ; item
-                ld (iy+D_ITEM),a
-                inc hl
-                or a
-                jr z,.next_lane
-                push hl
-                call spawn_item
-                pop hl
-.next_lane:     ld a,(.lane_no)
-                inc a
-                ld (.lane_no),a
-                cp 3
-                jr nz,.lane
-                call place_powerup
-                ld (chunk_ptr),hl
-                ld hl,chunk_left
-                dec (hl)
+                call chunk_row_c5
                 MAP_RAM GA_RAM_C0
                 ret
-.lane_no:       defb 0
+row_lane:       defb 0                      ; lane of the cell being placed
 
 ; --- empty track between chunks --------------------------------------------------
 spacer_row:
@@ -346,7 +315,10 @@ spacer_row:
                 ret c
                 ld c,3
                 call random_below
-                ld (chunk_row.lane_no),a
+                ld (row_lane),a
+                xor a                       ; (on the ground)
+                ld (pu_roof),a
+                ld a,(row_lane)
                 call clear_behind           ; and none in the rows behind
                 ret nz
                 ld e,a
@@ -377,87 +349,10 @@ spacer_step:
                 ret
 spacer_steps:   defb 64,40,24               ; rows per step: easy, medium, hard
 
-; -----------------------------------------------------------------------------
-; place_powerup: when pu_gap is 0, a power-up on a free lane of this row
-; (IX = descriptor, HL = the chunk's next row, bank C5): plain rail and no
-; item here and on the next row (it covers 2 rows), no obstacle in the
-; PU_CLEAR rows ahead of it nor in the PU_CLEAR rows behind it (rail or
-; ramps). Turbo PU_TURBO_ODDS/256,
-; the other five share the rest. Then 50-150 rows to the next one.
-; Preserves HL.
-; -----------------------------------------------------------------------------
 PU_GAP_MIN      equ 50
 PU_GAP_RANGE    equ 70                      ; 50-120 rows, ~50-150 with the wait
 PU_CLEAR        equ 8                       ; rows ahead and behind without an obstacle
 PU_TURBO_ODDS   equ 77                      ; 30%
-
-place_powerup:
-                ld de,(pu_gap)
-                ld a,d
-                or e
-                ret nz
-                ld a,(chunk_left)           ; rows ahead in this chunk, then the
-                dec a                       ; empty ones after it: PU_CLEAR
-                ret z
-                ld c,a
-                ld a,(spacer_len)
-                add a,c
-                cp PU_CLEAR
-                ret c
-                ld a,c                      ; the chunk rows to check
-                cp PU_CLEAR
-                jr c,.rows
-                ld a,PU_CLEAR
-.rows:          ld (.check),a
-                push hl
-                ld c,3
-                call random_below
-                ld b,3                      ; B = lanes to try from lane A
-.try:           ld (chunk_row.lane_no),a
-                ld e,a
-                ld d,0
-                push ix
-                pop iy
-                add iy,de                   ; this row
-                ld a,(iy+D_COLL)
-                or (iy+D_ITEM)
-                jr nz,.next
-                ld a,e                      ; the rows behind
-                call clear_behind
-                jr nz,.next
-                pop hl
-                push hl
-                add hl,de                   ; next row: lane * 3 + collision
-                add hl,de
-                add hl,de
-                inc hl
-                inc hl
-                ld a,(hl)                   ; no item next to it (2 rows)
-                dec hl
-                or a
-                jr nz,.next
-                ld a,(.check)               ; and no obstacle in the rows ahead
-                ld c,a
-.ahead:         ld a,(hl)
-                call obstacle
-                jr nz,.next
-                ld a,9                      ; the row above in the chunk
-                call add_a_hl
-                dec c
-                jr nz,.ahead
-                jr .found
-.next:          ld a,(chunk_row.lane_no)
-                inc a
-                cp 3
-                jr c,.lane_ok
-                xor a
-.lane_ok:       djnz .try
-                pop hl
-                ret                         ; none free: try the next row
-.found:         call put_powerup
-                pop hl
-                ret
-.check:         defb 0
 
 ; A = lane: Z if none of the PU_CLEAR rows below gen_row has an obstacle
 ; there. Preserves A, BC, DE, HL.
@@ -485,20 +380,33 @@ clear_behind:
                 pop hl
                 ret
 
-; A = collision byte: Z if the runner passes on the ground (rail, ramps)
+; A = collision byte: Z if it keeps a power-up spot clear. On the ground
+; (pu_roof 0): rail and ramps. On a roof: the train (wagons, couplers, ramps).
 obstacle:
                 and 15
+                push bc
+                ld b,a
+                ld a,(pu_roof)
+                or a
+                ld a,b
+                pop bc
+                jr nz,.roof
+                or a
                 ret z
                 cp COL_GAP
                 jr z,.yes
-                cp COL_RAMP_UP
+.ramps:         cp COL_RAMP_UP
                 jr c,.yes                   ; 1-4: stop, signal, train, nose
-                xor a                       ; ramps
+                xor a                       ; ramps (and couplers on a roof)
                 ret
-.yes:           or a                        ; NZ
+.roof:          cp COL_TRAIN
+                ret z
+                jr .ramps                   ; 0-4: off the train
+.yes:           or #80                      ; NZ
                 ret
+pu_roof:        defb 0                      ; the power-up spot being checked
 
-; IY = descriptor + lane, (chunk_row.lane_no) = lane: a power-up there
+; IY = descriptor + lane, (row_lane) = lane: a power-up there
 put_powerup:
                 call random                 ; the kind
                 cp PU_TURBO_ODDS
@@ -522,10 +430,10 @@ put_powerup:
                 ret
 pu_kinds:       defb ITEM_MAGNET,ITEM_SLOW,ITEM_SPRING,ITEM_HELMET,ITEM_TICKET
 
-; A = item, (chunk_row.lane_no) = lane: registers the item overlay
+; A = item, (row_lane) = lane: registers the item overlay
 spawn_item:
                 ld c,a
-                ld a,(chunk_row.lane_no)
+                ld a,(row_lane)
                 ld b,a
                 add a,a                     ; lane * 14
                 add a,b

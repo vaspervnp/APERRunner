@@ -68,7 +68,8 @@ without taking them. Obstacles get denser the longer you run. You have **3 lives
 
 ### Pick-ups
 
-One power-up every 50–150 rows, always with 8 clear rows around it; its name is written on the track.
+One power-up every 50–150 rows, always with 8 clear rows around it (some on the train roofs, reached by the ramps);
+its name is written on the track.
 
 | Item | Effect |
 |---|---|
