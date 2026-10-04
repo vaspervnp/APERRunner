@@ -8,7 +8,8 @@
 ; Loading screen: LOADSCR.BIN (ZX0) unpacked to &C000, a full-width picture
 ; of 21 char rows (96-byte lines: CRTC R1 = 48), centred vertically.
 ; Memory: loader &8000-&97FF, AMSDOS buffer &9800-&9FFF, files load at &4000
-; (base RAM or the bank mapped there).
+; (base RAM or the bank mapped there). SCORES (the saved high scores, a text
+; file in sector #C5 of track 0) is read to &7F00 for the game.
 ; =============================================================================
 
 SCR_SET_MODE    equ #BC0E
@@ -17,6 +18,9 @@ SCR_SET_BORDER  equ #BC38
 CAS_IN_OPEN     equ #BC77
 CAS_IN_CLOSE    equ #BC7A
 CAS_IN_DIRECT   equ #BC83
+CAS_IN_CHAR     equ #BC80
+SCORES_LOAD     equ #7F00               ; SCORES (high scores) for the game
+SCORES_SIZE     equ 4+48                ; "APER" + the table
 GA_PORT         equ #7F
 FILE_BUFFER     equ #9800
 LOAD_AT         equ #4000
@@ -80,7 +84,25 @@ loader:
                 jr .bank
 .game:          ld bc,GA_PORT*256+#C0
                 out (c),c
-                ld hl,name_game
+                ld hl,name_scores           ; the saved high scores (text file:
+                ld b,(hl)                   ; read char by char)
+                inc hl
+                ld de,FILE_BUFFER
+                call CAS_IN_OPEN
+                jr nc,.no_scores
+                ld hl,SCORES_LOAD
+                ld b,SCORES_SIZE
+.score_byte:    push bc
+                push hl
+                call CAS_IN_CHAR
+                pop hl
+                pop bc
+                jr nc,.scores_read
+                ld (hl),a
+                inc hl
+                djnz .score_byte
+.scores_read:   call CAS_IN_CLOSE
+.no_scores:     ld hl,name_game
                 call load_file
                 jp LOAD_AT                  ; boot stub: moves the code, firmware off
 
@@ -122,6 +144,8 @@ banks:          defb #C4,10
                 defb #C7,10
                 defm "APERB7.BIN"
                 defb 0
+name_scores:    defb 6
+                defm "SCORES"
 name_game:      defb 8
                 defm "APER.BIN"
 loader_end:

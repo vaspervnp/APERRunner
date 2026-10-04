@@ -67,6 +67,8 @@ $(BUILD)/debug-$(DEBUG): | $(BUILD)
 $(DSK): $(BIN) $(BANKS) $(LDR) $(LOADER) src/runner.bas
 	rm -f $@
 	$(IDSK) $@ -n
+	printf 'APR0\r\n\032' > $(BUILD)/scores
+	$(IDSK) $@ -i $(BUILD)/scores -t 0
 	cp $(LOADER) $(BUILD)/disc
 	$(IDSK) $@ -i $(BUILD)/disc -t 0
 	cp src/runner.bas $(BUILD)/runner

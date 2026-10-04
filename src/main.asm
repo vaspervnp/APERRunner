@@ -48,6 +48,7 @@ macro BORDER colour
 mend
 
 FILE_ADDR       equ #4000           ; where DISC loads APER.BIN
+SCORES_LOAD     equ #7F00           ; the loader puts SCORES (high scores) here
 
                 org FILE_ADDR
 boot_stub:
@@ -63,7 +64,19 @@ BOOT_STUB_SIZE  equ $-boot_stub
 start:
                 di
                 ld sp,STACK_TOP
-                call crtc_init
+                ld hl,SCORES_LOAD           ; high scores saved on the disc
+                ld de,score_magic           ; (the loader read them there)
+                ld b,4
+.magic:         ld a,(de)
+                cp (hl)
+                jr nz,.no_scores
+                inc hl
+                inc de
+                djnz .magic
+                ld de,hiscore_table
+                ld bc,HISCORES*HS_SIZE
+                ldir
+.no_scores:     call crtc_init
                 ld hl,game_palette
                 call set_palette
                 ld hl,blank_line            ; (below the code: not loaded)
@@ -244,6 +257,7 @@ paused:         defb 0
 
 end_of_code:
                 assert end_of_code <= #4000
+                assert FILE_ADDR+BOOT_STUB_SIZE+end_of_code-LOAD_ADDR <= SCORES_LOAD
                 assert blank_line+72 <= WORLD_RING
                 assert HUD_BUF_END <= #0D00
                 save "build/aper.bin",FILE_ADDR,BOOT_STUB_SIZE+end_of_code-LOAD_ADDR
@@ -301,6 +315,7 @@ bank7_start:
                 include "data/gfx_logo.asm"
                 include "data/text.asm"
                 include "sound.asm"
+                include "scores_save.asm"
                 include "data/music.asm"
 bank7_end:
                 assert bank7_end <= #8000

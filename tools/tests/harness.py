@@ -30,7 +30,7 @@ def load_symbols(path=SYM):
 
 
 def boot_game(max_frames=1500, collisions=False, pickups=False, menu=False, command='RUN"DISC',
-              crtc=None):
+              crtc=None, disc=DSK):
     """Cold-boots a 6128, inserts build/runner.dsk, RUN"DISC (the loader shows
     the loading screen, loads the banks and the game) and waits until the game's main loop is running, then
     starts a game from the menu (unless `menu`).
@@ -42,7 +42,7 @@ def boot_game(max_frames=1500, collisions=False, pickups=False, menu=False, comm
     if crtc is not None:            # CRTC type 0, 1 (default) or 2
         cpc.crtc_type = crtc
     cpc.run_frames(BOOT_FRAMES)
-    cpc.insert_disc(DSK)
+    cpc.insert_disc(disc)
     cpc.type_text(command + "\n")
     for _ in range(max_frames // 25):
         cpc.run_frames(25)

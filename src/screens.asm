@@ -401,6 +401,7 @@ over_frame:
                 cp NAME_LETTERS
                 jp nz,draw_name
                 call insert_score           ; name done
+                call save_scores
                 ld hl,(txt_over_continue)
                 ld c,OVER_CONT_Y
                 jp draw_text_centred
@@ -771,6 +772,16 @@ score_rank:
                 cp HISCORES
                 jr nz,.entry
                 ret
+
+; the table to the disc (src/scores_save.asm, bank C7)
+save_scores:
+                MAP_RAM GA_RAM_C7
+                call save_scores_c7
+                MAP_RAM GA_RAM_C0
+                ld a,(vbl_tick)             ; (the drive's wait: not missed frames)
+                ld (last_tick),a
+                ret
+score_magic:    defm "APER"                 ; SCORES starts with it once saved
 
 ; puts score + name_buf at over_rank, moving the ones below down
 insert_score:
