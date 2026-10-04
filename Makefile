@@ -30,7 +30,7 @@ LOADER  := src/disc.bas
 SYM     := $(BUILD)/aper.sym
 DSK     := $(BUILD)/runner.dsk
 
-.PHONY: all run test clean gfx placeholders
+.PHONY: all run test clean gfx placeholders screenshots
 
 all: $(DSK)
 
@@ -88,3 +88,6 @@ test: $(DSK)
 
 clean:
 	rm -rf $(BUILD) src/data
+
+screenshots: $(DSK)
+	CPCEMU=$(CPCEMU) $(PYTHON) tools/screenshots.py
