@@ -119,6 +119,7 @@ main_loop:
                 call player_restore
                 call game_state_update
                 jr nz,.not_playing
+                call move_trains            ; before collide: it sees them where they are
                 call player_update
                 call collide
                 ld a,(game_state)
@@ -273,7 +274,7 @@ bank4_start:
                 include "data/gfx_forest.asm"
                 include "data/gfx_bridges.asm"
                 include "data/gfx_hud_bg.asm"
-                include "data/gfx_hud_icons.asm"    ; (hud_prepare maps C4)
+                include "trains.asm"                ; moving trains (code)
 bank4_end:
                 assert bank4_end <= #8000
                 save "build/aperb4.bin",bank4_start,bank4_end-bank4_start
@@ -316,6 +317,7 @@ bank7_start:
                 include "data/gfx_logo.asm"
                 include "data/text.asm"
                 include "sound.asm"
+                include "data/gfx_hud_icons.asm"    ; (hud_prepare maps C7)
                 include "scores_save.asm"
                 include "data/music.asm"
 bank7_end:

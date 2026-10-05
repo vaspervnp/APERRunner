@@ -37,7 +37,9 @@ cell_at:
                 ld l,a
                 jr nc,.nc
                 inc h
-.nc:            srl h
+.nc:            and 7                       ; (the line in the row)
+                ld (.y),a
+                srl h
                 rr l
                 srl l
                 srl l
@@ -46,7 +48,45 @@ cell_at:
                 or a
                 sbc hl,de
                 ld (probe_row),hl
-                call desc_addr
+                ld a,(train_on)             ; the moving train's lane?
+                or a
+                jr z,.desc
+                ld a,(train_lane)
+                cp c
+                jr nz,.desc
+                push hl
+                add hl,hl                   ; world line: row * 8 + 7 - y
+                add hl,hl
+                add hl,hl
+                ld a,(.y)
+                cpl
+                and 7
+                call add_a_hl
+                ld de,(train_lo)
+                or a
+                sbc hl,de
+                jr c,.off                   ; below it
+                ld a,h                      ; its cab coming at the runner
+                or a
+                jr nz,.body
+                ld a,l
+                cp 8
+                jr nc,.body
+                ld a,c
+                cp 2
+                ld a,COL_NOSE
+                jr z,.on
+.body:          add hl,de
+                ld de,(train_hi)
+                or a
+                sbc hl,de
+                jr nc,.off                  ; above it
+                ld a,COL_TRAIN
+.on:            pop hl
+                ld b,0
+                ret
+.off:           pop hl
+.desc:          call desc_addr
                 ld a,D_COLL
                 add a,c
                 call add_a_hl
@@ -58,6 +98,7 @@ cell_at:
                 srl b
                 and 15
                 ret
+.y:             defb 0
 
 ; A = class, B = ramp row -> A = support level S
 support_level:

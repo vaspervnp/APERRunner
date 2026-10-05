@@ -23,7 +23,7 @@ from the ramps and watch out for red signals, from the city avenue all the way t
 ## Features
 
 - **Mode 0, 192×272 overscan**, 16 colours, smooth **vertical hardware scroll** (line by line), steady picture edges.
-- A steady **25 fps**, with no dropped frames even at top speed.
+- A steady **25 fps**: practically no dropped frames, even at top speed.
 - **3 difficulty levels**: EASY / MEDIUM / HARD (speed 4 / 5 / 6 lines per frame; on HARD you also jump the gaps
   between wagons). Obstacles start sparse and get denser over time, faster on the harder levels.
 - **Side HUD** (1/4 of the screen) like a train's dashboard: score and best score, coins and lives, the route
@@ -32,6 +32,8 @@ from the ramps and watch out for red signals, from the city avenue all the way t
 - **Stations**: Corinth, Megara, Elefsina, Aspropyrgos, Rentis, Piraeus. Their names appear on the track as you pass
   them; Piraeus gives 1000 points and the route starts again.
 - **3 railway tracks** with trains (3 wagon types, 3 locomotive types), ramps, buffer stops and signals.
+- **Moving trains**: on the right track they come towards you, on the left one they run ahead of you, slower; the
+  middle track's trains stand still (EASY: none move, MEDIUM: only the left track, HARD: both).
 - **5 height levels**: the runner "grows" the higher he is, from the ground up to the highest jump above a train roof.
 - **Environments**: city (a 3+3 lane avenue with cars, buses and kiosks) and forest, with **footbridges** and
   **road bridges** overhead.
@@ -92,6 +94,8 @@ its name is written on the track.
 | Wagon | Change lane, climb a ramp or jump with the super jump |
 | Gap between wagons | HARD only: jump it while running on the roofs |
 | Locomotive (front) | Never meet one head-on at ground level! |
+| Oncoming train (right track) | Get out of its way: it comes at you faster than the track |
+| Train ahead (left track) | Runs the same way, slower: you catch up with its back end |
 | Ramp | Takes you up onto the roof / back down |
 | Buffer stop | Jump or change lane |
 | Signal | Green: go on. Red: change lane |

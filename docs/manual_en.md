@@ -100,9 +100,9 @@ pass overhead. The longer you run, the more crowded the tracks get.
 
 | Level | Speed | Special |
 |---|---|---|
-| EASY | normal | Obstacles get denser slowly |
-| MEDIUM | about 20% faster | Obstacles get denser faster |
-| HARD | faster still | You must **jump the gaps between wagons** when you run on the roofs |
+| EASY | normal | Obstacles get denser slowly; trains stand still |
+| MEDIUM | about 20% faster | Obstacles get denser faster; trains move on the left track |
+| HARD | faster still | Trains move on both side tracks, and you must **jump the gaps between wagons** when you run on the roofs |
 
 ### Heights
 
@@ -168,6 +168,8 @@ TURBO and SLOW cancel each other.
 | Wagon | Change lane, run up a ramp, or use the SUPER JUMP |
 | Gap between wagons | On HARD only: jump it when you run on the roofs |
 | Locomotive | Don't meet one head-on at ground level! |
+| Oncoming train | On the right track (HARD): it comes at you faster than the track; get out of its way |
+| Train ahead | On the left track (MEDIUM and HARD): it runs your way, slower, and you catch up with its back end |
 | Ramp | Takes you up onto the roof; the end of the train takes you back down |
 | Buffer stop | Jump it or change lane |
 | Signal | Green: go on. Red: change lane, fast |

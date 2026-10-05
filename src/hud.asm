@@ -13,7 +13,7 @@
 ; previous game frame (hud_prepare), so the start of a frame only copies.
 ;
 ; Elements sit on the flat panel (bytes HUD_PANEL_FIRST..HUD_PANEL_LAST,
-; pen 1); the glyphs (tools/assets.py "panel" kind, bank C4) are opaque with
+; pen 1); the glyphs (tools/assets.py "panel" kind, bank C7) are opaque with
 ; that colour, so a slot never reads the screen.
 ;
 ; Layout: SC score, HI best score (or this one when higher), coins and lives,
@@ -256,7 +256,7 @@ hud_prepare:
                 or a                        ; next light one (speed < 8: there is
                 ret nz                      ; one at least every 4 frames)
                 call pu_scan                ; power-up cells for both slots
-                MAP_RAM GA_RAM_C4           ; (the glyphs)
+                MAP_RAM GA_RAM_C7           ; (the glyphs)
                 call .slots
                 MAP_RAM GA_RAM_C0
                 ret

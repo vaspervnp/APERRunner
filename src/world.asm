@@ -428,8 +428,17 @@ obstacle:
                 ret
 pu_roof:        defb 0                      ; the power-up spot being checked
 
-; IY = descriptor + lane, (row_lane) = lane: a power-up there
+; IY = descriptor + lane, (row_lane) = lane: a power-up there (not on the
+; track of the moving train: it would run it over)
 put_powerup:
+                ld a,(train_on)
+                or a
+                jr z,.free
+                ld a,(train_lane)
+                ld hl,row_lane
+                cp (hl)
+                ret z
+.free:
                 call random                 ; the kind
                 cp PU_TURBO_ODDS
                 ld a,ITEM_TURBO
@@ -1003,6 +1012,8 @@ render_row:
 
                 MAP_RAM GA_RAM_C5
                 call draw_overlays
+                MAP_RAM GA_RAM_C4           ; a moving train over it all
+                call train_render
                 MAP_RAM GA_RAM_C0
                 ret
 
@@ -1158,6 +1169,13 @@ draw_overlay_slice:
 .src:           defw 0
 
 ; --- generator state (cleared by world_init) ---------------------------------------
+; a game frame of the moving train (src/trains.asm, bank C4)
+move_trains:
+                MAP_RAM GA_RAM_C4
+                call move_trains_c4
+                MAP_RAM GA_RAM_C0
+                ret
+
 ; -----------------------------------------------------------------------------
 ; stations: once a game frame. When the runner reaches a station row its
 ; name is written on the track (and the bell rings); Piraeus gives 1000
@@ -1230,6 +1248,15 @@ kiosk_countdown: defb 0,0
 kiosk_phase:    defb 0,0
 path_left:      defb 0,0
 fence_left:     defb 0,0
+train_on:       defb 0                  ; a moving train (src/trains.asm)
+train_lane:     defb 0                  ; 0: goes on ahead, 2: comes at the runner
+train_lo:       defw 0                  ; its world lines [lo, hi)
+train_hi:       defw 0
+train_stop:     defw 0                  ; how far it may go (lowest lo / highest hi)
+train_anchor:   defw 0                  ; its first row (where its wagons are)
+train_livery:   defb 0
+train_left:     defb 0                  ; rows of it its chunk still has to come
+train_movable:  defb 0                  ; the chunk's trains may move
 route_left:     defw 0                  ; rows to the next station
 route_station:  defb 0                  ; stations passed on this lap (0-5)
 busy_counters:
