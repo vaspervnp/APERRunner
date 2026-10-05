@@ -320,6 +320,8 @@ bank7_start:
                 include "sound.asm"
                 include "data/gfx_hud_icons.asm"    ; (hud_prepare maps C7)
                 include "hud_slots.asm"
+                include "data/gfx_urban_ov_code.asm"    ; (render_row: overlays)
+                include "data/gfx_forest_ov_code.asm"
                 include "scores_save.asm"
                 include "data/music.asm"
 bank7_end:

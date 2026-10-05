@@ -827,7 +827,7 @@ forest_sides:
 ; overlays in the row (items too) would grow wider than SCENERY_W_MAX bytes:
 ; render_row draws them all with the new row, in a coarse step.
 ; -----------------------------------------------------------------------------
-SCENERY_W_MAX   equ 12
+SCENERY_W_MAX   equ 20
 
 add_scenery:
                 push af
@@ -1009,8 +1009,48 @@ draw_overlays:
                 ret
 .above:         defb 0
 
-; IY = overlay, (draw_overlays.above) = rows above this row inside it
+; IY = overlay, (draw_overlays.above) = rows above this row inside it.
+; Bank C5 mapped. An overlay with code (its sprite's prefix, src/data/
+; gfx_*_ov_code.asm in C7): that slice's routine, unless the row crosses a
+; plane end; else the masked pairs.
 draw_overlay_slice:
+                ld l,(iy+OV_SPRITE)
+                ld h,(iy+OV_SPRITE+1)
+                dec hl
+                ld a,(hl)
+                dec hl
+                ld l,(hl)
+                ld h,a                      ; HL = its slices (bank C7), 0: none
+                or l
+                jr z,.masked
+                push hl
+                ld de,(render_row.dest)
+                ld a,(iy+OV_COLUMN)
+                call ring_column
+                ld a,(iy+OV_WIDTH)
+                ld c,a
+                ex de,hl                    ; HL = plane 0 address
+                call ring_fits
+                pop de
+                jr nz,.masked
+                ld a,(draw_overlays.above)  ; DE = its slice's entry
+                add a,a
+                add a,e
+                ld e,a
+                jr nc,.slice
+                inc d
+.slice:         MAP_RAM GA_RAM_C7
+                ex de,hl
+                ld a,(hl)
+                inc hl
+                ld h,(hl)
+                ld l,a
+                ld (.code+1),hl
+                ex de,hl
+.code:          call 0                      ; SMC
+                MAP_RAM GA_RAM_C5
+                ret
+.masked:
                 ld l,(iy+OV_SPRITE)
                 ld h,(iy+OV_SPRITE+1)
                 ld a,(hl)

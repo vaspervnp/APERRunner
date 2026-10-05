@@ -14,6 +14,10 @@ An asset converts frames of a sheet into src/data/gfx_<asset>.asm:
                   saves the background and draws, no data reads
   kind "header" - width (bytes) and height only, for sprites drawn by
                   their compiled code
+  kind "slices" - an overlay as code, a routine per char row (see
+                  png2cpc.slices_source); asset <sheet>_code next to the
+                  sprite asset, whose sprites then point at it (a defw
+                  before each sprite, 0 for sprites without code)
   mirror        - also emit horizontally mirrored copies (<frame>_m)
 """
 
@@ -97,6 +101,8 @@ ASSETS = {
     "urban_ov": ("urban_ov", "sprite", None, True),
     "forest": ("forest", "tile", None, True),
     "forest_ov": ("forest_ov", "sprite", None, False),
+    "urban_ov_code": ("urban_ov", "slices", None, True),     # bank C7, render_row
+    "forest_ov_code": ("forest_ov", "slices", None, False),
     "bridges": ("bridges", "tile", None, False),
     "player": ("player", "header", None, False),        # width, height (drawn by player_code)
     "shadows": ("shadows", "sprite", None, False),

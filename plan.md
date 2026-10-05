@@ -350,7 +350,7 @@ APERRunner/
   (Windows, repo στο `\\wsl.localhost\Ubuntu\...`) και γράφει `gfx/src/<sheet>.aseprite` + `gfx/png/<sheet>.png/.json`.
   Λεπτομέρειες στο `gfx/README.md`. Εργαλεία: `tools/preview.py`, `tools/mockup.py`.
   - [x] `track` (36), `urban` (6), `forest` (8), `urban_ov` (6), `forest_ov` (5), `bridges` (11), `player` (23), `shadows` (4), `items` (10), `hud` (12)
-  - [ ] fonts, οθόνες μενού/σκορ (μαζί με Φάσεις 7–8)
+  - [x] fonts, οθόνες μενού/σκορ (μαζί με Φάσεις 7–8)
 - Επιπλέον: `blit_tile`/`ring_put`/`ring_column` (`src/video.asm`) και δοκιμαστικός κόσμος από tiles (`src/testworld.asm`)·
   ο φόρτος στο coarse step έπεσε από 9 σε 7/12.
 - **Αποδοχή** (`make test`, 13/13 ✔): όλα τα sheets από `gfx/png/` (όχι placeholders), κάθετα ομοιόμορφο φόντο HUD, round-trip κωδικοποίησης mode 0, όλα τα assets περνούν τον έλεγχο μεγεθών,
@@ -609,7 +609,7 @@ APERRunner/
   - Γραμμές που περνούν τέλος επιπέδου: κομμένες στο σημείο αυτό και με LDI chain (`copy_row`: τα σημεία μία φορά για
     τα 8 επίπεδα· overlays, HUD)· `next_ring_byte` με `INC L : RET NZ`· `restore_sprite` με LDI chain αντί LDIR.
   - Overlays: unrolled αλυσίδα (mask, data) με είσοδο ανά πλάτος· σκηνικά (αυτοκίνητα, δέντρα) μόνο αν όλα τα overlays
-    της σειράς (και τα items) χωρούν σε `SCENERY_W_MAX` = 12 bytes (`add_scenery`, τρέχον άθροισμα `scenery_width`).
+    της σειράς (και τα items) χωρούν σε `SCENERY_W_MAX` = 20 bytes (`add_scenery`, τρέχον άθροισμα `scenery_width`).
   - HUD: το καθάρισμα κάτω από κάθε ομάδα slots στην ίδια κλήση `hud_blit` (`hb_after`)· `hud_blit` με τρόπο (copy/fill)
     μία φορά ανά κλήση και γρήγορη επόμενη σειρά· οι builders των slots στο C7 (`src/hud_slots.asm`, ~750 bytes κύριας RAM).
   - Γεννήτρια: βάρη chunks ανά περιβάλλον σε cache (ξαναζυγίζονται μόνο όταν αλλάζει η δυσκολία)· `forest_sides`/
@@ -617,8 +617,15 @@ APERRunner/
     `compiled_next_line`: αλλαγή σειράς από τα bits επιπέδου.
   - Αποτέλεσμα (6 seeds): `test_five_minute_flight` 10–11/12, μαγνήτης 400 frames στην ταχύτητα 7 11/12 (easy)· τα
     περισσότερα frames της ταχύτητας 7 ≤ 38,5 ms. Ακόμα: σπάνιο 12 με μαγνήτη συνεχώς στην ταχύτητα 7 (~1 στα 1000
-    frames) ή hard + μαγνήτη. Επόμενο βήμα αν χρειαστεί: compiled overlays.
+    frames) ή hard + μαγνήτη.
   - Έλεγχος στο `test_world`: η επιφάνεια του HUD έξω από τη ζώνη των slots είναι μόνο pen 1.
+- [x] **11.11** Compiled overlays: αυτοκίνητα και δέντρα ως κώδικας, μια ρουτίνα ανά σειρά χαρακτήρων (png2cpc kind
+  `slices`: `urban_ov_code`, `forest_ov_code` στο C7, ~6 KB). Διάφανα bytes παραλείπονται, συμπαγή `ld (hl),n`, μικτά
+  and/or: ~5 NOPs/byte αντί 16. Κάθε masked sprite στο C5 έχει πριν από το label ένα `defw` προς τον κώδικά του (0 αν
+  δεν έχει)· το `draw_overlay_slice` ανοίγει το C7 και καλεί το slice, εκτός αν η σειρά περνά τέλος επιπέδου (τότε τα
+  masked ζεύγη). Επαλήθευση: οι πλευρές της οθόνης ίδιες byte προς byte με το masked σχέδιο. Ταχύτητα 7 χωρίς
+  μαγνήτη ≤ 37,6 ms ανά frame· `test_five_minute_flight` 10/12 (5 από 6 seeds)· ο προϋπολογισμός σκηνικών ξανά 20 bytes.
+  Τα σπάνια 12 που μένουν: μαγνήτης στην ταχύτητα 7 με τον δρομέα σε άλμα και 3 νομίσματα στον αέρα.
 - [ ] Ανοιχτά για την έκδοση: έλεγχος σε 6128+ (10.4).
 - [ ] **11.2** Μελλοντικά: καμπύλες γραμμών, διακλαδώσεις, κινούμενη κίνηση στη λεωφόρο, νυχτερινό περιβάλλον, σταθμοί (Πειραιάς, Φάληρο, Μοναστηράκι, Κηφισιά).
 
