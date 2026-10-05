@@ -36,64 +36,6 @@ row_offsets:
                 rend
 
 ; -----------------------------------------------------------------------------
-; ring_copy: copies C bytes (1-96) from HL to DE. Either pointer may wrap at
-; the end of a 2K plane. A linear source must not sit in the last 256 bytes
-; of a 2K-aligned block (H&7 = 7) nor end exactly on a 2K boundary.
-; Destroys A, BC, HL, DE.
-; -----------------------------------------------------------------------------
-ring_copy:
-.segment:       ld b,c                      ; B = bytes this segment
-                ld a,h
-                and 7
-                cp 7
-                jr nz,.src_ok
-                ld a,l
-                or a
-                jr z,.src_ok
-                neg                         ; room before the plane end
-                cp b
-                jr nc,.src_ok
-                ld b,a
-.src_ok:        ld a,d
-                and 7
-                cp 7
-                jr nz,.dst_ok
-                ld a,e
-                or a
-                jr z,.dst_ok
-                neg
-                cp b
-                jr nc,.dst_ok
-                ld b,a
-.dst_ok:        ld a,c
-                sub b
-                ld (.remaining),a
-                ld c,b
-                ld b,0
-                ldir
-                ; a pointer that reached a 2K boundary wraps to its plane start
-                ld a,h
-                and 7
-                or l
-                jr nz,.src_in
-                ld a,h
-                sub 8
-                ld h,a
-.src_in:        ld a,d
-                and 7
-                or e
-                jr nz,.dst_in
-                ld a,d
-                sub 8
-                ld d,a
-.dst_in:        ld a,(.remaining)
-                ld c,a
-                or a
-                jr nz,.segment
-                ret
-.remaining:     defb 0
-
-; -----------------------------------------------------------------------------
 ; copy_row: copies a full char row (8 planes x 96 bytes).
 ;   HL = source plane 0, DE = destination plane 0.
 ; The ring offset is the same in every plane, so the wrap test is done once:
@@ -122,22 +64,95 @@ copy_row:
                 dec a
                 jr nz,.fast_plane
                 ret
-.slow:          ld a,8
+; a plane end cuts the lines at the same offsets in every plane: the cuts
+; once, then per plane three LDI chains, a pointer at a plane end back to
+; its plane start after each cut
+.slow:          call .room
+                ld b,a                      ; B = the source's cut
+                ex de,hl
+                call .room                  ; A = the destination's
+                ex de,hl
+                cp b
+                jr c,.sorted
+                ld c,b
+                ld b,a
+                ld a,c
+.sorted:        ld c,a                      ; C = first cut, B = second
+                cp b
+                push hl
+                push de
+                ld hl,.fix                  ; both at once: the second fix
+                jr nz,.two                  ; would take a plane start for
+                ld hl,.nofix                ; a plane end
+.two:           ld (.f2+1),hl
+                ld a,c
+                call .entry
+                ld (.c1+1),hl
+                ld a,b
+                sub c
+                call .entry
+                ld (.c2+1),hl
+                ld a,ROW_BYTES
+                sub b
+                call .entry
+                ld (.c3+1),hl
+                pop de
+                pop hl
+                ld a,8
 .plane:         push af
                 push hl
                 push de
-                ld c,ROW_BYTES
-                call ring_copy
+.c1:            call 0                      ; SMC: chain entries
+                call .fix
+.c2:            call 0
+.f2:            call .fix                   ; SMC: .fix / .nofix
+.c3:            call 0
                 pop de
                 pop hl
-                pop af
                 ld bc,PLANE_SIZE
                 add hl,bc
                 ex de,hl
                 add hl,bc
                 ex de,hl
+                pop af
                 dec a
                 jr nz,.plane
+                ret
+; a pointer that reached a 2K boundary wraps to its plane start
+.fix:           ld a,h
+                and 7
+                or l
+                jr nz,.fix_de
+                ld a,h
+                sub 8
+                ld h,a
+.fix_de:        ld a,d
+                and 7
+                or e
+                ret nz
+                ld a,d
+                sub 8
+                ld d,a
+.nofix:         ret
+; HL = ring address: A = bytes before its plane end, ROW_BYTES at most
+.room:          ld a,h
+                and 7
+                cp 7
+                jr nz,.whole
+                ld a,l
+                neg
+                jr z,.whole
+                cp ROW_BYTES
+                ret c
+.whole:         ld a,ROW_BYTES
+                ret
+; A = bytes: HL = the LDI chain entry for them
+.entry:         add a,a
+                ld e,a
+                ld d,0
+                ld hl,ldi_chain_end
+                or a
+                sbc hl,de
                 ret
 
 ; -----------------------------------------------------------------------------

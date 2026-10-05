@@ -358,17 +358,12 @@ unseen_base:
 ; between the lines of a compiled sprite: HL = next line, its address
 ; written at DE (DE += 2). Destroys A.
 compiled_next_line:
-                ld hl,fc_plane
-                inc (hl)
-                ld a,(hl)
-                cp 8
-                jr z,.next_row
-                ld hl,(fc_line)
-                ld a,h
-                add 8
+                ld hl,(fc_line)             ; the next plane, or past plane 7
+                ld a,h                      ; (plane bits back to 0): the next
+                add 8                       ; char row's base
                 ld h,a
-                jr .store
-.next_row:      ld (hl),0
+                and #38
+                jr nz,.store
                 push de
                 ld hl,(fc_base_ptr)
                 ld e,(hl)
@@ -396,6 +391,15 @@ restore_sprite:
                 or a
                 ret z
                 ld (spr_width),a
+                add a,a                     ; the LDI chain for a line
+                neg
+                ld c,a
+                ld b,#FF                    ; BC = -2 * width
+                push hl
+                ld hl,ldi_chain_end
+                add hl,bc
+                ld (.chain+1),hl
+                pop hl
                 ld (hl),0
                 inc hl
                 ld a,(hl)
@@ -432,7 +436,8 @@ restore_sprite:
                 ld d,a
 .slow_next:     djnz .slow_byte
                 jr .next_line
-.fast:          ldir
+.fast:
+.chain:         call 0                      ; SMC
 .next_line:     ld a,(spr_lines)
                 dec a
                 ld (spr_lines),a
@@ -457,10 +462,11 @@ spr_clipped:
 
 ; HL = next byte of a screen line, wrapping at the end of a 2K plane.
 next_ring_byte:
-                inc hl
+                inc l
+                ret nz
+                inc h
                 ld a,h
                 and 7
-                or l
                 ret nz
                 ld a,h
                 sub 8

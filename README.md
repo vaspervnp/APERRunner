@@ -25,7 +25,8 @@ from the ramps and watch out for red signals, from the city avenue all the way t
 - **Mode 0, 192×272 overscan**, 16 colours, smooth **vertical hardware scroll** (line by line), steady picture edges.
 - A steady **25 fps**: practically no dropped frames, even at top speed.
 - **3 difficulty levels**: EASY / MEDIUM / HARD (speed 4 / 5 / 6 lines per frame; on HARD you also jump the gaps
-  between wagons). Obstacles start sparse and get denser over time, faster on the harder levels.
+  between wagons). Obstacles start sparse and get denser over time, faster on the harder levels; on EASY never more
+  than 2 on one track in a screen.
 - **Side HUD** (1/4 of the screen) like a train's dashboard: score and best score, coins and lives, the route
   Kiato → Piraeus with the runner's place, all six power-ups (lit with a time bar while running), and a little
   track that scrolls with the world and shows the station boards going by.

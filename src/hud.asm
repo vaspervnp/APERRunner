@@ -178,11 +178,18 @@ hud_update:
                 jr .extend
 .run:           ld a,c
                 ld (hb_lines),a
+                xor a                       ; the s lines below the run: in
+                bit 3,(ix+SL_STATE)         ; the same blit (if its last slot
+                jr z,.after                 ; was drawn last frame)
+                ld a,(hud_step)
+.after:         ld (hb_after),a
                 push bc
                 push ix
                 call hud_blit
-                ld ix,(hud_run)             ; the run's slots: below them
+                ld ix,(hud_run)             ; the run's other slots: below them
                 ld a,(hud_run_n)
+                dec a
+                jr z,.run_done
 .run_clear:     push af
                 call hud_slot_clear
                 ld de,SL_SIZE
@@ -190,11 +197,12 @@ hud_update:
                 pop af
                 dec a
                 jr nz,.run_clear
-                pop ix
+.run_done:      pop ix
                 pop bc
 .next:          ld de,SL_SIZE
                 add ix,de
-                djnz .slot
+                dec b
+                jp nz,.slot
                 ret
 
 ; IX = slot: if it was drawn last frame, clear the lines its old picture
@@ -255,8 +263,8 @@ hud_prepare:
                 ld a,(scr_coarse)           ; the heavy frames: leave it to the
                 or a                        ; next light one (speed < 8: there is
                 ret nz                      ; one at least every 4 frames)
+                MAP_RAM GA_RAM_C7           ; (src/hud_slots.asm, the glyphs)
                 call pu_scan                ; power-up cells for both slots
-                MAP_RAM GA_RAM_C7           ; (the glyphs)
                 call .slots
                 MAP_RAM GA_RAM_C0
                 ret
@@ -346,17 +354,10 @@ hud_blit:
                 ld (spr_width),a            ; (row_base: plane-end test)
                 neg
                 add HB_LDI_MAX
-                add a,a                     ; skip (16-w) LDIs of 2 bytes
-                ld (.jump+1),a
-                ld a,(hb_stride)            ; fill: rewind the source each line
-                or a
-                ld a,#21                    ; ld hl,src
-                ld hl,(.src)
-                jr z,.rewind
-                ld a,#C3                    ; copy: jp to the next instruction
-                ld hl,.reset+3
-.rewind:        ld (.reset),a
-                ld (.reset+1),hl
+                add a,a                     ; skip (max - w) units of 2 bytes:
+                ld (.jump+1),a              ; LDI, or LD (HL),C : INC L
+                ld (.fjump+1),a
+                call .set_mode
                 ld a,(hb_y)                 ; picture line -> row, plane
                 ld l,a
                 ld h,0
@@ -371,45 +372,41 @@ hud_blit:
                 srl l
                 ld a,l
                 ld (.row),a
-.row_start:     ld a,(hb_x)
+                ld a,(hb_x)
                 ld c,a
                 ld a,(.row)
                 call row_base               ; HL = plane 0 address, spr_wrap
 .have_base:     ld (.base),hl
                 ld a,(.plane)               ; DE = first line of this char row
+                ld b,a
                 add a,a
                 add a,a
                 add a,a
                 or h
                 ld d,a
                 ld e,l
-                ld a,(.plane)               ; B = lines in this char row
-                neg
-                add 8
+                ld a,8                      ; B = lines in this char row
+                sub b
                 ld b,a
                 ld a,(hb_lines)
-                cp b
-                jr nc,.count
-                ld b,a
-.count:         ld a,(hb_lines)
                 sub b
-                ld (hb_lines),a
+                jr nc,.count
+                add a,b                     ; fewer: all that are left
+                ld b,a
+                xor a
+.count:         ld (hb_lines),a
+                ld a,b
+                ld (.done),a
                 ld hl,(.src)
                 ld a,(spr_wrap)
                 or a
                 jp nz,.slow
-                ld a,(hb_stride)            ; a fill within a 256-byte page:
-                or a                        ; LD (HL),C : INC L
-                jr nz,.copy
-                ld a,(hb_w)
-                add a,e
+.mode:          jp .copy                    ; SMC: .copy / .fill
+
+.fill:          ld a,(hb_w)                 ; within a 256-byte page:
+                add a,e                     ; LD (HL),C : INC L
                 jr c,.copy
                 jr z,.copy
-                ld a,(hb_w)                 ; SMC: skip (max - w) pairs of
-                neg                         ; 1-byte instructions
-                add HB_LDI_MAX
-                add a,a
-                ld (.fjump+1),a
                 ld c,HUD_PANEL_BYTE
 .fline:         ld h,d
                 ld l,e
@@ -439,17 +436,23 @@ hud_blit:
                 djnz .line
                 jr .row_done
 
-.slow:          push bc                     ; line crosses the plane end
-                push de
-                ex de,hl
+.slow:          push bc                     ; line crosses the plane end:
+                push de                     ; up to it, then from the plane start
+                ld a,e
+                neg
+                ld c,a
+                ld b,0
                 ld a,(hb_w)
-                ld b,a
-.slow_byte:     ld a,(de)
-                ld (hl),a
-                inc de
-                call next_ring_byte
-                djnz .slow_byte
-                ex de,hl                    ; HL = source after the line
+                sub c
+                push af
+                ldir
+                ex de,hl
+                ld bc,-#800
+                add hl,bc
+                ex de,hl
+                pop af
+                ld c,a
+                ldir                        ; HL = source after the line
                 ld a,(hb_stride)
                 or a
                 jr nz,.slow_next
@@ -464,491 +467,100 @@ hud_blit:
 .row_done:      ld (.src),hl
                 ld a,(hb_lines)
                 or a
+                jr nz,.next_row
+                ld a,(hb_after)             ; then hb_after lines of panel
+                or a                        ; colour right below
                 ret z
+                ld (hb_lines),a
                 xor a
+                ld (hb_after),a
+                ld (hb_stride),a
+                ld hl,hud_panel_line
+                ld (.src),hl
+                call .set_mode
+                ld a,(.plane)               ; in this char row still?
+                ld hl,.done
+                add a,(hl)
+                cp 8
+                jr nc,.next_row
                 ld (.plane),a
-                ld hl,.row                  ; next char row
+                ld hl,(.base)
+                jp .have_base
+.next_row:      ld hl,.row                  ; next char row
                 inc (hl)
                 ld a,(hl)
                 cp ROWS_PER_BLOCK           ; into D2: from its start address
-                jp z,.row_start
-                ld hl,(.base)               ; same block: 96 bytes on in the ring
-                ld a,h
-                and #C0
-                ld b,a
+                jr nz,.same_block
+                xor a
+                ld (.plane),a
+                ld a,(hb_x)
+                ld c,a
+                ld a,ROWS_PER_BLOCK
+                call row_base
+                jp .have_base
+.same_block:    ld hl,(.base)               ; same block: 96 bytes on in the ring
                 ld a,l
                 add ROW_BYTES
                 ld l,a
+                jr nc,.in_page
+                ld a,h                      ; (round the 2K ring)
+                and #F8
+                ld b,a
                 ld a,h
-                adc 0
-                and RING_MASK>>8
+                inc a
+                and 7
                 or b
                 ld h,a
-                xor a                       ; wrap test (as row_base)
-                ld (spr_wrap),a
+.in_page:       ld (.base),hl
+                ld d,h                      ; plane 0: DE = the base
+                ld e,l
+                xor a
+                ld (.plane),a
+                ld (spr_wrap),a             ; wrap test (as row_base)
                 ld a,h
                 and 7
                 cp 7
-                jp nz,.have_base
+                jr nz,.lines8
                 ld a,l
                 or a
-                jp z,.have_base
+                jr z,.lines8
                 neg
                 ld b,a
                 ld a,(hb_w)
                 cp b
-                jp c,.have_base
-                jp z,.have_base
+                jr c,.lines8
+                jr z,.lines8
                 ld (spr_wrap),a
-                jp .have_base
+.lines8:        ld b,8
+                ld a,(hb_lines)
+                sub b
+                jp nc,.count
+                add a,b
+                ld b,a
+                xor a
+                jp .count
+
+; the copy or the fill (hb_stride 0: the source rewinds every line)
+.set_mode:      ld a,(hb_stride)
+                or a
+                jr z,.set_fill
+                ld hl,.copy
+                ld (.mode+1),hl
+                ld a,#C3                    ; jp to the next instruction
+                ld hl,.reset+3
+                jr .set_reset
+.set_fill:      ld hl,.fill
+                ld (.mode+1),hl
+                ld a,#21                    ; ld hl,src
+                ld hl,(.src)
+.set_reset:     ld (.reset),a
+                ld (.reset+1),hl
+                ret
 .src:           defw 0
 .base:          defw 0
 .plane:         defb 0
 .row:           defb 0
-
-; =============================================================================
-; Slot contents. Key functions: A = visible (non-zero), hud_key = 3 bytes
-; that identify what the buffer must show. Build functions: IX = slot.
-; =============================================================================
-
-key_score:
-                ld hl,score
-                jr key_copy3
-key_hi:                                     ; the best score, or this one if higher
-                ld hl,score+2
-                ld de,hiscore_table+2       ; (BCD, most significant byte last)
-                ld b,3
-.cmp:           ld a,(de)
-                cp (hl)
-                jr c,key_score
-                jr nz,.table
-                dec hl
-                dec de
-                djnz .cmp
-.table:         ld hl,hiscore_table
-                jr key_copy3
-key_coins:                                  ; coins (2 bytes), lives + route pixel * 8
-                call route_pixel
-                add a,a
-                add a,a
-                add a,a
-                ld b,a
-                ld a,(lives)
-                or b
-                ld (hud_key+2),a
-                ld hl,coins
-                ld de,hud_key
-                ldi
-                ldi
-                or 1
-                ret
-key_copy3:      ld de,hud_key
-                ldi
-                ldi
-                ldi
-                or 1
-                ret
-; A = the runner's pixel on the route bar: 6 per station + rows / 64 (0-34)
-route_pixel:
-                ld hl,ROUTE_SEG
-                ld de,(route_left)
-                or a
-                sbc hl,de
-                add hl,hl
-                add hl,hl                   ; H = rows into this stretch / 64
-                ld a,(route_station)
-                ld b,a
-                add a,a
-                add a,b
-                add a,a
-                add a,h
-                ret
-key_a:          ld (hud_key),a
-                xor a
-                ld (hud_key+1),a
-                ld (hud_key+2),a
-                or 1
-                ret
-
-; power-ups: a cell for each of the six, always (magnet, turbo, slow, springs
-; in the first slot; helmet, ticket in the second). Key byte per cell: icon
-; index + 1 in the high nibble (the dark icon when not running), bar pixels
-; 0-8 in the low nibble.
-key_pu_first:   ld hl,hud_cells
-                jr key_pu
-key_pu_second:  ld hl,hud_cells+HUD_PU_CELLS
-key_pu:         ld de,hud_key
-                ld bc,HUD_PU_CELLS
-                ldir
-                ld a,(hud_key)              ; visible if the first cell is used
-                ret
-
-; hud_cells: a cell for every power-up, in pu_hud_table order
-pu_scan:
-                ld de,hud_cells
-                ld hl,pu_hud_table
-                ld b,PU_HUD_COUNT
-.entry:         push bc
-                push hl
-                ld c,(hl)                   ; timer
-                inc hl
-                ld b,(hl)
-                inc hl
-                ld a,b
-                or c
-                jr nz,.timed
-                ld a,(helmet)               ; no timer: the helmet
-                or a
-                jr z,.off
-                ld c,0                      ; no bar
-                jr .active
-.timed:         push hl                     ; frames left
-                ld a,(bc)
-                ld l,a
-                inc bc
-                ld a,(bc)
-                ld h,a
-                ex (sp),hl
-                ld c,(hl)                   ; frames per bar pixel
-                ex (sp),hl
-                ld a,h
-                or l
-                jr z,.idle
-                ld b,0                      ; pixels = ceil(frames / step)
-.count:         inc b
-                ld a,l
-                sub c
-                ld l,a
-                jr nc,.more
-                ld a,h
-                or a
-                jr z,.counted
-                dec h
-.more:          ld a,h
-                or l
-                jr nz,.count
-.counted:       ld a,b
-                cp 9
-                jr c,.px
-                ld a,8
-.px:            ld c,a
-                pop hl
-                jr .active
-.idle:          pop hl
-.off:           inc hl                      ; the dark icon, no bar
-                ld c,0
-.active:        inc hl                      ; icon
-                ld a,(hl)
-                inc a
-                add a,a
-                add a,a
-                add a,a
-                add a,a
-                or c
-                ld (de),a
-                inc de
-                pop hl
-                ld bc,PU_HUD_SIZE
-                add hl,bc
-                pop bc
-                djnz .entry
-                ret
-
-PU_HUD_SIZE     equ 5                       ; timer, frames per pixel, icon, dark icon
-pu_hud_table:   defw pu_magnet
-                defb 32,IDX_HUD_ICONS_IC_MAGNET,IDX_HUD_ICONS_IC_MAGNET_OFF   ; 250 frames / 8 pixels
-                defw pu_turbo
-                defb 25,IDX_HUD_ICONS_IC_TURBO,IDX_HUD_ICONS_IC_TURBO_OFF
-                defw pu_slow
-                defb 25,IDX_HUD_ICONS_IC_SLOW,IDX_HUD_ICONS_IC_SLOW_OFF
-                defw 0                              ; helmet (no timer)
-                defb 0,IDX_HUD_ICONS_IC_HELMET,IDX_HUD_ICONS_IC_HELMET_OFF
-                defw pu_spring
-                defb 32,IDX_HUD_ICONS_IC_SPRING,IDX_HUD_ICONS_IC_SPRING_OFF
-                defw pu_ticket
-                defb 47,IDX_HUD_ICONS_IC_TICKET,IDX_HUD_ICONS_IC_TICKET_OFF
-PU_HUD_COUNT    equ 6
-
-; --- builders --------------------------------------------------------------------
-build_score:                                ; 6 digits
-                ld de,0
-                ld hl,hud_key+2
-                ld b,3
-                jp put_bcd
-build_hi:                                   ; the same in orange
-                ld a,IDX_HUD_ICONS_H0
-                ld (put_digit.base+1),a
-                call build_score
-                ld a,IDX_HUD_ICONS_D0
-                ld (put_digit.base+1),a
-                ret
-
-; the route: stations, the stretch done in yellow, the runner in red
-build_route:
-                ld l,(ix+SL_BUF)
-                ld h,(ix+SL_BUF+1)
-                ld de,HUD_ROUTE_LINE*HUD_ROUTE_W
-                add hl,de
-                push hl
-                ex de,hl
-                ld hl,route_template
-                ld bc,HUD_ROUTE_W*HUD_ROUTE_H
-                ldir
-                pop hl                      ; HL = buffer
-                push hl
-                ld a,(hud_key+2)            ; C = runner's pixel
-                rrca
-                rrca
-                rrca
-                and 31
-                ld c,a
-                srl a
-                ld b,a                      ; B = whole yellow bytes
-                ld de,HUD_ROUTE_W           ; the track: lines 1 and 2
-                add hl,de
-                push hl
-                call .fill
-                pop hl
-                ld de,HUD_ROUTE_W
-                add hl,de
-                call .fill
-                pop hl                      ; the runner: a red pixel column
-                ld a,c
-                srl a
-                call add_a_hl
-                ld de,#55A2                 ; even pixel: keep the right one
-                bit 0,c
-                jr z,.mark
-                ld de,#AA51
-.mark:          ld b,HUD_ROUTE_H
-.mark_line:     ld a,(hl)
-                and d
-                or e
-                ld (hl),a
-                ld a,HUD_ROUTE_W
-                call add_a_hl
-                djnz .mark_line
-                ret
-.fill:          push bc
-                ld a,b
-                or a
-                jr z,.half
-.byte:          ld (hl),#FC                 ; yellow, yellow
-                inc hl
-                djnz .byte
-.half:          pop bc
-                bit 0,c
-                ret z
-                ld (hl),#AC                 ; yellow, grey
-                ret
-
-; the station ticks on line 0 (white on the panel, pixels 0, 6 .. 30 and
-; 35), the track on 1 and 2 (grey); pens: blue #80/#40, white #88/#44,
-; grey #08/#04
-route_template:
-                defb #C8,#C0,#C0,#C8,#C0,#C0,#C8,#C0,#C0,#C8,#C0,#C0,#C8,#C0,#C0,#C8,#C0,#C4
-                defs HUD_ROUTE_W,#0C
-                defs HUD_ROUTE_W,#0C
-
-build_coins:                                ; coin + 4 digits, head + lives,
-                ld a,(hud_partial)          ; the route under them
-                or a
-                jr nz,.digits
-                call clear_buffer
-                ld a,IDX_HUD_ICONS_IC_COIN
-                ld de,0
-                call put_icon
-                ld a,IDX_HUD_ICONS_IC_LIFE
-                ld de,12
-                call put_icon
-.digits:        ld de,4
-                ld hl,hud_key+1
-                ld b,2
-                call put_bcd
-                ld a,(hud_partial)          ; lives and route as they were?
-                or a
-                jr z,.lives
-                ld a,(hud_key+2)
-                ld hl,hud_old_key+2
-                cp (hl)
-                ret z
-.lives:         ld a,(hud_key+2)
-                and 7
-                ld de,16
-                call put_digit
-                jp build_route
-
-; power-up cells: icon, its time bar (up to 8 pixels) on the last line
-build_pu:
-                call clear_buffer
-                ld hl,hud_key
-                ld de,0
-                ld b,HUD_PU_CELLS
-.cell:          ld a,(hl)
-                or a
-                ret z
-                push bc
-                push hl
-                push de
-                rrca
-                rrca
-                rrca
-                rrca
-                and 15
-                dec a
-                call put_icon
-                pop de
-                pop hl
-                push hl
-                push de
-                ld a,(hl)                   ; bar: 4 bytes on the icon's last line
-                and 15                      ; (empty on every icon)
-                add a,a
-                add a,a
-                ld hl,hud_bar_bytes
-                call add_a_hl
-                ex de,hl                    ; DE = pattern, HL = cell offset
-                ld a,(ix+SL_W)
-                ld c,a
-                add a,a
-                add a,a
-                add a,a
-                sub c                       ; line 7
-                call add_a_hl
-                ld a,(ix+SL_BUF)
-                add a,l
-                ld l,a
-                ld a,(ix+SL_BUF+1)
-                adc a,h
-                ld h,a
-                ex de,hl                    ; DE = buffer line 7, HL = pattern
-                ld bc,4
-                ldir
-                pop de
-                ld a,e
-                add HUD_PU_CELL
-                ld e,a
-                pop hl
-                inc hl
-                pop bc
-                djnz .cell
-                ret
-
-; bar patterns by filled pixels 0-8 (yellow on the panel), 4 bytes each:
-; pen 7 left #A8 / right #54, pen 1 left #80 / right #40
-hud_bar_bytes:
-                defb #C0,#C0,#C0,#C0, #E8,#C0,#C0,#C0, #FC,#C0,#C0,#C0, #FC,#E8,#C0,#C0
-                defb #FC,#FC,#C0,#C0, #FC,#FC,#E8,#C0, #FC,#FC,#FC,#C0, #FC,#FC,#FC,#E8
-                defb #FC,#FC,#FC,#FC
-
-put_icon:       ld c,4
-                jr put_glyph
-
-; HL = last (most significant) BCD byte in hud_key, B = bytes, DE = byte
-; offset: 2*B digits, most significant first. With hud_partial set only
-; the digits that differ from hud_old_key are drawn.
-put_bcd:
-.byte:          push bc
-                push hl
-                ld a,(hud_partial)
-                or a
-                ld c,#FF                    ; C = changed nibbles
-                jr z,.changed
-                push hl                     ; old byte: same offset in hud_old_key
-                ld bc,hud_old_key-hud_key
-                add hl,bc
-                ld a,(hl)
-                pop hl
-                xor (hl)
-                ld c,a
-.changed:       ld a,c
-                and #F0
-                jr z,.low
-                ld a,(hl)
-                rrca
-                rrca
-                rrca
-                rrca
-                push bc
-                push de
-                call put_digit
-                pop de
-                pop bc
-.low:           inc de
-                inc de
-                pop hl
-                push hl
-                ld a,c
-                and #0F
-                jr z,.next
-                ld a,(hl)
-                push de
-                call put_digit
-                pop de
-.next:          inc de
-                inc de
-                pop hl
-                dec hl
-                pop bc
-                djnz .byte
-                ret
-
-; A (low nibble) = digit, DE = byte offset
-put_digit:
-                and 15
-.base:          add IDX_HUD_ICONS_D0        ; SMC: H0 for the best score
-                ld c,2
-                ; fall through
-; A = glyph index, C = glyph width (bytes), DE = byte offset in the slot buffer
-; (width SL_W). Destroys A, BC, DE, HL.
-put_glyph:
-                ld (.glyph),a
-                ld a,4                      ; SMC: run of C LDIs (C = 1-4)
-                sub c
-                add a,a
-                ld (.jump+1),a
-                ld a,(ix+SL_W)              ; SMC: buffer stride after a line
-                sub c
-                ld (.stride+1),a
-                push de
-                ld a,(.glyph)
-                ld hl,gfx_hud_icons_table
-                call table_entry
-                pop de
-                push hl
-                ld l,(ix+SL_BUF)
-                ld h,(ix+SL_BUF+1)
-                add hl,de
-                ex de,hl                    ; DE = destination
-                pop hl
-                ld bc,8*256+255             ; B = lines (LDI only touches C)
-.line:
-.jump:          jr .ldis                    ; SMC
-.ldis:          ldi
-                ldi
-                ldi
-                ldi
-                ld a,e
-.stride:        add 0                       ; SMC
-                ld e,a
-                jr nc,.nc
-                inc d
-.nc:            djnz .line
-                ret
-.glyph:         defb 0
-
-clear_buffer:
-                ld l,(ix+SL_BUF)
-                ld h,(ix+SL_BUF+1)
-                ld b,(ix+SL_H)              ; W*H bytes
-                xor a
-.mul:           add a,(ix+SL_W)
-                djnz .mul
-                ld b,a
-.byte:          ld (hl),HUD_PANEL_BYTE
-                inc hl
-                djnz .byte
-                ret
+.done:          defb 0                  ; lines drawn in the char row
 
 ; --- layout: y, x, w, buffer, key, build (top to bottom) -------------------------
 macro SLOT_DEF y,x,w,h,buffer,key,build,cover
@@ -986,6 +598,7 @@ hb_x:           defb 0
 hb_w:           defb 0
 hb_lines:       defb 0
 hb_stride:      defb 0
+hb_after:       defb 0                  ; then this many lines of panel colour
 hud_slots:      defs HUD_SLOT_COUNT*SL_SIZE
 ; slot buffers: below the code (src/main.asm, from hud_buf_score)
 hud_buf_hi      equ hud_buf_score+HUD_SCORE_W*8

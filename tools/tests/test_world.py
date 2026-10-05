@@ -29,6 +29,10 @@ def _check_screen(cpc, sym, sheets):
                 keep = [x for x in range(48) if 72 + x // 2 not in HUD_PANEL]
                 assert [[line[x] for x in keep] for line in got] == [[line[x] for x in keep] for line in pens], \
                     f"world row {row}: HUD frame differs"
+                if index < 9 or index > 26:      # away from the slots (lines 80-203): plain panel
+                    panel = [x for x in range(48) if 72 + x // 2 in HUD_PANEL]
+                    assert all(line[x] == 1 for line in got for x in panel), \
+                        f"world row {row} (picture row {index}): HUD panel not plain"
                 checked += 1
                 continue
             elif width == 14:
@@ -218,3 +222,36 @@ def test_obstacles_get_denser_and_faster_on_hard():
           f"hard {hard_first:.0%} -> {hard_last:.0%} (gap at 800: {hard_gap})")
     assert easy_last > easy_first and hard_last > hard_first
     assert hard_gap < easy_gap, "the empty stretches shrink faster on hard"
+
+
+def test_easy_at_most_two_obstacles_a_lane_on_a_screen():
+    """Easy: a buffer stop or a signal never has two other obstacles before it
+    in its lane within a screen (34 rows); trains (ramps, roofs) stay as
+    they are. Medium keeps the chunks as written."""
+    sym = load_symbols()
+    picture = sym["picture_rows"]
+    for skill in (0, 1):
+        cpc = boot_game()
+        cpc.write_ram(sym["skill"], bytes([skill]))
+        cpc.write_ram(sym["scroll_speed"], bytes([6]))
+        classes = {}
+        while len(classes) < 2500:
+            sync_game_frame(cpc, sym)
+            top = peek16(cpc, sym["scr_top_row"])
+            for r in range(max(top - 20, 0), top):
+                if r not in classes:
+                    coll = cpc.read_ram(sym["world_ring"] + (r & 63) * sym["row_size"] + 6, 3)
+                    classes[r] = [c & 15 for c in coll]
+        crowded = 0
+        for lane in range(3):
+            starts = [(r, classes[r][lane]) for r in sorted(classes)
+                      if classes[r][lane] in (1, 2, 3, 4, 7) and classes.get(r - 1, [0] * 3)[lane] in (0, 5, 6)]
+            for i, (row, cls) in enumerate(starts):
+                before = [s for s, _ in starts[:i] if row - s < picture]
+                if cls in (1, 2) and len(before) >= 2:
+                    crowded += 1
+        print(f"    skill {skill}: {crowded} stops or signals with two obstacles before them on a screen")
+        if skill == 0:
+            assert crowded == 0
+        else:
+            assert crowded > 0, "medium keeps the dense chunks"

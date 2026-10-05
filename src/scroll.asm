@@ -13,12 +13,16 @@
 ; World row 0 is at the bottom of the screen, numbers grow upwards; rows are
 ; generated in that order (D2 bottom first, D1 top last).
 ; -----------------------------------------------------------------------------
+D2_RING_START   equ #400
+
 scroll_init:
                 xor a
                 ld (scr_j),a
                 ld hl,0
                 ld (scr_d1),hl
-                ld (scr_d2),hl
+                ld hl,D2_RING_START         ; half a ring from D1: the two
+                ld (scr_d2),hl              ; blocks cross a plane end in
+                                            ; different coarse steps
                 ld hl,ROWS_PER_BLOCK*2-1
                 ld (scr_top_row),hl
 

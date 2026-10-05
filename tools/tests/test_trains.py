@@ -63,7 +63,9 @@ def test_right_comes_on_fast_left_goes_ahead_slowly():
                 assert train["hi"] - train["lo"] == prev["hi"] - prev["lo"], "the train keeps its length"
                 # room before the stop, in lines (negative: a stop already inside it)
                 room = prev["lo"] - prev["stop"] if train["lane"] == 2 else prev["stop"] - prev["hi"]
-                if room < 0:
+                if train["stop"] != prev["stop"]:
+                    pass                            # a new stop (before or after the move)
+                elif room < 0:
                     assert moved == 0, ("a stop inside it: it stands", train)
                 elif room < 4:
                     assert abs(moved) <= room, ("never past its stop", moved, train)

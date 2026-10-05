@@ -293,25 +293,27 @@ collide:
 ; a signal turned red: its bell if one is in the 16 rows ahead of the runner
 signal_bell:
                 ld hl,(feet_row)
-                ld b,16
-.row:           push hl
                 call desc_addr
                 ld a,D_COLL
-                call add_a_hl
-                ld c,3
+                call add_a_hl               ; HL = its collision classes
+                ld de,ROW_SIZE-3
+                ld b,16
+.row:           ld c,3                      ; (a row: 16 bytes, 16-aligned)
 .lane:          ld a,(hl)
                 and 15
                 cp COL_SIGNAL
                 jr z,.ring
-                inc hl
+                inc l
                 dec c
                 jr nz,.lane
-                pop hl
-                inc hl
-                djnz .row
+                add hl,de                   ; the next row, round the ring
+                ld a,h
+                cp (WORLD_RING+RING_ROWS*ROW_SIZE)>>8
+                jr c,.in_ring
+                ld h,WORLD_RING>>8
+.in_ring:       djnz .row
                 ret
-.ring:          pop hl
-                ld a,SFX_SIGNAL
+.ring:          ld a,SFX_SIGNAL
                 ld (sfx_request),a
                 ret
 

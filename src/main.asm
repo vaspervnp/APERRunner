@@ -257,6 +257,7 @@ scroll_speed:   defb DEFAULT_SPEED
 paused:         defb 0
 
 end_of_code:
+                print "END_OF_CODE ",{hex4}end_of_code
                 assert end_of_code <= #4000
                 assert FILE_ADDR+BOOT_STUB_SIZE+end_of_code-LOAD_ADDR <= SCORES_LOAD
                 assert blank_line+72 <= WORLD_RING
@@ -318,6 +319,7 @@ bank7_start:
                 include "data/text.asm"
                 include "sound.asm"
                 include "data/gfx_hud_icons.asm"    ; (hud_prepare maps C7)
+                include "hud_slots.asm"
                 include "scores_save.asm"
                 include "data/music.asm"
 bank7_end:

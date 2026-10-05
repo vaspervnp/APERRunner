@@ -9,8 +9,28 @@
 ; livery for its trains, so the same chunk looks and plays differently.
 ; =============================================================================
 pick_chunk_c5:
-                ld hl,chunk_table
+                ld hl,(gen_row)             ; a new game: no obstacles behind
+                ld de,SPACER_START+1
+                or a
+                sbc hl,de
+                call c,easy_reset
+                ld a,(env)                  ; weights per environment, worked
+                or a                        ; out again only when the
+                ld hl,pick_cache            ; difficulty changed
                 ld de,chunk_weights
+                jr z,.env
+                ld hl,pick_cache+2
+                ld de,chunk_weights+CHUNK_COUNT
+.env:           ld (.table),de
+                ld a,(difficulty)
+                cp (hl)
+                jr nz,.reweigh
+                inc hl
+                ld c,(hl)                   ; C = their total
+                jr .pick
+.reweigh:       ld (hl),a
+                push hl
+                ld hl,chunk_table
                 ld b,CHUNK_COUNT
                 ld c,0                      ; C = total weight
 .weigh:         push hl
@@ -49,10 +69,13 @@ pick_chunk_c5:
                 djnz .weigh
                 ld a,c
                 or a
-                jr nz,.pick
+                jr nz,.total
                 inc c                       ; nothing eligible: the first one
+.total:         pop hl
+                inc hl
+                ld (hl),c
 .pick:          call random_below           ; A = 0 .. total-1
-                ld hl,chunk_weights
+                ld hl,(.table)
                 ld de,chunk_table
                 ld b,CHUNK_COUNT
 .find:          sub (hl)
@@ -118,6 +141,8 @@ pick_chunk_c5:
                 ld (livery),a               ; 0, 64, 128
                 ret
 
+.table:         defw 0                      ; chunk_weights of this environment
+
 ; chunk lane k goes to lane chunk_lanes[k]; the first two keep neighbours
 lane_orders:    defb 0,1,2, 2,1,0, 1,0,2, 0,2,1, 1,2,0, 2,0,1
 
@@ -147,6 +172,10 @@ chunk_row_c5:
                 add iy,de
                 call train_cell             ; part of the moving train: rail here
                 ret c
+                ld a,(skill)                ; easy: at most 2 obstacles a lane
+                or a                        ; on a screen
+                call z,easy_cell
+                ret c
                 ld a,(livery)               ; tile, in the chunk's livery
                 add a,(hl)
                 ld e,a
@@ -166,6 +195,113 @@ chunk_row_c5:
                 call spawn_item
                 pop hl
                 ret
+
+; -----------------------------------------------------------------------------
+; Easy: a buffer stop or a signal that would be the third obstacle of its lane
+; within EASY_WINDOW rows (a screen) becomes rail, both its rows. Trains stay
+; (ramps, roofs), but count. HL = cell, IY = its descriptor cell, (row_lane) =
+; lane. C: rail written (HL += 3), NC: an ordinary cell (HL kept).
+; -----------------------------------------------------------------------------
+EASY_WINDOW     equ PICTURE_ROWS
+
+easy_cell:
+                push hl
+                inc hl
+                ld a,(hl)                   ; collision class
+                and 15
+                ld c,a
+                ld a,(row_lane)
+                ld hl,ez_obj
+                call add_a_hl               ; bit 0: an obstacle on the row
+                ld a,c                      ; below, bit 1: it is being dropped
+                or a
+                jr z,.clear
+                cp COL_RAMP_UP
+                jr c,.obstacle              ; stop, signal, train, cab
+                cp COL_GAP
+                jr z,.obstacle              ; coupler
+.clear:         ld (hl),0
+.keep:          pop hl
+                or a
+                ret
+.obstacle:      bit 0,(hl)                  ; the same one as the row below
+                jr z,.start
+                bit 1,(hl)
+                jr nz,.drop
+                jr .keep
+.start:         ld (hl),1
+                ld a,(row_lane)             ; HL = its starts: newer, older
+                add a,a
+                add a,a
+                ld hl,ez_starts
+                call add_a_hl
+                ld a,c
+                cp COL_TRAIN
+                jr nc,.record               ; a train stays
+                push hl
+                inc hl
+                inc hl
+                ld e,(hl)
+                inc hl
+                ld d,(hl)
+                ld hl,(gen_row)
+                or a
+                sbc hl,de                   ; rows since the older one
+                ld de,EASY_WINDOW
+                or a
+                sbc hl,de
+                pop hl
+                jr c,.too_many
+.record:        ld e,(hl)                   ; older = newer, newer = this row
+                inc hl
+                ld d,(hl)
+                inc hl
+                ld (hl),e
+                inc hl
+                ld (hl),d
+                ld de,(gen_row)
+                dec hl
+                dec hl
+                ld (hl),d
+                dec hl
+                ld (hl),e
+                jr .keep
+.too_many:      ld a,(row_lane)
+                ld hl,ez_obj
+                call add_a_hl
+                ld (hl),3
+.drop:          pop hl
+                ld (iy+D_LANES),TILE_RAIL_A
+                ld (iy+D_COLL),COL_NONE
+                ld (iy+D_ITEM),0
+                inc hl
+                inc hl
+                inc hl
+                scf
+                ret
+
+; a new game: no obstacles below, the starts long ago
+easy_reset:
+                ld hl,ez_obj
+                ld b,3
+.obj:           ld (hl),0
+                inc hl
+                djnz .obj
+                ld hl,(gen_row)
+                ld de,-1000
+                add hl,de
+                ex de,hl
+                ld hl,ez_starts
+                ld b,6
+.start:         ld (hl),e
+                inc hl
+                ld (hl),d
+                inc hl
+                djnz .start
+                ret
+
+ez_obj:         defs 3                  ; per lane: bit 0 obstacle below, bit 1 dropped
+ez_starts:      defs 3*4                ; per lane: rows of the last two obstacles
 
 ; -----------------------------------------------------------------------------
 ; Moving trains (src/trains.asm): a train cell in a side lane of a chunk
@@ -518,7 +654,126 @@ place_powerup:
 .check:         defb 0
 
 
-chunk_weights:  defs CHUNK_COUNT
+; -----------------------------------------------------------------------------
+; Forest sides (src/world.asm forest_sides maps C5): ground, paths, fences
+; and the trees, bushes and rocks (overlays, their sprites in this bank).
+; -----------------------------------------------------------------------------
+forest_sides_c5:
+                ld a,(ix+D_FLAGS)
+                or F_FOREST
+                ld (ix+D_FLAGS),a
+                ld b,0
+                call .side
+                ld b,1
+                call .side
+                ld b,0
+                call spawn_tree
+                ld b,1
+                jp spawn_tree
+
+; B = side
+.side:          ld e,b
+                ld d,0
+                ld hl,path_left
+                add hl,de
+                ld a,(hl)
+                or a
+                jr z,.no_path
+                dec (hl)
+                ld a,IDX_FOREST_PATH
+                jr .store
+.no_path:       ld hl,fence_left
+                add hl,de
+                ld a,(hl)
+                or a
+                jr z,.no_fence
+                dec (hl)
+                ld a,IDX_FOREST_FENCE
+                jr .store
+.no_fence:      call random                 ; start a path or a fence now and then
+                and 31
+                jr nz,.ground
+                call random
+                and 3
+                add 3
+                ld c,a
+                call random
+                rra
+                ld hl,path_left
+                jr c,.run
+                ld hl,fence_left
+.run:           add hl,de
+                ld (hl),c
+.ground:        call random
+                and 2                       ; ground_a = 0, ground_b = 2
+.store:         bit 0,b
+                jr z,.left
+                inc a
+                ld (ix+D_RIGHT),a
+                ret
+.left:          ld (ix+D_LEFT),a
+                ret
+
+; B = side: maybe plant a tree / bush / rock
+spawn_tree:
+                ld e,b
+                ld d,0
+                ld hl,tree_busy
+                add hl,de
+                ld a,(hl)
+                or a
+                ret nz
+                call random
+                and 3
+                ret nz
+                push hl
+                push bc
+                ld c,3
+                call scenery_allowed
+                pop bc
+                pop hl
+                ret z
+                push hl
+                ld c,5
+                call random_below
+                ld e,a
+                ld d,0
+                ld hl,tree_info             ; width (bytes), rows
+                add hl,de
+                add hl,de
+                ld a,(hl)
+                ld (.width),a
+                inc hl
+                ld a,(hl)
+                ld (.rows),a
+                pop hl
+                inc a                       ; busy rows + 1
+                ld (hl),a
+                ; column: left 0..(14-w), right 58..(72-w)
+                ld a,(.width)
+                neg
+                add 15
+                ld c,a                      ; choices
+                call random_below
+                bit 0,b
+                jr z,.col
+                add 58
+.col:           ld c,a
+                push bc
+                ld a,e
+                ld hl,gfx_forest_ov_table
+                call table_entry
+                pop bc
+                ld a,(.rows)
+                jp add_scenery
+.width:         defb 0
+.rows:          defb 0
+
+tree_info:      defb 8,3, 12,3, 4,3, 4,1, 4,1     ; pine, oak, cypress, bush, rock
+
+
+chunk_weights:  defs 2*CHUNK_COUNT              ; urban, forest
+pick_cache:     defb #FF,0,#FF,0                ; per env: their difficulty, total
 chunk_lanes:    defb 0,1,2
 chunk_src:      defb 0,1,2
 livery:         defb 0                  ; offset of its table in livery_tiles

@@ -49,6 +49,8 @@ OV_BOTTOM       equ 0                   ; world row (2)
 OV_ROWS         equ 2                   ; 0 = free slot
 OV_COLUMN       equ 3
 OV_SPRITE       equ 4                   ; (2) sprite in bank C5
+OV_WIDTH        equ 6                   ; its width in bytes (add_scenery)
+OVERLAY_W_MAX   equ 12                  ; the widest overlay (oak)
 
 ; --- layout ---------------------------------------------------------------------------
 COL_LEFT        equ 0
@@ -203,9 +205,12 @@ generate_row:
                 srl d
                 rr e                        ; DE = rows / 2
                 ld a,(skill)
+                or a
                 ld b,a
                 inc b
                 ld a,h
+                jr nz,.diff_add
+                rra                         ; easy: every 512 rows
                 jr .diff_add
 .diff_more:     add hl,de
                 ld a,h
@@ -350,7 +355,7 @@ spacer_row:
                 MAP_RAM GA_RAM_C0
                 ret
 
-; HL = spacer_tick: reloads it, one empty row less (down to 0)
+; HL = spacer_tick: reloads it, one empty row less (down to the fewest)
 SPACER_START    equ 24
 spacer_step:
                 push hl
@@ -358,15 +363,20 @@ spacer_step:
                 ld hl,spacer_steps
                 call add_a_hl
                 ld a,(hl)
+                inc hl
+                inc hl
+                inc hl
+                ld b,(hl)                   ; B = the fewest
                 pop hl
                 ld (hl),a
                 ld hl,spacer_len
-                ld a,(hl)
-                or a
-                ret z
+                ld a,b
+                cp (hl)
+                ret nc
                 dec (hl)
                 ret
-spacer_steps:   defb 64,40,24               ; rows per step: easy, medium, hard
+spacer_steps:   defb 96,40,24               ; rows per step: easy, medium, hard
+                defb 8,0,0                  ; the fewest empty rows
 
 ROUTE_SEG       equ 320                     ; rows between two stations (5 route pixels)
 ROUTE_STATIONS  equ 7                       ; Kiato .. Piraeus
@@ -384,18 +394,23 @@ clear_behind:
                 push bc
                 ld c,a
                 ld hl,(gen_row)
-                ld b,PU_CLEAR
-.row:           dec hl
-                push hl
+                dec hl
                 call desc_addr
                 ld a,D_COLL
                 add a,c
-                call add_a_hl
-                ld a,(hl)
-                pop hl
+                call add_a_hl               ; HL = its class in the row below
+                ld de,-ROW_SIZE
+                ld b,PU_CLEAR
+.row:           ld a,(hl)
                 call obstacle
                 jr nz,.done
-                djnz .row
+                add hl,de                   ; the row below, round the ring
+                ld a,h
+                cp WORLD_RING>>8
+                jr nc,.in_ring
+                ld h,(WORLD_RING+RING_ROWS*ROW_SIZE-1)>>8
+.in_ring:       djnz .row
+                xor a                       ; Z: all clear
 .done:          ld a,c
                 pop bc
                 pop de
@@ -759,15 +774,16 @@ spawn_car:
                 inc a
                 ld (hl),a                   ; busy for rows + gap
                 ld a,e
-                MAP_RAM GA_RAM_C5
+                MAP_RAM GA_RAM_C5           ; (add_scenery reads its width)
                 ld hl,gfx_urban_ov_table
                 call table_entry
-                MAP_RAM GA_RAM_C0
                 ld a,(.column)
                 ld b,c
                 ld c,a
                 ld a,b
-                jp add_overlay
+                call add_scenery
+                MAP_RAM GA_RAM_C0
+                ret
 .column:        defb 0
 
 car_columns:    defb 0,5,9,68,63,59
@@ -799,125 +815,34 @@ transition_sides:
                 ld (env),a
                 ret
 
-; --- forest -------------------------------------------------------------------------
+; --- forest (src/chunk_pick.asm, bank C5) ----------------------------------------------
 forest_sides:
-                ld a,(ix+D_FLAGS)
-                or F_FOREST
-                ld (ix+D_FLAGS),a
-                ld b,0
-                call .side
-                ld b,1
-                call .side
-                ld b,0
-                call spawn_tree
-                ld b,1
-                jp spawn_tree
-
-; B = side
-.side:          ld e,b
-                ld d,0
-                ld hl,path_left
-                add hl,de
-                ld a,(hl)
-                or a
-                jr z,.no_path
-                dec (hl)
-                ld a,IDX_FOREST_PATH
-                jr .store
-.no_path:       ld hl,fence_left
-                add hl,de
-                ld a,(hl)
-                or a
-                jr z,.no_fence
-                dec (hl)
-                ld a,IDX_FOREST_FENCE
-                jr .store
-.no_fence:      call random                 ; start a path or a fence now and then
-                and 31
-                jr nz,.ground
-                call random
-                and 3
-                add 3
-                ld c,a
-                call random
-                rra
-                ld hl,path_left
-                jr c,.run
-                ld hl,fence_left
-.run:           add hl,de
-                ld (hl),c
-.ground:        call random
-                and 2                       ; ground_a = 0, ground_b = 2
-.store:         bit 0,b
-                jr z,.left
-                inc a
-                ld (ix+D_RIGHT),a
-                ret
-.left:          ld (ix+D_LEFT),a
-                ret
-
-; B = side: maybe plant a tree / bush / rock
-spawn_tree:
-                ld e,b
-                ld d,0
-                ld hl,tree_busy
-                add hl,de
-                ld a,(hl)
-                or a
-                ret nz
-                call random
-                and 3
-                ret nz
-                push hl
-                push bc
-                ld c,3
-                call scenery_allowed
-                pop bc
-                pop hl
-                ret z
-                push hl
-                ld c,5
-                call random_below
-                ld e,a
-                ld d,0
-                ld hl,tree_info             ; width (bytes), rows
-                add hl,de
-                add hl,de
-                ld a,(hl)
-                ld (.width),a
-                inc hl
-                ld a,(hl)
-                ld (.rows),a
-                pop hl
-                inc a                       ; busy rows + 1
-                ld (hl),a
-                ; column: left 0..(14-w), right 58..(72-w)
-                ld a,(.width)
-                neg
-                add 15
-                ld c,a                      ; choices
-                call random_below
-                bit 0,b
-                jr z,.col
-                add 58
-.col:           ld c,a
-                push bc
-                ld a,e
                 MAP_RAM GA_RAM_C5
-                ld hl,gfx_forest_ov_table
-                call table_entry
+                call forest_sides_c5
                 MAP_RAM GA_RAM_C0
-                pop bc
-                ld a,(.rows)
-                jp add_overlay
-.width:         defb 0
-.rows:          defb 0
-
-tree_info:      defb 8,3, 12,3, 4,3, 4,1, 4,1     ; pine, oak, cypress, bush, rock
+                ret
 
 ; -----------------------------------------------------------------------------
-; add_overlay: HL = sprite (bank C5), C = column, A = rows; bottom = gen_row.
-; Silently dropped if the list is full.
+; add_scenery: as add_overlay, for scenery (cars, trees), unless the
+; overlays in the row (items too) would grow wider than SCENERY_W_MAX bytes:
+; render_row draws them all with the new row, in a coarse step.
+; -----------------------------------------------------------------------------
+SCENERY_W_MAX   equ 12
+
+add_scenery:
+                push af
+                ld a,(scenery_width)
+                add a,(hl)
+                cp SCENERY_W_MAX+1
+                jr c,.room
+                pop af                      ; too wide: not this time
+                ret
+.room:          pop af
+                ; fall through
+
+; -----------------------------------------------------------------------------
+; add_overlay: HL = sprite (bank C5, mapped), C = column, A = rows; bottom =
+; gen_row. Silently dropped if the list is full.
 ; -----------------------------------------------------------------------------
 add_overlay:
                 ld b,a
@@ -943,7 +868,15 @@ add_overlay:
                 ld (hl),e                   ; sprite
                 inc hl
                 ld (hl),d
-                ld de,-OV_SPRITE-1
+                inc hl
+                ld a,(de)
+                ld (hl),a                   ; its width
+                push hl
+                ld hl,scenery_width
+                add a,(hl)
+                ld (hl),a
+                pop hl
+                ld de,-OV_WIDTH
                 add hl,de                   ; back to the slot start
                 ld de,(gen_row)
                 ld (hl),e
@@ -1066,6 +999,9 @@ draw_overlays:
                 or a
                 jr nz,.next
 .expired:       ld (iy+OV_ROWS),0           ; top row drawn: free the slot
+                ld a,(scenery_width)
+                sub (iy+OV_WIDTH)
+                ld (scenery_width),a
 .next:          ld de,OV_SIZE
                 add iy,de
                 pop bc
@@ -1111,43 +1047,70 @@ draw_overlay_slice:
                 ld a,(iy+OV_COLUMN)
                 call ring_column
                 ex de,hl                    ; HL = plane 0 address
+                ld a,l                      ; bytes before the plane end
+                neg
+                ld (.part),a
                 ld a,(.width)               ; same offset in every plane: test once
                 ld c,a
                 call ring_fits
+                ld de,(.src)                ; source pointer kept in DE across planes
                 jr z,.fast
-                ld a,(.count)
+                push hl                     ; a line crossing the plane end: up
+                ld a,(.part)                ; to it, then from the plane start
+                call .entry
+                ld (.s1+1),hl
+                ld a,(.part)
                 ld b,a
-.line:          push bc
-                push hl
-                ld de,(.src)
                 ld a,(.width)
-                ld b,a
-.byte:          ld a,(de)
-                and (hl)
-                inc de
-                ld c,a
-                ld a,(de)
-                or c
-                inc de
-                ld (hl),a
-                call next_ring_byte
-                djnz .byte
-                ld (.src),de
+                sub b
+                call .entry
+                ld (.s2+1),hl
                 pop hl
-                ld a,h                      ; next plane
-                add 8
-                ld h,a
-                pop bc
-                djnz .line
+                ld a,(.count)
+.split:         push hl
+                push af
+.s1:            call 0                      ; SMC
+                ld bc,-PLANE_SIZE
+                add hl,bc
+.s2:            call 0                      ; SMC
+                pop af
+                pop hl
+                ld bc,PLANE_SIZE
+                add hl,bc
+                dec a
+                jr nz,.split
                 ret
-; no plane-end crossing: plain loop, source pointer kept in DE across planes
-.fast:          ld de,(.src)
+.fast:          ld a,(.width)
+                push hl
+                call .entry
+                ld (.f1+1),hl
+                pop hl
                 ld a,(.count)
 .fast_line:     push hl
                 push af
-                ld a,(.width)
-                ld b,a
-.fast_byte:     ld a,(de)
+.f1:            call 0                      ; SMC
+                pop af
+                pop hl
+                ld bc,PLANE_SIZE
+                add hl,bc
+                dec a
+                jr nz,.fast_line
+                ret
+; A = bytes: HL = the entry into the chain below for them
+.entry:         ld b,a
+                add a,a
+                add a,a
+                add a,a
+                add a,b                     ; 9 bytes a step
+                ld c,a
+                ld b,0
+                ld hl,.chain_end
+                or a
+                sbc hl,bc
+                ret
+; (mask, data) pairs DE -> screen HL
+.chain:         repeat OVERLAY_W_MAX
+                ld a,(de)
                 and (hl)
                 inc de
                 ld c,a
@@ -1156,14 +1119,9 @@ draw_overlay_slice:
                 inc de
                 ld (hl),a
                 inc hl
-                djnz .fast_byte
-                pop af
-                pop hl
-                ld bc,PLANE_SIZE
-                add hl,bc
-                dec a
-                jr nz,.fast_line
-                ret
+                rend
+.chain_end:     ret
+.part:          defb 0
 .width:         defb 0
 .count:         defb 0
 .src:           defw 0
@@ -1227,6 +1185,7 @@ station_seen:   defw 0                  ; the runner's row when last checked
 station_next:   defb 1                  ; the next station's number
 
 gen_state:
+scenery_width:  defb 0                  ; bytes of the active overlays (add_scenery)
 rng:            defw 0
 gen_row:        defw 0
 pu_gap:         defw 0                  ; rows until the next power-up

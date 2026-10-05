@@ -100,7 +100,7 @@ pass overhead. The longer you run, the more crowded the tracks get.
 
 | Level | Speed | Special |
 |---|---|---|
-| EASY | normal | Obstacles get denser slowly; trains stand still |
+| EASY | normal | Obstacles get denser slowly, never more than 2 on one track in a screen; trains stand still |
 | MEDIUM | about 20% faster | Obstacles get denser faster; trains move on the left track |
 | HARD | faster still | Trains move on both side tracks, and you must **jump the gaps between wagons** when you run on the roofs |
 
