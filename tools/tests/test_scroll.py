@@ -8,7 +8,7 @@ scrolling screen are tested with the HUD (test_hud.py) and the runner.
 from harness import boot_game, load_symbols, peek8, sync_game_frame
 
 PLAYFIELD_RIGHT = 576    # framebuffer x where the HUD starts
-HUD_X = 600              # framebuffer x in the HUD frame, left of the panel
+HUD_X = 588              # framebuffer x in the HUD frame (the green stripe), left of the panel
 COMPARE_LINES = range(40, 200)   # below the top edge, above the runner (7 lines down too)
 SPEEDS = range(1, 8)                 # up to 7: hard + turbo
 
@@ -75,7 +75,8 @@ def test_hud_panel_is_static():
     for _ in range(16):
         img = sync_game_frame(cpc, sym)
         # skip the top 8 lines: the picture edge moves with the fine scroll
-        column = [img.getpixel((HUD_X, y)) for y in range(8, 272)]
+        # (and the black border below the picture's last line, 268)
+        column = [img.getpixel((HUD_X, y)) for y in range(8, 268)]
         assert len(set(column)) == 1, "HUD panel column is not uniform"
         if reference is None:
             reference = column[0]

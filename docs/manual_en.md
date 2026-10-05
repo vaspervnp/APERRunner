@@ -124,12 +124,18 @@ You have **3 lives**. After a crash you are protected for a moment. When the las
 
 ## The screen
 
-The track takes up three quarters of the screen. The panel on the right shows:
+The track takes up three quarters of the screen. The panel on the right is the train's dashboard:
 
-- your **score**;
-- your **coins**;
-- the **lives** left;
-- the **power-ups** you have, each with a bar that shows how much time is left.
+- your **score** (white) and the **best score** (orange);
+- your **coins** and the **lives** left;
+- the **route** from Kiato to Piraeus: the yellow stretch is behind you, the red mark is you;
+- all six **power-ups**: grey when you don't have them, lit with a time bar while they run;
+- on the right, a little **track** that runs with you: the station boards go by on it.
+
+## The route
+
+You run from Kiato to Piraeus: **Corinth, Megara, Elefsina, Aspropyrgos, Rentis, Piraeus**. The bell rings and the
+station's name appears on the track as you pass it. **Piraeus gives 1000 points**, and then the route starts again.
 
 ---
 

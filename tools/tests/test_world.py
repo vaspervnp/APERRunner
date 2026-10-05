@@ -4,7 +4,7 @@ from harness import boot_game, load_symbols, peek8, peek16, save_screenshot, syn
 from world_model import F_BRIDGE, F_FOREST, F_OVERLAY, Sheets, read_desc, screen_row, visible_rows
 
 TRACK_TILES = 39
-HUD_PANEL = range(76, 91)            # bytes where the HUD draws its elements
+HUD_PANEL = range(74, 92)            # bytes where the HUD draws its elements
 RUNNER_ROWS = range(28, 34)          # picture rows the runner (and its shadow) can touch
 
 
@@ -23,7 +23,7 @@ def _check_screen(cpc, sym, sheets):
     for index, (row, bank, ring) in enumerate(visible_rows(cpc, sym)):
         desc = read_desc(cpc, sym, row)
         below = read_desc(cpc, sym, row - 1)
-        for column, width, pens in sheets.expected(desc):
+        for column, width, pens in sheets.expected(desc, row):
             if column == 72:                 # HUD: only the frame around the panel
                 got = screen_row(cpc, bank, ring, column, width)
                 keep = [x for x in range(48) if 72 + x // 2 not in HUD_PANEL]

@@ -24,6 +24,7 @@ D_LANES         equ 3                   ; 3 track tile indices
 D_COLL          equ 6                   ; 3 collision classes (see tools/mklevel.py)
 D_ITEM          equ 9                   ; 3 items
 F_FOREST        equ 1
+F_STATION       equ 2                   ; a station on the route (HUD board, name)
 F_OVERLAY       equ #40
 F_BRIDGE        equ #80
 
@@ -100,6 +101,10 @@ world_init:
                 ld (kiosk_countdown),a
                 ld a,50
                 ld (kiosk_countdown+1),a
+                ld hl,ROUTE_SEG             ; the route: Kiato to Piraeus
+                ld (route_left),hl
+                ld a,1
+                ld (station_next),a
                 ret
 
 ; -----------------------------------------------------------------------------
@@ -219,6 +224,20 @@ generate_row:
                 call z,spacer_step
 
                 call tick_busy_counters
+                ld hl,(route_left)          ; the route: a station every
+                dec hl                      ; ROUTE_SEG rows, Piraeus the 6th,
+                ld a,h                      ; then from Kiato again
+                or l
+                jr nz,.route
+                set 1,(ix+D_FLAGS)          ; F_STATION
+                ld a,(route_station)
+                inc a
+                cp ROUTE_STATIONS-1
+                jr c,.station
+                xor a
+.station:       ld (route_station),a
+                ld hl,ROUTE_SEG
+.route:         ld (route_left),hl
                 ld hl,(pu_gap)              ; rows until the next power-up
                 ld a,h
                 or l
@@ -348,6 +367,9 @@ spacer_step:
                 dec (hl)
                 ret
 spacer_steps:   defb 64,40,24               ; rows per step: easy, medium, hard
+
+ROUTE_SEG       equ 320                     ; rows between two stations (5 route pixels)
+ROUTE_STATIONS  equ 7                       ; Kiato .. Piraeus
 
 PU_GAP_MIN      equ 50
 PU_GAP_RANGE    equ 70                      ; 50-120 rows, ~50-150 with the wait
@@ -967,8 +989,15 @@ render_row:
                 ld b,COL_LANE1+LANE_BYTES*2
                 call .lane
 
-.hud:           ld hl,gfx_hud_bg_hud_bg
-                ld b,COL_HUD
+.hud:           ld hl,gfx_hud_bg_hud_station ; the HUD frame: a station board,
+                bit 1,(ix+D_FLAGS)          ; or the little track's sleeper on
+                jr nz,.hud_tile             ; every other row
+                ld hl,gfx_hud_bg_hud_bg
+                ld a,(.row)
+                rra
+                jr nc,.hud_tile
+                ld hl,gfx_hud_bg_hud_bg_t
+.hud_tile:      ld b,COL_HUD
                 ld c,GFX_HUD_BG_WIDTH
                 call .blit
 
@@ -1129,6 +1158,56 @@ draw_overlay_slice:
 .src:           defw 0
 
 ; --- generator state (cleared by world_init) ---------------------------------------
+; -----------------------------------------------------------------------------
+; stations: once a game frame. When the runner reaches a station row its
+; name is written on the track (and the bell rings); Piraeus gives 1000
+; points and the route starts over.
+; -----------------------------------------------------------------------------
+stations:
+                ld hl,(feet_row)
+                ld de,(station_seen)
+                or a
+                sbc hl,de
+                ret z
+                add hl,de
+                ld (station_seen),hl
+                call desc_addr
+                bit 1,(hl)                  ; F_STATION
+                ret z
+                ld a,(station_next)         ; 1 Corinth .. 6 Piraeus
+                ld b,a
+                inc a
+                cp ROUTE_STATIONS
+                jr c,.next
+                ld a,1
+.next:          ld (station_next),a
+                ld a,SFX_SIGNAL
+                ld (sfx_request),a
+                ld a,b
+                cp ROUTE_STATIONS-1
+                call z,piraeus_bonus
+                ld a,b
+                add LABEL_STATION-1
+                jp make_label
+
+piraeus_bonus:                              ; 1000 points
+                push bc
+                ld hl,score+1
+                ld a,(hl)
+                add #10
+                daa
+                ld (hl),a
+                inc hl
+                ld a,(hl)
+                adc 0
+                daa
+                ld (hl),a
+                pop bc
+                ret nc
+                jp score_add.full
+station_seen:   defw 0                  ; the runner's row when last checked
+station_next:   defb 1                  ; the next station's number
+
 gen_state:
 rng:            defw 0
 gen_row:        defw 0
@@ -1151,6 +1230,8 @@ kiosk_countdown: defb 0,0
 kiosk_phase:    defb 0,0
 path_left:      defb 0,0
 fence_left:     defb 0,0
+route_left:     defw 0                  ; rows to the next station
+route_station:  defb 0                  ; stations passed on this lap (0-5)
 busy_counters:
 car_busy:       defs 6
 tree_busy:      defs 2

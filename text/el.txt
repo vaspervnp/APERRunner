@@ -47,6 +47,12 @@ pu_3: 3
 pu_2: 2
 pu_1: 1
 pu_go: ΠΑΜΕ!
+station_1: ΚΟΡΙΝΘΟΣ
+station_2: ΜΕΓΑΡΑ
+station_3: ΕΛΕΥΣΙΝΑ
+station_4: ΑΣΠΡΟΠΥΡΓΟΣ
+station_5: ΡΕΝΤΗΣ
+station_6: ΠΕΙΡΑΙΑΣ! 1000 ΠΟΝΤΟΙ
 menu_story: ΙΣΤΟΡΙΑ
 story_title: Ο ΤΕΛΕΥΤΑΙΟΣ ΣΟΥΒΛΑΤΖΗΣ
 story_1: 6:47 ΤΟ ΠΡΩΙ ΣΤΟ ΚΙΑΤΟ.

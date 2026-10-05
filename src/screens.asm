@@ -34,7 +34,7 @@ DEMO_FRAMES     equ 750                 ; 30 s of demo
 HISCORES        equ 8
 HS_SIZE         equ 6                   ; score (3, BCD), name (3 letters 0-25)
 NAME_LETTERS    equ 3
-PAUSE_Y         equ 200                 ; pause label in the HUD panel
+PAUSE_Y         equ 220                 ; pause label in the HUD panel
 KEY_L_LINE      equ 4                   ; keyboard matrix: L
 KEY_L_MASK      equ %00010000
 KEY_M_LINE      equ 4                   ; M: music on/off while playing

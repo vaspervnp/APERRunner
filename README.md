@@ -26,7 +26,11 @@ from the ramps and watch out for red signals, from the city avenue all the way t
 - A steady **25 fps**, with no dropped frames even at top speed.
 - **3 difficulty levels**: EASY / MEDIUM / HARD (speed 4 / 5 / 6 lines per frame; on HARD you also jump the gaps
   between wagons). Obstacles start sparse and get denser over time, faster on the harder levels.
-- **Side HUD** (1/4 of the screen): score, coins, lives, active power-ups with a time bar.
+- **Side HUD** (1/4 of the screen) like a train's dashboard: score and best score, coins and lives, the route
+  Kiato → Piraeus with the runner's place, all six power-ups (lit with a time bar while running), and a little
+  track that scrolls with the world and shows the station boards going by.
+- **Stations**: Corinth, Megara, Elefsina, Aspropyrgos, Rentis, Piraeus. Their names appear on the track as you pass
+  them; Piraeus gives 1000 points and the route starts again.
 - **3 railway tracks** with trains (3 wagon types, 3 locomotive types), ramps, buffer stops and signals.
 - **5 height levels**: the runner "grows" the higher he is, from the ground up to the highest jump above a train roof.
 - **Environments**: city (a 3+3 lane avenue with cars, buses and kiosks) and forest, with **footbridges** and

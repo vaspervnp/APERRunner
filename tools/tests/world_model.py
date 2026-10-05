@@ -10,7 +10,7 @@ sys.path.insert(0, os.path.join(ROOT, "tools"))
 import assets  # noqa: E402
 import png2cpc  # noqa: E402
 
-F_FOREST, F_OVERLAY, F_BRIDGE = 0x01, 0x40, 0x80
+F_FOREST, F_STATION, F_OVERLAY, F_BRIDGE = 0x01, 0x02, 0x40, 0x80
 
 
 def read_desc(cpc, sym, row):
@@ -55,9 +55,10 @@ class Sheets:
                                  for i in range(2 * len(names))]
         bridges = png2cpc.load_sheet("bridges")
         self.bridges = [bridges[n] for n, _, _ in assets.SHEETS["bridges"]]
-        self.hud = png2cpc.load_sheet("hud")["hud_bg"]
+        hud = png2cpc.load_sheet("hud")
+        self.hud, self.hud_sleeper, self.hud_station = hud["hud_bg"], hud["hud_bg_t"], hud["hud_station"]
 
-    def expected(self, desc):
+    def expected(self, desc, row=0):
         """Expected pens for (column, width, lines) parts of a row."""
         parts = []
         if desc["flags"] & F_BRIDGE:
@@ -68,5 +69,7 @@ class Sheets:
             parts.append((57, 15, sides[desc["right"]]))
             for lane in range(3):
                 parts.append((15 + lane * 14, 14, self.track[self.track_names[desc["lanes"][lane]]]))
-        parts.append((72, 24, self.hud))
+        # the HUD frame: a station board, or the little track's sleeper on odd rows
+        parts.append((72, 24, self.hud_station if desc["flags"] & F_STATION
+                       else self.hud_sleeper if row & 1 else self.hud))
         return parts

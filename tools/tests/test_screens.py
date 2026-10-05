@@ -107,7 +107,7 @@ def test_esc_goes_back_to_the_menu_and_pause_shows_a_label():
     assert peek8(cpc, sym["paused"]) == 1
     img = sync_game_frame(cpc, sym)
     label = white_lines(img, 608, 724)
-    assert any(200 + IMAGE_Y <= y < 208 + IMAGE_Y for y in label), "ΠΑΥΣΗ in the HUD panel"
+    assert any(220 + IMAGE_Y <= y < 228 + IMAGE_Y for y in label), "ΠΑΥΣΗ in the HUD panel"
     press(cpc, sym, ord("h"))
     assert peek8(cpc, sym["paused"]) == 0
     img = sync_game_frame(cpc, sym)

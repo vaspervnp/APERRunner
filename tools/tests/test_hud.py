@@ -15,7 +15,7 @@ import png2cpc  # noqa: E402
 
 SL_SIZE, SLOTS, SL_STATE = 15, 5, 14
 PANEL_PEN, GLINT_PEN = 1, 14
-BAND = range(56, 168)                   # screen lines the slots can reach
+BAND = range(80, 204)                   # screen lines the slots can reach
 
 
 def _palette():
@@ -129,7 +129,7 @@ def test_hud_shows_the_values():
     cpc.write_ram(sym["scroll_speed"], bytes([0]))
     for _ in range(2):                                          # the world stands still
         sync_game_frame(cpc, sym)
-    cpc.write_ram(sym["score"], bytes([0x56, 0x34, 0x12]))      # 123456
+    cpc.write_ram(sym["score"], bytes([0x56, 0x34, 0x12]))      # 123456: above the best
     cpc.write_ram(sym["coins"], bytes([0x42, 0x00]))            # 0042
     cpc.write_ram(sym["lives"], bytes([2]))
     cpc.write_ram(sym["pu_magnet"], (125).to_bytes(2, "little"))  # half of 250
@@ -137,44 +137,93 @@ def test_hud_shows_the_values():
     for _ in range(3):
         sync_game_frame(cpc, sym)
     glyph = _glyphs()
-    score, coins, lives, cells, more_cells = slots(cpc, sym)
+    score, best, coins, first, second = slots(cpc, sym)
 
-    def digits(slot, offset, text):
-        lines = buffer_pens(cpc, slot)
+    def digits(slot, offset, text, kind="d"):
+        lines = buffer_pens(cpc, slot)[:8]
         for i, d in enumerate(text):
-            assert _cells(lines, offset + 2 * i, 2) == glyph[f"d{d}"], f"digit {i} of {text}"
+            assert _cells(lines, offset + 2 * i, 2) == glyph[f"{kind}{d}"], f"digit {i} of {text}"
 
     digits(score, 0, "123456")
-    assert _cells(buffer_pens(cpc, coins), 0, 4) == glyph["ic_coin"]
+    digits(best, 0, "123456", "h")                              # the best score: this one, in orange
+    lines = buffer_pens(cpc, coins)
+    assert _cells(lines[:8], 0, 4) == glyph["ic_coin"]
     digits(coins, 4, "0042")
-    assert _cells(buffer_pens(cpc, lives), 0, 4) == glyph["ic_life"]
-    digits(lives, 4, "2")
-    assert not more_cells["drawn"], "one power-up: one row of cells"
-    lines = buffer_pens(cpc, cells)
-    assert _cells(lines[:8], 0, 4) == glyph["ic_magnet"]
-    bar = lines[8][:8]                                           # 122/250 of 8 pixels -> 4
-    assert bar == [7] * 4 + [PANEL_PEN] * 4 and lines[9][:8] == bar, bar
-    assert all(p == PANEL_PEN for row in lines for p in row[8:]), "other cells empty"
+    assert _cells(lines[:8], 12, 4) == glyph["ic_life"]
+    digits(coins, 16, "2")
+    route = lines[9:12]                                         # station ticks, the track
+    assert [route[0][x] for x in (6, 12, 35)] == [3, 3, 3]
+    assert 13 in route[1] and set(route[1]) <= {2, 7, 13}, "the runner on the grey track"
+    # the six power-ups: lit with a time bar when running, dark otherwise
+    shelf = buffer_pens(cpc, first)
+    assert _cells(shelf[:7], 0, 4) == glyph["ic_magnet"][:7]
+    assert shelf[7][:8] == [7] * 4 + [PANEL_PEN] * 4, "half of the magnet's time"
+    assert _cells(shelf[:8], 4, 4) == glyph["ic_turbo_off"]
+    assert _cells(shelf[:8], 8, 4) == glyph["ic_slow_off"]
+    shelf = buffer_pens(cpc, second)
+    for cell, name in enumerate(("ic_helmet_off", "ic_spring_off", "ic_ticket_off")):
+        assert _cells(shelf[:8], 4 * cell, 4) == glyph[name], name
     cpc.write_ram(sym["coins"], bytes([0x43, 0x00]))            # one digit changes
     for _ in range(2):
         sync_game_frame(cpc, sym)
     digits(coins, 4, "0043")
 
 
-def test_power_up_row_disappears_when_it_ends():
+def test_power_up_goes_dark_when_it_ends():
     sym = load_symbols()
     cpc = boot_game()
     palette = _palette()
     cpc.write_ram(sym["pu_spring"], (30).to_bytes(2, "little"))
     cpc.write_ram(sym["pu_ticket"], (200).to_bytes(2, "little"))
-    seen = False
+    glyph = _glyphs()
+    lit = False
     sync_game_frame(cpc, sym)
     for _ in range(40):
         img, buffers = game_frame(cpc, sym)
-        spring = slots(cpc, sym)[3]
-        seen |= bool(spring["drawn"])
+        cells = buffer_pens(cpc, slots(cpc, sym)[4])
+        lit |= _cells(cells[:7], 4, 4) == glyph["ic_spring"][:7]
         assert not check_panel(img, expected_panel(cpc, sym, buffers), palette)
-    assert seen and slots(cpc, sym)[3]["drawn"], "the ticket stays"
-    assert peek16(cpc, sym["pu_spring"]) == 0
-    lines = buffer_pens(cpc, slots(cpc, sym)[3])
-    assert _cells(lines[:8], 0, 4) == _glyphs()["ic_ticket"], "the ticket moved to the first cell"
+    assert lit and peek16(cpc, sym["pu_spring"]) == 0
+    cells = buffer_pens(cpc, slots(cpc, sym)[4])
+    assert _cells(cells[:8], 4, 4) == glyph["ic_spring_off"], "the springs went dark"
+    assert _cells(cells[:7], 8, 4) == glyph["ic_ticket"][:7], "the ticket still runs"
+
+
+def test_route_and_stations():
+    """A station every ROUTE_SEG rows: its board on the HUD's little track,
+    its name on the track when the runner gets there, Piraeus' bonus."""
+    sym = load_symbols()
+    cpc = boot_game()
+    cpc.write_ram(sym["scroll_speed"], bytes([6]))
+    names, boards = [], 0
+    seen = set()
+    score_at = None
+    last_next = peek8(cpc, sym["station_next"])
+    score_now = 0
+
+    def bcd(cpc, addr):
+        value = 0
+        for byte in reversed(cpc.read_ram(addr, 3)):
+            value = value * 100 + (byte >> 4) * 10 + (byte & 15)
+        return value
+    for _ in range(4000):
+        sync_game_frame(cpc, sym)
+        top = peek16(cpc, sym["scr_top_row"])
+        for r in range(top - 20, top):
+            if r not in seen:
+                seen.add(r)
+                desc = cpc.read_ram(sym["world_ring"] + (r & 63) * sym["row_size"], 1)[0]
+                boards += bool(desc & 2)
+        last_score, score_now = score_now, bcd(cpc, sym["score"])
+        nxt = peek8(cpc, sym["station_next"])
+        if nxt != last_next:                    # a station passed: its name
+            last_next = nxt
+            names.append(peek8(cpc, sym["label_item"]))
+            if names[-1] == 18:                 # Piraeus: 1000 points at once
+                score_at = bcd(cpc, sym["score"]) - last_score
+        if len(names) >= 7:
+            break
+    print(f"    {boards} station boards, labels {names}, Piraeus: +{score_at}")
+    assert names[:7] == [13, 14, 15, 16, 17, 18, 13], names         # Corinth .. Piraeus, Corinth again
+    assert boards >= 7
+    assert 1000 <= score_at < 1100

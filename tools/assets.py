@@ -46,9 +46,13 @@ PLAYER_FRAMES = (
 )
 
 POWERUPS = ["pu_magnet", "pu_turbo", "pu_slow", "pu_spring", "pu_helmet", "pu_ticket"]
-HUD_ICONS = ["ic_coin", "ic_magnet", "ic_turbo", "ic_slow", "ic_spring", "ic_helmet",
-             "ic_ticket", "ic_life", "ic_dist"]
-HUD_DIGITS = [f"d{d}" for d in range(10)]
+HUD_POWERUPS = ["ic_magnet", "ic_turbo", "ic_slow", "ic_spring", "ic_helmet", "ic_ticket"]
+# (src/hud.asm keeps an icon index + 1 in a nibble: the power-up icons, lit
+# and dark, come first)
+HUD_ICONS = (["ic_coin"] + HUD_POWERUPS + [n + "_off" for n in HUD_POWERUPS]
+             + ["ic_life", "ic_dist"])
+HUD_BACKGROUNDS = ["hud_bg", "hud_bg_t", "hud_station"]   # plain, a sleeper, a station
+HUD_DIGITS = [f"d{d}" for d in range(10)] + [f"h{d}" for d in range(10)]   # white; orange (best score)
 
 # font sheet order (gfx/src/font.lua): frame name, characters it draws
 FONT_GLYPHS = (
@@ -82,7 +86,7 @@ SHEETS = {
     "items": _fixed([f"coin{i}" for i in range(4)], 8, 8) + _fixed(POWERUPS, 12, 12),
     "font": [(name, 6, 8) for name, _ in FONT_GLYPHS],
     "logo": [("logo", 144, 48)],
-    "hud": ([("hud_bg", 48, 8)] + _fixed(HUD_ICONS, 8, 8) + [("bar_full", 2, 8), ("bar_empty", 2, 8)]
+    "hud": (_fixed(HUD_BACKGROUNDS, 48, 8) + _fixed(HUD_ICONS, 8, 8) + [("bar_full", 2, 8), ("bar_empty", 2, 8)]
             + _fixed(HUD_DIGITS, 4, 8)),
 }
 
@@ -97,7 +101,7 @@ ASSETS = {
     "player": ("player", "header", None, False),        # width, height (drawn by player_code)
     "shadows": ("shadows", "sprite", None, False),
     "items": ("items", "sprite", None, False),
-    "hud_bg": ("hud", "tile", ["hud_bg"], False),
+    "hud_bg": ("hud", "tile", HUD_BACKGROUNDS, False),
     "hud_icons": ("hud", "panel", HUD_ICONS + ["bar_full", "bar_empty"] + HUD_DIGITS, False),
     "coin_code": ("items", "compiled", [f"coin{i}" for i in range(4)], False),
     "player_code": ("player", "compiled", None, False),

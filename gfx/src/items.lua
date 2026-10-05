@@ -81,18 +81,34 @@ local POWERUPS = {
 }
 
 -- --- HUD ------------------------------------------------------------------------------
--- panel like a train door: dark blue core, steel frame, rivet stripe
+-- a dashboard: steel frame with the green ISAP stripe, a dark blue display
+-- (bytes 2-19: where the values sit, pen 1) and on the right a little track
+-- that scrolls with the world (sleepers every other row: hud_bg_t) and shows
+-- the stations as they go by (hud_station).
 local HUD_COLUMNS = {
-  BLACK, GREY, WHITE, GREY, BLUE, BLUE, BLACK,
-  BLUE, BLUE, BLUE, BLUE, BLUE, BLUE, BLUE, BLUE, BLUE, BLUE, BLUE, BLUE, BLUE, BLUE, BLUE, BLUE,
-  BLUE, BLUE, BLUE, BLUE, BLUE, BLUE, BLUE, BLUE, BLUE, BLUE, BLUE, BLUE, BLUE, BLUE, BLUE, BLUE,
-  BLACK, BLUE, BLUE, GREY, WHITE, GREY, BLACK, BLACK, BLACK,
+  BLACK, GREY, WHITE, GREEN,                                   -- frame, ISAP stripe
+  BLUE, BLUE, BLUE, BLUE, BLUE, BLUE, BLUE, BLUE, BLUE, BLUE,  -- the display
+  BLUE, BLUE, BLUE, BLUE, BLUE, BLUE, BLUE, BLUE, BLUE, BLUE,
+  BLUE, BLUE, BLUE, BLUE, BLUE, BLUE, BLUE, BLUE, BLUE, BLUE,
+  BLUE, BLUE, BLUE, BLUE, BLUE, BLUE,
+  GREEN, BLACK,                                                -- stripe, then the track
+  WHITE, OLIVE, OLIVE, WHITE,                                  -- rails on the ballast
+  GREY, BLACK,                                                 -- frame
 }
+local TRACK_X = 42                                             -- left rail
 
-local function hud_bg()
+local function hud_bg(kind)
   local c = Canvas(48, 8)
   assert(#HUD_COLUMNS == 48)
   for x = 0, 47 do c:vline(x, 0, 7, HUD_COLUMNS[x + 1]) end
+  if kind == "sleeper" then
+    c:rect(TRACK_X, 3, TRACK_X + 3, 5, RED)                    -- a sleeper across the rails
+  elseif kind == "station" then                                -- a station board
+    c:rect(40, 0, 46, 7, WHITE)
+    c:rect(41, 1, 45, 6, BBLUE)
+    c:hline(42, 44, 2, WHITE); c:px(43, 3, WHITE); c:hline(42, 44, 4, WHITE)   -- a little sign
+    c:hline(42, 44, 5, WHITE)
+  end
   return c
 end
 
@@ -127,6 +143,16 @@ local ICONS = {
   end,
 }
 
+-- a power-up not running: its icon in grey and black on the display
+local function dim(draw)
+  local c = icon(draw)
+  for y = 0, 7 do for x = 0, 7 do
+    local p = c:get(x, y)
+    if p ~= CLEAR then c:px(x, y, (p == BLACK) and BLACK or GREY) end
+  end end
+  return c
+end
+
 local function bar(full)
   local c = Canvas(2, 8)
   if full then c:rect(0, 0, 1, 7, YELLOW); c:vline(1, 0, 7, ORANGE)
@@ -148,11 +174,11 @@ local DIGITS = {
   { "###", "#.#", "#.#", "###", "..#", "..#", "###" },
 }
 
-local function digit(d)
+local function digit(d, pen)
   local c = Canvas(4, 8, BLUE)
   for y, row in ipairs(DIGITS[d + 1]) do
     for x = 1, 3 do
-      if row:sub(x, x) == "#" then c:px(x - 1, y - 1, WHITE) end
+      if row:sub(x, x) == "#" then c:px(x - 1, y - 1, pen or WHITE) end
     end
   end
   return c
@@ -166,12 +192,21 @@ for _, name in ipairs({ "pu_magnet", "pu_turbo", "pu_slow", "pu_spring", "pu_hel
 end
 build_sheet("items", items)
 
-local hud = { { name = "hud_bg", canvas = hud_bg() } }
-for _, name in ipairs({ "ic_coin", "ic_magnet", "ic_turbo", "ic_slow", "ic_spring", "ic_helmet",
-                        "ic_ticket", "ic_life", "ic_dist" }) do
+local hud = { { name = "hud_bg", canvas = hud_bg() }, { name = "hud_bg_t", canvas = hud_bg("sleeper") },
+              { name = "hud_station", canvas = hud_bg("station") } }
+local POWERUP_ICONS = { "ic_magnet", "ic_turbo", "ic_slow", "ic_spring", "ic_helmet", "ic_ticket" }
+for _, name in ipairs({ "ic_coin", table.unpack(POWERUP_ICONS) }) do
   hud[#hud + 1] = { name = name, canvas = icon(ICONS[name]) }
 end
+for _, name in ipairs(POWERUP_ICONS) do
+  hud[#hud + 1] = { name = name .. "_off", canvas = dim(ICONS[name]) }
+end
+for _, name in ipairs({ "ic_life", "ic_dist" }) do
+  hud[#hud + 1] = { name = name, canvas = icon(ICONS[name]) }
+end
+
 hud[#hud + 1] = { name = "bar_full", canvas = bar(true) }
 hud[#hud + 1] = { name = "bar_empty", canvas = bar(false) }
 for d = 0, 9 do hud[#hud + 1] = { name = "d" .. d, canvas = digit(d) } end
+for d = 0, 9 do hud[#hud + 1] = { name = "h" .. d, canvas = digit(d, ORANGE) } end   -- the best score
 build_sheet("hud", hud)

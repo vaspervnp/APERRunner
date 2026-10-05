@@ -29,7 +29,7 @@ flyer_saves     equ shadow_save+SHADOW_SAVE_SIZE    ; FLYER_COUNT*FLY_SAVE_SIZE
 text_ptrs       equ flyer_saves+FLYER_COUNT*FLY_SAVE_SIZE ; TXT_COUNT*2 (set_language)
 text_buf        equ text_ptrs+TXT_COUNT*2       ; 24
 blank_line      equ text_buf+24                 ; 72 zeros (start)
-label_buf       equ #0880                           ; LABEL_BUF_SIZE (stack: &0D00-&0FFF)
+label_buf       equ #0880                           ; LABEL_BUF_SIZE (stack: &0E00-&0FFF)
 hud_buf_score   equ label_buf+LABEL_BUF_SIZE        ; HUD slot buffers (src/hud.asm)
 
 VBLS_PER_FRAME  equ 2               ; 25 fps
@@ -128,6 +128,7 @@ main_loop:
                 call magnet
                 call tick_powerups
                 call late_erase             ; a picked-up power-up off the screen
+                call stations               ; a station's name, the Piraeus bonus
                 call draw_label             ; a power-up's name on the track
 .not_playing:   call move_flyers
                 call effects
@@ -243,7 +244,6 @@ measure_load:
                 include "pickups.asm"
                 include "hud.asm"
                 include "screens.asm"
-                include "data/gfx_hud_icons.asm"
                 include "data/palette.asm"
 
 ; --- variables (fixed labels, read by tools/tests) ---------------------------
@@ -259,7 +259,7 @@ end_of_code:
                 assert end_of_code <= #4000
                 assert FILE_ADDR+BOOT_STUB_SIZE+end_of_code-LOAD_ADDR <= SCORES_LOAD
                 assert blank_line+72 <= WORLD_RING
-                assert HUD_BUF_END <= #0D00
+                assert HUD_BUF_END <= #0E00         ; the stack: &0E00-&0FFF
                 save "build/aper.bin",FILE_ADDR,BOOT_STUB_SIZE+end_of_code-LOAD_ADDR
 
 ; =============================================================================
@@ -273,6 +273,7 @@ bank4_start:
                 include "data/gfx_forest.asm"
                 include "data/gfx_bridges.asm"
                 include "data/gfx_hud_bg.asm"
+                include "data/gfx_hud_icons.asm"    ; (hud_prepare maps C4)
 bank4_end:
                 assert bank4_end <= #8000
                 save "build/aperb4.bin",bank4_start,bank4_end-bank4_start

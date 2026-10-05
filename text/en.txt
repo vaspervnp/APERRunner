@@ -47,6 +47,12 @@ pu_3: 3
 pu_2: 2
 pu_1: 1
 pu_go: GO!
+station_1: CORINTH
+station_2: MEGARA
+station_3: ELEFSINA
+station_4: ASPROPYRGOS
+station_5: RENTIS
+station_6: PIRAEUS! 1000 BONUS
 menu_story: STORY
 story_title: THE LAST SOUVLAKI MAN
 story_1: 6:47 AM IN KIATO.

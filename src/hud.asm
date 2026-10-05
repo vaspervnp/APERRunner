@@ -13,17 +13,22 @@
 ; previous game frame (hud_prepare), so the start of a frame only copies.
 ;
 ; Elements sit on the flat panel (bytes HUD_PANEL_FIRST..HUD_PANEL_LAST,
-; pen 1); the glyphs (tools/assets.py "panel" kind) are opaque with that
-; colour, so a slot never reads the screen.
+; pen 1); the glyphs (tools/assets.py "panel" kind, bank C4) are opaque with
+; that colour, so a slot never reads the screen.
+;
+; Layout: SC score, HI best score (or this one when higher), coins and lives,
+; the six power-ups (dark, or lit with a time bar), the route Kiato-Piraeus
+; with the runner's place. The background (render_row) frames it and runs a
+; little track with the stations on the right.
 ; =============================================================================
 
 HUD_PANEL_BYTE  equ #C0                 ; two pixels of pen 1
-HUD_PANEL_FIRST equ COL_HUD+4
-HUD_PANEL_LAST  equ COL_HUD+18
-HUD_MAX_W       equ 15                  ; bytes
+HUD_PANEL_FIRST equ COL_HUD+2
+HUD_PANEL_LAST  equ COL_HUD+19
+HUD_MAX_W       equ 18                  ; bytes
 HUD_STEP_MAX    equ 16                  ; (2 frames at top speed) larger: wipe the panel
-HUD_BAND_FIRST  equ 56                  ; screen lines the slots can reach
-HUD_BAND_LAST   equ 167
+HUD_BAND_FIRST  equ 80                  ; screen lines the slots can reach
+HUD_BAND_LAST   equ 203
 
 ; slot record (hud_slots, HUD_SLOT_COUNT of them)
 SL_Y            equ 0                   ; top screen line
@@ -36,20 +41,29 @@ SL_BUILD_FN     equ 8                   ; (2) fills the buffer from hud_key
 SL_COVER        equ 10                  ; 1: the next slot sits right below, as wide
 SL_KEY          equ 11                  ; (3) value the buffer shows
 SL_STATE        equ 14                  ; bit0 drawn on screen, bit1 buffer valid,
-                                        ; bit2 shown this frame
+                                        ; bit2 shown this frame, bit3 drawn last frame
 SL_SIZE         equ 15
 
 ; layout (exported to the symbol file for the tests). Slots of a group touch,
 ; so only the lines below the last shown one of a group need clearing.
-HUD_SCORE_Y     equ 64
-HUD_COINS_Y     equ 72
-HUD_LIVES_Y     equ 80
-HUD_PU_Y        equ 96                  ; first power-up row
+; The slots are drawn faster than nothing but slower than the beam (~100 us
+; a line for 64), so the groups are spread down the band: the gaps between
+; them give the drawing its lead back.
+HUD_SCORE_Y     equ 88
+HUD_HI_Y        equ 96
+HUD_COINS_Y     equ 116                 ; coins and lives side by side
+HUD_COINS_W     equ 18
+HUD_COINS_H     equ 12                      ; and the route bar under them
+HUD_PU_Y        equ 136                 ; first power-up row
 HUD_PU_CELLS    equ 3                       ; power-up cells per slot
-HUD_PU_W        equ HUD_PU_CELLS*4
-HUD_PU_H        equ 10                      ; icon + 2-line bar
-HUD_PU_X        equ HUD_PANEL_FIRST+1
-HUD_LIVES_W     equ 6                       ; head + digit
+HUD_PU_CELL     equ 4
+HUD_PU_W        equ HUD_PU_CELLS*HUD_PU_CELL
+HUD_PU_H        equ 8                       ; icon, its time bar on the last line
+HUD_PU_X        equ HUD_PANEL_FIRST+3
+HUD_SCORE_W     equ 12                      ; 6 digits (the best score in orange)
+HUD_ROUTE_LINE  equ 9                       ; the route bar in the coins slot:
+HUD_ROUTE_W     equ HUD_COINS_W             ; 36 pixels, a station every 6
+HUD_ROUTE_H     equ 3
 
 ; -----------------------------------------------------------------------------
 ; hud_init: slots from hud_layout, nothing drawn (the screen is fresh).
@@ -115,19 +129,27 @@ hud_update:
                 ld (hud_fresh),a
 .step:          ld (hud_step),a
 
-                ld ix,hud_slots             ; clear what scrolled out
+                ld ix,hud_slots             ; bit 3: drawn last frame
                 ld b,HUD_SLOT_COUNT
-.clear:         push bc
-                call hud_slot_clear
                 ld de,SL_SIZE
-                add ix,de
+.old:           res 3,(ix+SL_STATE)
+                bit 0,(ix+SL_STATE)
+                jr z,.old_next
+                set 3,(ix+SL_STATE)
+                res 0,(ix+SL_STATE)
+.old_next:      add ix,de
+                djnz .old
+                ld ix,hud_slots             ; top to bottom, ahead of the beam:
+                ld b,HUD_SLOT_COUNT         ; each run of touching shown slots,
+.slot:          bit 2,(ix+SL_STATE)         ; then what scrolled out below it
+                jr nz,.shown
+                push bc
+                call hud_slot_clear         ; hidden: its old place
                 pop bc
-                djnz .clear
-                ld ix,hud_slots             ; draw runs of touching shown slots,
-                ld b,HUD_SLOT_COUNT         ; top to bottom, ahead of the beam
-.slot:          res 0,(ix+SL_STATE)
-                bit 2,(ix+SL_STATE)
-                jr z,.next
+                jr .next
+.shown:         ld (hud_run),ix
+                ld a,1
+                ld (hud_run_n),a
                 ld a,(ix+SL_Y)
                 ld (hb_y),a
                 ld a,(ix+SL_X)
@@ -147,6 +169,9 @@ hud_update:
                 ld de,SL_SIZE
                 add ix,de
                 dec b
+                ld a,(hud_run_n)
+                inc a
+                ld (hud_run_n),a
                 ld a,c
                 add a,(ix+SL_H)
                 ld c,a
@@ -154,17 +179,28 @@ hud_update:
 .run:           ld a,c
                 ld (hb_lines),a
                 push bc
+                push ix
                 call hud_blit
+                ld ix,(hud_run)             ; the run's slots: below them
+                ld a,(hud_run_n)
+.run_clear:     push af
+                call hud_slot_clear
+                ld de,SL_SIZE
+                add ix,de
+                pop af
+                dec a
+                jr nz,.run_clear
+                pop ix
                 pop bc
 .next:          ld de,SL_SIZE
                 add ix,de
                 djnz .slot
                 ret
 
-; IX = slot drawn last frame: clear the lines its old picture moved to that
-; this frame's drawing will not cover.
+; IX = slot: if it was drawn last frame, clear the lines its old picture
+; moved to that this frame's drawing will not cover.
 hud_slot_clear:
-                bit 0,(ix+SL_STATE)
+                bit 3,(ix+SL_STATE)
                 ret z
                 ld c,0                      ; C = the next slot is drawn below
                 ld a,(ix+SL_COVER)
@@ -220,7 +256,11 @@ hud_prepare:
                 or a                        ; next light one (speed < 8: there is
                 ret nz                      ; one at least every 4 frames)
                 call pu_scan                ; power-up cells for both slots
-                ld ix,hud_slots
+                MAP_RAM GA_RAM_C4           ; (the glyphs)
+                call .slots
+                MAP_RAM GA_RAM_C0
+                ret
+.slots:         ld ix,hud_slots
                 ld b,HUD_SLOT_COUNT
 .slot:          push bc
                 call hud_slot_build         ; A = visible
@@ -293,12 +333,12 @@ hud_slot_build:
                 jp (hl)
 
 ; -----------------------------------------------------------------------------
-; hud_blit: copies hb_lines lines of hb_w bytes (1-16) from HL to screen line
+; hud_blit: copies hb_lines lines of hb_w bytes (1-18) from HL to screen line
 ; hb_y, column hb_x; hb_stride 0 repeats the same source line (fills).
 ; Per line: an unrolled LDI run entered by a patched JR (~17+5w us). Lines
 ; that cross the end of a 2K plane are copied byte by byte.
 ; -----------------------------------------------------------------------------
-HB_LDI_MAX      equ 16
+HB_LDI_MAX      equ 18
 
 hud_blit:
                 ld (.src),hl
@@ -357,8 +397,35 @@ hud_blit:
                 ld hl,(.src)
                 ld a,(spr_wrap)
                 or a
-                jr nz,.slow
-                ld c,255                    ; LDI decrements BC: keep B intact
+                jp nz,.slow
+                ld a,(hb_stride)            ; a fill within a 256-byte page:
+                or a                        ; LD (HL),C : INC L
+                jr nz,.copy
+                ld a,(hb_w)
+                add a,e
+                jr c,.copy
+                jr z,.copy
+                ld a,(hb_w)                 ; SMC: skip (max - w) pairs of
+                neg                         ; 1-byte instructions
+                add HB_LDI_MAX
+                add a,a
+                ld (.fjump+1),a
+                ld c,HUD_PANEL_BYTE
+.fline:         ld h,d
+                ld l,e
+.fjump:         jr .fills                   ; SMC
+.fills:         repeat HB_LDI_MAX
+                ld (hl),c
+                inc l
+                rend
+                ld a,d
+                add 8
+                ld d,a
+                djnz .fline
+                ld hl,(.src)
+                jr .row_done
+.copy:          ld c,255                    ; LDI decrements BC: keep B intact
+                                            ; (8 lines of <= 18 bytes: C stays > 0)
 .line:          push de
 .jump:          jr .ldis                    ; SMC
 .ldis:          repeat HB_LDI_MAX
@@ -366,7 +433,6 @@ hud_blit:
                 rend
                 pop de
 .reset:         ld hl,0                     ; SMC: ld hl,src (fill) / jp $+3 (copy)
-                ld c,255
                 ld a,d
                 add 8
                 ld d,a
@@ -448,13 +514,32 @@ hud_blit:
 key_score:
                 ld hl,score
                 jr key_copy3
-key_coins:
-                ld hl,coins                 ; 2 bytes
+key_hi:                                     ; the best score, or this one if higher
+                ld hl,score+2
+                ld de,hiscore_table+2       ; (BCD, most significant byte last)
+                ld b,3
+.cmp:           ld a,(de)
+                cp (hl)
+                jr c,key_score
+                jr nz,.table
+                dec hl
+                dec de
+                djnz .cmp
+.table:         ld hl,hiscore_table
+                jr key_copy3
+key_coins:                                  ; coins (2 bytes), lives + route pixel * 8
+                call route_pixel
+                add a,a
+                add a,a
+                add a,a
+                ld b,a
+                ld a,(lives)
+                or b
+                ld (hud_key+2),a
+                ld hl,coins
                 ld de,hud_key
                 ldi
                 ldi
-                xor a
-                ld (de),a
                 or 1
                 ret
 key_copy3:      ld de,hud_key
@@ -463,9 +548,21 @@ key_copy3:      ld de,hud_key
                 ldi
                 or 1
                 ret
-key_lives:
-                ld a,(lives)
-                jr key_a
+; A = the runner's pixel on the route bar: 6 per station + rows / 64 (0-34)
+route_pixel:
+                ld hl,ROUTE_SEG
+                ld de,(route_left)
+                or a
+                sbc hl,de
+                add hl,hl
+                add hl,hl                   ; H = rows into this stretch / 64
+                ld a,(route_station)
+                ld b,a
+                add a,a
+                add a,b
+                add a,a
+                add a,h
+                ret
 key_a:          ld (hud_key),a
                 xor a
                 ld (hud_key+1),a
@@ -473,9 +570,10 @@ key_a:          ld (hud_key),a
                 or 1
                 ret
 
-; power-ups: cells of up to 3 active ones per slot (magnet, turbo, slow,
-; springs, helmet, ticket in that order). Key byte per cell: icon index + 1
-; in the high nibble (0 = empty), bar pixels 0-8 in the low nibble.
+; power-ups: a cell for each of the six, always (magnet, turbo, slow, springs
+; in the first slot; helmet, ticket in the second). Key byte per cell: icon
+; index + 1 in the high nibble (the dark icon when not running), bar pixels
+; 0-8 in the low nibble.
 key_pu_first:   ld hl,hud_cells
                 jr key_pu
 key_pu_second:  ld hl,hud_cells+HUD_PU_CELLS
@@ -485,13 +583,8 @@ key_pu:         ld de,hud_key
                 ld a,(hud_key)              ; visible if the first cell is used
                 ret
 
-; hud_cells: the cells of every active power-up, in order
+; hud_cells: a cell for every power-up, in pu_hud_table order
 pu_scan:
-                ld hl,hud_cells
-                ld b,HUD_PU_CELLS*2
-.clear:         ld (hl),0
-                inc hl
-                djnz .clear
                 ld de,hud_cells
                 ld hl,pu_hud_table
                 ld b,PU_HUD_COUNT
@@ -506,7 +599,7 @@ pu_scan:
                 jr nz,.timed
                 ld a,(helmet)               ; no timer: the helmet
                 or a
-                jr z,.skip_entry
+                jr z,.off
                 ld c,0                      ; no bar
                 jr .active
 .timed:         push hl                     ; frames left
@@ -542,7 +635,8 @@ pu_scan:
                 pop hl
                 jr .active
 .idle:          pop hl
-                jr .skip_entry
+.off:           inc hl                      ; the dark icon, no bar
+                ld c,0
 .active:        inc hl                      ; icon
                 ld a,(hl)
                 inc a
@@ -553,26 +647,26 @@ pu_scan:
                 or c
                 ld (de),a
                 inc de
-.skip_entry:    pop hl
+                pop hl
                 ld bc,PU_HUD_SIZE
                 add hl,bc
                 pop bc
                 djnz .entry
                 ret
 
-PU_HUD_SIZE     equ 4
+PU_HUD_SIZE     equ 5                       ; timer, frames per pixel, icon, dark icon
 pu_hud_table:   defw pu_magnet
-                defb 32,IDX_HUD_ICONS_IC_MAGNET     ; 250 frames / 8 pixels
+                defb 32,IDX_HUD_ICONS_IC_MAGNET,IDX_HUD_ICONS_IC_MAGNET_OFF   ; 250 frames / 8 pixels
                 defw pu_turbo
-                defb 25,IDX_HUD_ICONS_IC_TURBO
+                defb 25,IDX_HUD_ICONS_IC_TURBO,IDX_HUD_ICONS_IC_TURBO_OFF
                 defw pu_slow
-                defb 25,IDX_HUD_ICONS_IC_SLOW
-                defw pu_spring
-                defb 32,IDX_HUD_ICONS_IC_SPRING
+                defb 25,IDX_HUD_ICONS_IC_SLOW,IDX_HUD_ICONS_IC_SLOW_OFF
                 defw 0                              ; helmet (no timer)
-                defb 0,IDX_HUD_ICONS_IC_HELMET
+                defb 0,IDX_HUD_ICONS_IC_HELMET,IDX_HUD_ICONS_IC_HELMET_OFF
+                defw pu_spring
+                defb 32,IDX_HUD_ICONS_IC_SPRING,IDX_HUD_ICONS_IC_SPRING_OFF
                 defw pu_ticket
-                defb 47,IDX_HUD_ICONS_IC_TICKET
+                defb 47,IDX_HUD_ICONS_IC_TICKET,IDX_HUD_ICONS_IC_TICKET_OFF
 PU_HUD_COUNT    equ 6
 
 ; --- builders --------------------------------------------------------------------
@@ -581,25 +675,110 @@ build_score:                                ; 6 digits
                 ld hl,hud_key+2
                 ld b,3
                 jp put_bcd
+build_hi:                                   ; the same in orange
+                ld a,IDX_HUD_ICONS_H0
+                ld (put_digit.base+1),a
+                call build_score
+                ld a,IDX_HUD_ICONS_D0
+                ld (put_digit.base+1),a
+                ret
 
-build_coins:                                ; coin icon + 4 digits
+; the route: stations, the stretch done in yellow, the runner in red
+build_route:
+                ld l,(ix+SL_BUF)
+                ld h,(ix+SL_BUF+1)
+                ld de,HUD_ROUTE_LINE*HUD_ROUTE_W
+                add hl,de
+                push hl
+                ex de,hl
+                ld hl,route_template
+                ld bc,HUD_ROUTE_W*HUD_ROUTE_H
+                ldir
+                pop hl                      ; HL = buffer
+                push hl
+                ld a,(hud_key+2)            ; C = runner's pixel
+                rrca
+                rrca
+                rrca
+                and 31
+                ld c,a
+                srl a
+                ld b,a                      ; B = whole yellow bytes
+                ld de,HUD_ROUTE_W           ; the track: lines 1 and 2
+                add hl,de
+                push hl
+                call .fill
+                pop hl
+                ld de,HUD_ROUTE_W
+                add hl,de
+                call .fill
+                pop hl                      ; the runner: a red pixel column
+                ld a,c
+                srl a
+                call add_a_hl
+                ld de,#55A2                 ; even pixel: keep the right one
+                bit 0,c
+                jr z,.mark
+                ld de,#AA51
+.mark:          ld b,HUD_ROUTE_H
+.mark_line:     ld a,(hl)
+                and d
+                or e
+                ld (hl),a
+                ld a,HUD_ROUTE_W
+                call add_a_hl
+                djnz .mark_line
+                ret
+.fill:          push bc
+                ld a,b
+                or a
+                jr z,.half
+.byte:          ld (hl),#FC                 ; yellow, yellow
+                inc hl
+                djnz .byte
+.half:          pop bc
+                bit 0,c
+                ret z
+                ld (hl),#AC                 ; yellow, grey
+                ret
+
+; the station ticks on line 0 (white on the panel, pixels 0, 6 .. 30 and
+; 35), the track on 1 and 2 (grey); pens: blue #80/#40, white #88/#44,
+; grey #08/#04
+route_template:
+                defb #C8,#C0,#C0,#C8,#C0,#C0,#C8,#C0,#C0,#C8,#C0,#C0,#C8,#C0,#C0,#C8,#C0,#C4
+                defs HUD_ROUTE_W,#0C
+                defs HUD_ROUTE_W,#0C
+
+build_coins:                                ; coin + 4 digits, head + lives,
+                ld a,(hud_partial)          ; the route under them
+                or a
+                jr nz,.digits
+                call clear_buffer
                 ld a,IDX_HUD_ICONS_IC_COIN
                 ld de,0
                 call put_icon
-                ld de,4
+                ld a,IDX_HUD_ICONS_IC_LIFE
+                ld de,12
+                call put_icon
+.digits:        ld de,4
                 ld hl,hud_key+1
                 ld b,2
-                jp put_bcd
+                call put_bcd
+                ld a,(hud_partial)          ; lives and route as they were?
+                or a
+                jr z,.lives
+                ld a,(hud_key+2)
+                ld hl,hud_old_key+2
+                cp (hl)
+                ret z
+.lives:         ld a,(hud_key+2)
+                and 7
+                ld de,16
+                call put_digit
+                jp build_route
 
-build_lives:                                ; head + number of lives
-                ld a,IDX_HUD_ICONS_IC_LIFE
-                ld de,0
-                call put_icon
-                ld a,(hud_key)
-                ld de,4
-                jp put_digit
-
-; power-up cells: icon, then a 2-line bar of up to 8 pixels under it
+; power-up cells: icon, its time bar (up to 8 pixels) on the last line
 build_pu:
                 call clear_buffer
                 ld hl,hud_key
@@ -622,17 +801,19 @@ build_pu:
                 pop hl
                 push hl
                 push de
-                ld a,(hl)                   ; bar: 2 lines of 4 bytes at line 8
-                and 15
+                ld a,(hl)                   ; bar: 4 bytes on the icon's last line
+                and 15                      ; (empty on every icon)
                 add a,a
                 add a,a
                 ld hl,hud_bar_bytes
                 call add_a_hl
                 ex de,hl                    ; DE = pattern, HL = cell offset
                 ld a,(ix+SL_W)
+                ld c,a
                 add a,a
                 add a,a
                 add a,a
+                sub c                       ; line 7
                 call add_a_hl
                 ld a,(ix+SL_BUF)
                 add a,l
@@ -640,22 +821,12 @@ build_pu:
                 ld a,(ix+SL_BUF+1)
                 adc a,h
                 ld h,a
-                ex de,hl                    ; DE = buffer line 8, HL = pattern
-                push hl
+                ex de,hl                    ; DE = buffer line 7, HL = pattern
                 ld bc,4
-                ldir
-                pop hl
-                ld a,(ix+SL_W)              ; line 9
-                sub 4
-                add a,e
-                ld e,a
-                jr nc,.nc
-                inc d
-.nc:            ld bc,4
                 ldir
                 pop de
                 ld a,e
-                add 4
+                add HUD_PU_CELL
                 ld e,a
                 pop hl
                 inc hl
@@ -725,7 +896,7 @@ put_bcd:
 ; A (low nibble) = digit, DE = byte offset
 put_digit:
                 and 15
-                add IDX_HUD_ICONS_D0
+.base:          add IDX_HUD_ICONS_D0        ; SMC: H0 for the best score
                 ld c,2
                 ; fall through
 ; A = glyph index, C = glyph width (bytes), DE = byte offset in the slot buffer
@@ -787,14 +958,16 @@ macro SLOT_DEF y,x,w,h,buffer,key,build,cover
 mend
 
 hud_layout:
-                SLOT_DEF HUD_SCORE_Y,HUD_PANEL_FIRST+1,12,8,hud_buf_score,key_score,build_score,1
-                SLOT_DEF HUD_COINS_Y,HUD_PANEL_FIRST+1,12,8,hud_buf_coins,key_coins,build_coins,0
-                SLOT_DEF HUD_LIVES_Y,HUD_PANEL_FIRST+1,HUD_LIVES_W,8,hud_buf_lives,key_lives,build_lives,0
+                SLOT_DEF HUD_SCORE_Y,HUD_PANEL_FIRST+3,HUD_SCORE_W,8,hud_buf_score,key_score,build_score,1
+                SLOT_DEF HUD_HI_Y,HUD_PANEL_FIRST+3,HUD_SCORE_W,8,hud_buf_hi,key_hi,build_hi,0
+                SLOT_DEF HUD_COINS_Y,HUD_PANEL_FIRST,HUD_COINS_W,HUD_COINS_H,hud_buf_coins,key_coins,build_coins,0
                 SLOT_DEF HUD_PU_Y,HUD_PU_X,HUD_PU_W,HUD_PU_H,hud_buf_pu,key_pu_first,build_pu,1
                 SLOT_DEF HUD_PU_Y+HUD_PU_H,HUD_PU_X,HUD_PU_W,HUD_PU_H,hud_buf_pu+HUD_PU_W*HUD_PU_H,key_pu_second,build_pu,0
 HUD_SLOT_COUNT  equ 5
                 assert $-hud_layout == HUD_SLOT_COUNT*SL_KEY
-                assert HUD_PU_Y+HUD_PU_H*2+HUD_STEP_MAX <= HUD_BAND_LAST+1
+                assert HUD_PU_Y+2*HUD_PU_H+HUD_STEP_MAX <= HUD_BAND_LAST+1
+                assert HUD_COINS_Y+HUD_COINS_H <= HUD_PU_Y
+                assert HUD_PANEL_FIRST+HUD_COINS_W-1 == HUD_PANEL_LAST
 
 hud_panel_line: defs HUD_PANEL_LAST-HUD_PANEL_FIRST+1,HUD_PANEL_BYTE
 
@@ -806,6 +979,8 @@ hud_key:        defs 3
 hud_old_key:    defs 3                  ; (right after hud_key: put_bcd)
 hud_cells:   defs HUD_PU_CELLS*2
 hud_partial:    defb 0
+hud_run:        defw 0                  ; hud_update: first slot of a run
+hud_run_n:      defb 0                  ; and its slots
 hb_y:           defb 0
 hb_x:           defb 0
 hb_w:           defb 0
@@ -813,7 +988,7 @@ hb_lines:       defb 0
 hb_stride:      defb 0
 hud_slots:      defs HUD_SLOT_COUNT*SL_SIZE
 ; slot buffers: below the code (src/main.asm, from hud_buf_score)
-hud_buf_coins   equ hud_buf_score+12*8
-hud_buf_lives   equ hud_buf_coins+12*8
-hud_buf_pu      equ hud_buf_lives+HUD_LIVES_W*8
+hud_buf_hi      equ hud_buf_score+HUD_SCORE_W*8
+hud_buf_coins   equ hud_buf_hi+HUD_SCORE_W*8
+hud_buf_pu      equ hud_buf_coins+HUD_COINS_W*HUD_COINS_H
 HUD_BUF_END     equ hud_buf_pu+2*HUD_PU_W*HUD_PU_H

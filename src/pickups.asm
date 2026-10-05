@@ -42,6 +42,7 @@ LABEL_Y         equ 112                 ; power-up name: top screen line
 LABEL_BUF_SIZE  equ 8*24*FONT_W         ; a whole playfield line
 LABEL_WAGONS    equ 8                   ; show_label: the hard mode hint (txt_pu_wagons),
 LABEL_GO        equ 12                  ; then 3, 2, 1 (9-11) and GO!
+LABEL_STATION   equ 13                  ; the stations Corinth .. Piraeus (13-18)
 
 ; -----------------------------------------------------------------------------
 ; pickups_init: no score, no power-ups, no flying coins (new run).
@@ -230,7 +231,7 @@ score_add:
                 daa
                 ld (hl),a
                 ret nc
-                ld a,#99
+.full:          ld a,#99                    ; HL = score+2
                 ld (hl),a
                 dec hl
                 ld (hl),a
