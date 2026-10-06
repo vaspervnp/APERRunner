@@ -12,22 +12,7 @@ import png2cpc  # noqa: E402
 
 F_FOREST, F_STATION, F_PLATFORM, F_OVERLAY, F_BRIDGE = 0x01, 0x02, 0x10, 0x40, 0x80
 
-# station platforms (src/platform.asm): the lines of each kind of row, top to
-# bottom (None: the side tile's line), and the kind by D_PLAT (1 = the top row)
-_C, _J, _R = "concrete", "joint", "ramp"
-_A, _B = "roof_a", "roof_b"
-PLATFORM_KINDS = {
-    "end_lo": [_C, _C, _C, _C, _C, _R, None, None],
-    "end_hi": [None, None, _R, _C, _C, _C, _C, _J],
-    "plain": [_C, _C, _C, _C, _J, _C, _C, _C],
-    "bench": [_C, _C, "bench_back", "bench_seat", "bench_shadow", _C, _C, _J],
-    "sign": [_A, _B, "sign_edge", "sign_text", "sign_text", "sign_edge", _B, _A],
-    "roof": [_B, _A, _B, _A, _B, _A, _B, _A],
-    "roof_lo": [_A, _B, _A, _B, _A, _B, _A, "roof_shadow"],
-}
-PLATFORM_SEQ = [None, "end_hi", "plain", "bench", "plain", "plain", "bench", "plain",
-                "roof", "sign", "roof", "roof", "sign", "roof", "roof_lo",
-                "plain", "bench", "plain", "end_lo", None, None, None, None]
+PLATFORM_KINDS, PLATFORM_SEQ = assets.PLATFORM_KINDS, assets.PLATFORM_SEQ   # src/platform.asm
 
 
 def read_desc(cpc, sym, row):

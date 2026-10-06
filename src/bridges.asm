@@ -8,7 +8,7 @@
 ; BR_BUF and ring_put.
 ; =============================================================================
 
-BR_BUF          equ plat_base+2             ; a line (below the stack)
+BR_BUF          equ hud_buf_end             ; a line (below the stack)
                 assert BR_BUF+GFX_BRIDGES_WIDTH <= #0E00
 
 ; HL = tile, DE = plane 0 ring address of the row

@@ -18,8 +18,9 @@ An asset converts frames of a sheet into src/data/gfx_<asset>.asm:
                   png2cpc.slices_source); asset <sheet>_code next to the
                   sprite asset, whose sprites then point at it (a defw
                   before each sprite, 0 for sprites without code)
-  kind "rows"   - lines like a tile, back to back under one label, no
-                  table (src/platform.asm indexes them itself)
+  kind "platform" - 1-line frames put together into the rows of
+                  PLATFORM_KINDS (left, and right from the mirrored lines),
+                  with a table by kind and PLATFORM_SEQ (src/platform.asm)
   kind "lines"  - tiles as pointers to their lines, each distinct line as
                   copy / fill ops (png2cpc.line_ops), for src/bridges.asm
   mirror        - also emit horizontally mirrored copies (<frame>_m)
@@ -43,6 +44,22 @@ FOREST_TILES = (["ground_a", "ground_b", "path", "fence"]
                 + [f"trans_forest_urban_{i}" for i in range(2)])
 PLATFORM_LINES = ["concrete", "joint", "bench_seat", "bench_back", "bench_shadow", "roof_a", "roof_b",
                   "sign_edge", "sign_text", "ramp", "roof_shadow"]
+# station platforms (src/platform.asm): the lines of each kind of row, top to
+# bottom (None: the side tile's line, only at the two ends), and the kind by
+# D_PLAT (index 1 = the top row .. the station row; None: no platform)
+_C, _J, _R, _A, _B = "concrete", "joint", "ramp", "roof_a", "roof_b"
+PLATFORM_KINDS = {
+    "end_lo": [_C, _C, _C, _C, _C, _R, None, None],
+    "end_hi": [None, None, _R, _C, _C, _C, _C, _J],
+    "plain": [_C, _C, _C, _C, _J, _C, _C, _C],
+    "bench": [_C, _C, "bench_back", "bench_seat", "bench_shadow", _C, _C, _J],
+    "sign": [_A, _B, "sign_edge", "sign_text", "sign_text", "sign_edge", _B, _A],
+    "roof": [_B, _A, _B, _A, _B, _A, _B, _A],
+    "roof_lo": [_A, _B, _A, _B, _A, _B, _A, "roof_shadow"],
+}
+PLATFORM_SEQ = [None, "end_hi", "plain", "bench", "plain", "plain", "bench", "plain",
+                "roof", "sign", "roof", "roof", "sign", "roof", "roof_lo",
+                "plain", "bench", "plain", "end_lo", None, None, None, None]
 BRIDGE_ROWS = ([f"footbridge_{i}" for i in range(3)] + ["footbridge_shadow"]
                + [f"roadbridge_{i}" for i in range(6)] + ["roadbridge_shadow"])
 
@@ -111,7 +128,7 @@ ASSETS = {
     "urban_ov_code": ("urban_ov", "slices", None, True),     # bank C7, render_row
     "forest_ov_code": ("forest_ov", "slices", None, False),
     "bridges": ("bridges", "lines", None, False),        # src/bridges.asm
-    "platform": ("platform", "rows", None, True),         # src/platform.asm
+    "platform": ("platform", "platform", None, True),     # src/platform.asm
     "player": ("player", "header", None, False),        # width, height (drawn by player_code)
     "shadows": ("shadows", "sprite", None, False),
     "items": ("items", "sprite", None, False),
