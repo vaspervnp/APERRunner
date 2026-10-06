@@ -18,6 +18,8 @@ An asset converts frames of a sheet into src/data/gfx_<asset>.asm:
                   png2cpc.slices_source); asset <sheet>_code next to the
                   sprite asset, whose sprites then point at it (a defw
                   before each sprite, 0 for sprites without code)
+  kind "rows"   - lines like a tile, back to back under one label, no
+                  table (src/platform.asm indexes them itself)
   mirror        - also emit horizontally mirrored copies (<frame>_m)
 """
 
@@ -37,6 +39,8 @@ URBAN_TILES = ["road_a", "road_b", "road_cross_0", "road_cross_1", "road_kiosk_0
 FOREST_TILES = (["ground_a", "ground_b", "path", "fence"]
                 + [f"trans_urban_forest_{i}" for i in range(2)]
                 + [f"trans_forest_urban_{i}" for i in range(2)])
+PLATFORM_LINES = ["concrete", "joint", "bench_seat", "bench_back", "bench_shadow", "roof_a", "roof_b",
+                  "sign_edge", "sign_text", "ramp", "roof_shadow"]
 BRIDGE_ROWS = ([f"footbridge_{i}" for i in range(3)] + ["footbridge_shadow"]
                + [f"roadbridge_{i}" for i in range(6)] + ["roadbridge_shadow"])
 
@@ -85,6 +89,7 @@ SHEETS = {
     "forest": _fixed(FOREST_TILES, 30, 8),
     "forest_ov": [("pine", 16, 24), ("oak", 24, 24), ("cypress", 8, 24), ("bush", 8, 8), ("rock", 8, 8)],
     "bridges": _fixed(BRIDGE_ROWS, 144, 8),
+    "platform": _fixed(PLATFORM_LINES, 14, 1),
     "player": PLAYER_FRAMES,
     "shadows": [("sh1", 8, 4), ("sh2", 10, 4), ("sh3", 12, 6), ("sh4", 14, 6)],
     "items": _fixed([f"coin{i}" for i in range(4)], 8, 8) + _fixed(POWERUPS, 12, 12),
@@ -104,6 +109,7 @@ ASSETS = {
     "urban_ov_code": ("urban_ov", "slices", None, True),     # bank C7, render_row
     "forest_ov_code": ("forest_ov", "slices", None, False),
     "bridges": ("bridges", "tile", None, False),
+    "platform": ("platform", "rows", None, True),         # src/platform.asm
     "player": ("player", "header", None, False),        # width, height (drawn by player_code)
     "shadows": ("shadows", "sprite", None, False),
     "items": ("items", "sprite", None, False),

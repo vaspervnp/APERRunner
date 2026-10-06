@@ -23,8 +23,10 @@ D_RIGHT         equ 2                   ; side tile index (mirrored entries)
 D_LANES         equ 3                   ; 3 track tile indices
 D_COLL          equ 6                   ; 3 collision classes (see tools/mklevel.py)
 D_ITEM          equ 9                   ; 3 items
+D_PLAT          equ 12                  ; a station's platform: rows left (platform.asm)
 F_FOREST        equ 1
 F_STATION       equ 2                   ; a station on the route (HUD board, name)
+F_PLATFORM      equ #10                 ; its platform (no moving car)
 F_OVERLAY       equ #40
 F_BRIDGE        equ #80
 
@@ -235,6 +237,8 @@ generate_row:
                 or l
                 jr nz,.route
                 set 1,(ix+D_FLAGS)          ; F_STATION
+                ld a,PLAT_ROWS              ; and its platform from here on
+                ld (plat_left),a
                 ld a,(route_station)
                 inc a
                 cp ROUTE_STATIONS-1
@@ -250,6 +254,19 @@ generate_row:
                 dec hl
                 ld (pu_gap),hl
 .pu_due:
+                ld hl,plat_left             ; a platform: no scenery starts
+                ld a,(hl)
+                or a
+                jr z,.no_plat
+                dec (hl)
+                ld (ix+D_PLAT),a
+                set 4,(ix+D_FLAGS)          ; F_PLATFORM
+                ld hl,busy_counters         ; cars, trees
+                ld b,8
+.busy:          ld (hl),1
+                inc hl
+                djnz .busy
+.no_plat:
 
                 ; --- environment ---
                 ld a,(trans_left)
@@ -993,7 +1010,7 @@ road_row:
                 jr c,.no
                 call desc_addr
                 ld a,(hl)
-                and F_FOREST|F_BRIDGE
+                and F_FOREST|F_BRIDGE|F_PLATFORM
                 ret nz
                 inc hl                      ; its side's tile
                 ld a,(iy+MV_LANE)
@@ -1280,6 +1297,9 @@ render_row:
                 ld a,(ix+D_LANES+2)
                 ld b,COL_LANE1+LANE_BYTES*2
                 call .lane
+                ld a,(ix+D_PLAT)            ; a station's platform over the sides
+                or a
+                call nz,platform_strip
 
 .hud:           ld hl,gfx_hud_bg_hud_station ; the HUD frame: a station board,
                 bit 1,(ix+D_FLAGS)          ; or the little track's sleeper on
@@ -1622,6 +1642,7 @@ station_seen:   defw 0                  ; the runner's row when last checked
 station_next:   defb 1                  ; the next station's number
 
 gen_state:
+plat_left:      defb 0                  ; rows of the station's platform left
 scenery_width:  defb 0                  ; bytes of the active overlays (add_scenery)
 rng:            defw 0
 gen_row:        defw 0

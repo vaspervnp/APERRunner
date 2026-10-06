@@ -353,6 +353,10 @@ def make_frame(sheet, name, w, h):
         return overlay_frame(name, w, h)
     if sheet == "bridges":
         return bridge_frame(name)
+    if sheet == "platform":                             # grey concrete, white edge
+        f = Frame(w, h, GREY)
+        f.rect(w - 2, 0, w - 2, h - 1, WHITE)
+        return f
     if sheet == "player":
         return player_frame(name, w, h)
     if sheet == "shadows":

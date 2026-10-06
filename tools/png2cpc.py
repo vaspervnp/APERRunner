@@ -166,7 +166,7 @@ def convert(asset):
     if kind == "header":                       # drawn by compiled code: the size only
         encoded = [(name, [len(rows[0]) // 2, len(rows)], rows) for name, rows in entries]
     else:
-        encoded = [(name, tile_bytes(name, rows) if kind in ("tile", "panel", "tile0") else sprite_bytes(rows), rows)
+        encoded = [(name, tile_bytes(name, rows) if kind in ("tile", "panel", "tile0", "rows") else sprite_bytes(rows), rows)
                    for name, rows in entries]
     return kind, encoded
 
@@ -276,8 +276,11 @@ def asm_source(asset, kind, encoded):
     # rasm labels are case-insensitive: indices get their own prefix
     for index, (name, _, _) in enumerate(encoded):
         lines.append(f"IDX_{asset.upper()}_{name.upper()} equ {index}")
-    lines += ["", f"{prefix}_table:"]
-    lines += [f"                defw {prefix}_{name}" for name, _, _ in encoded]
+    if kind == "rows":                         # back to back, no table
+        lines += ["", f"{prefix}:"]
+    else:
+        lines += ["", f"{prefix}_table:"]
+        lines += [f"                defw {prefix}_{name}" for name, _, _ in encoded]
     for name, data, _ in encoded:
         if kind == "sprite":                   # its code (kind "slices"), 0 if none
             code = f"gfx_{asset}_code_{name}" if f"{asset}_code" in assets.ASSETS else "0"

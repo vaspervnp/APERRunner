@@ -1,0 +1,110 @@
+{
+ "frames": [
+  {
+   "filename": "concrete",
+   "frame": {
+    "x": 0,
+    "y": 0,
+    "w": 14,
+    "h": 1
+   }
+  },
+  {
+   "filename": "joint",
+   "frame": {
+    "x": 14,
+    "y": 0,
+    "w": 14,
+    "h": 1
+   }
+  },
+  {
+   "filename": "bench_seat",
+   "frame": {
+    "x": 28,
+    "y": 0,
+    "w": 14,
+    "h": 1
+   }
+  },
+  {
+   "filename": "bench_back",
+   "frame": {
+    "x": 42,
+    "y": 0,
+    "w": 14,
+    "h": 1
+   }
+  },
+  {
+   "filename": "bench_shadow",
+   "frame": {
+    "x": 56,
+    "y": 0,
+    "w": 14,
+    "h": 1
+   }
+  },
+  {
+   "filename": "roof_a",
+   "frame": {
+    "x": 70,
+    "y": 0,
+    "w": 14,
+    "h": 1
+   }
+  },
+  {
+   "filename": "roof_b",
+   "frame": {
+    "x": 84,
+    "y": 0,
+    "w": 14,
+    "h": 1
+   }
+  },
+  {
+   "filename": "sign_edge",
+   "frame": {
+    "x": 98,
+    "y": 0,
+    "w": 14,
+    "h": 1
+   }
+  },
+  {
+   "filename": "sign_text",
+   "frame": {
+    "x": 112,
+    "y": 0,
+    "w": 14,
+    "h": 1
+   }
+  },
+  {
+   "filename": "ramp",
+   "frame": {
+    "x": 126,
+    "y": 0,
+    "w": 14,
+    "h": 1
+   }
+  },
+  {
+   "filename": "roof_shadow",
+   "frame": {
+    "x": 140,
+    "y": 0,
+    "w": 14,
+    "h": 1
+   }
+  }
+ ],
+ "meta": {
+  "app": "tools/mkplaceholders.py",
+  "size": {
+   "w": 154,
+   "h": 1
+  }
+ }
+}

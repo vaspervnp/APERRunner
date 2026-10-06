@@ -137,7 +137,8 @@ The track takes up three quarters of the screen. The panel on the right is the t
 ## The route
 
 You run from Kiato to Piraeus: **Corinth, Megara, Elefsina, Aspropyrgos, Rentis, Piraeus**. The bell rings and the
-station's name appears on the track as you pass it. **Piraeus gives 1000 points**, and then the route starts again.
+station's name appears on the track as you pass it, with its platforms on either side of you (benches, a red
+canopy with blue name boards). **Piraeus gives 1000 points**, and then the route starts again.
 
 ---
 

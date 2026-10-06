@@ -31,7 +31,7 @@ def test_every_asset_converts_with_the_manifest_sizes():
         for name, data, rows in encoded:
             w, h = sizes[name[:-2] if name.endswith("_m") else name]
             assert (len(rows[0]), len(rows)) == (w, h)
-            expected = (w // 2 * h if kind in ("tile", "panel", "tile0")
+            expected = (w // 2 * h if kind in ("tile", "panel", "tile0", "rows")
                         else 2 if kind == "header" else 2 + w * h)
             assert len(data) == expected, f"{asset}/{name}"
 

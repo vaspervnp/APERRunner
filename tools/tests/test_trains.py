@@ -37,11 +37,13 @@ def test_easy_none_move_medium_only_left_hard_both():
     for skill, lanes_wanted in ((0, set()), (1, {0}), (2, {0, 2})):
         sym, cpc = _boot(skill, 5)
         lanes = set()
-        for _ in range(3000):
+        for frame in range(9000):           # (easy: 3000 frames without one)
             sync_game_frame(cpc, sym)
             train = _train(cpc, sym)
             if train:
                 lanes.add(train["lane"])
+            if lanes == lanes_wanted and (skill or frame >= 3000):
+                break
         print(f"    skill {skill}: moving trains in lanes {sorted(lanes)}")
         assert lanes == lanes_wanted, (skill, lanes)
 
@@ -55,7 +57,9 @@ def test_right_comes_on_fast_left_goes_ahead_slowly():
         sym, cpc = _boot(2, speed)
         steps = {0: [], 2: []}
         prev = None
-        for _ in range(4000):
+        for _ in range(12000):
+            if min(len(steps[0]), len(steps[2])) > 100:
+                break
             sync_game_frame(cpc, sym)
             train = _train(cpc, sym)
             if train and prev and train["anchor"] == prev["anchor"]:
@@ -187,7 +191,7 @@ def test_oncoming_train_crashes_the_runner():
     cpc.write_ram(sym["no_crash"], bytes([1]))
     cpc.write_ram(sym["skill"], bytes([2]))
     cpc.write_ram(sym["scroll_speed"], bytes([5]))
-    for _ in range(4000):
+    for _ in range(12000):
         sync_game_frame(cpc, sym)
         train = _train(cpc, sym)
         feet = peek16(cpc, sym["feet_row"]) * 8

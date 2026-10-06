@@ -59,15 +59,22 @@ def test_moving_car_is_drawn_where_it_is_and_leaves_no_trail():
     bank5 = open(os.path.join(ROOT, "build", "aperb5.bin"), "rb").read()
     sym, cpc = _boot(4)
     road = car = 0
-    for frame in range(2500):
+    start = {}                               # where each mover started: until it
+    for frame in range(2500):                # moves, the parked car shows
         sync_game_frame(cpc, sym)
+        for i, m in enumerate(_movers(cpc, sym)):
+            if m["on"] != 2:
+                start.pop(i, None)
+            else:
+                start.setdefault(i, m["lo"])
         if frame % 37 or not any(m["on"] == 2 for m in _movers(cpc, sym)):
             continue
         cpc.write_ram(sym["scroll_speed"], bytes([0]))
         sync_game_frame(cpc, sym)
         sync_game_frame(cpc, sym)
-        for m in _movers(cpc, sym):
-            if m["on"] != 2:
+        cpc.run_us(15000)                    # the frame done (move_cars comes last)
+        for i, m in enumerate(_movers(cpc, sym)):
+            if m["on"] != 2 or start.get(i, m["lo"]) == m["lo"]:
                 continue
             right = m["lane"] >= 3
             offset = (m["col"] - (57 if right else 0)) * 2

@@ -31,7 +31,8 @@ from the ramps and watch out for red signals, from the city avenue all the way t
   Kiato → Piraeus with the runner's place, all six power-ups (lit with a time bar while running), and a little
   track that scrolls with the world and shows the station boards going by.
 - **Stations**: Corinth, Megara, Elefsina, Aspropyrgos, Rentis, Piraeus. Their names appear on the track as you pass
-  them; Piraeus gives 1000 points and the route starts again.
+  them, and platforms line the track on both sides (benches, a red canopy with blue name boards); Piraeus gives
+  1000 points and the route starts again.
 - **3 railway tracks** with trains (3 wagon types, 3 locomotive types), ramps, buffer stops and signals.
 - **Moving trains**: on the right track they come towards you, on the left one they run ahead of you, slower; the
   middle track's trains stand still (EASY: none move, MEDIUM: only the left track, HARD: both).
