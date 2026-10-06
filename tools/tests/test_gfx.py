@@ -31,9 +31,23 @@ def test_every_asset_converts_with_the_manifest_sizes():
         for name, data, rows in encoded:
             w, h = sizes[name[:-2] if name.endswith("_m") else name]
             assert (len(rows[0]), len(rows)) == (w, h)
-            expected = (w // 2 * h if kind in ("tile", "panel", "tile0", "rows")
+            expected = (w // 2 * h if kind in ("tile", "panel", "tile0", "rows", "lines")
                         else 2 if kind == "header" else 2 + w * h)
             assert len(data) == expected, f"{asset}/{name}"
+
+
+def test_bridge_lines_decode_to_the_tiles():
+    """Kind "lines": each tile's line pointers and their ops give back the
+    tile byte for byte; the ops stay within the decoder's limits."""
+    _, encoded = png2cpc.convert("bridges")
+    tiles, ops = png2cpc.lines_tables(encoded)
+    for (name, refs), (_, data, _) in zip(tiles, encoded):
+        assert [b for r in refs for b in png2cpc.decode_line_ops(ops[r])] == list(data), name
+    for line in ops:
+        assert line[-1] == 0 and all(0 < (b & 0x7F) <= 72 for b in line[:1])
+    size = png2cpc.lines_size(encoded)
+    print(f"    {len(ops)} distinct lines, {size} bytes instead of {sum(len(d) for _, d, _ in encoded)}")
+    assert size < 2000
 
 
 def test_sprite_masks_match_transparency():

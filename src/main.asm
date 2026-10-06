@@ -285,6 +285,7 @@ bank4_start:
                 include "trains.asm"                ; moving trains (code)
                 include "data/gfx_platform.asm"
                 include "platform.asm"              ; stations' platforms (code)
+                include "bridges.asm"               ; bridge rows (code)
 bank4_end:
                 assert bank4_end <= #8000
                 save "build/aperb4.bin",bank4_start,bank4_end-bank4_start

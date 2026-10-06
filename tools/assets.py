@@ -20,6 +20,8 @@ An asset converts frames of a sheet into src/data/gfx_<asset>.asm:
                   before each sprite, 0 for sprites without code)
   kind "rows"   - lines like a tile, back to back under one label, no
                   table (src/platform.asm indexes them itself)
+  kind "lines"  - tiles as pointers to their lines, each distinct line as
+                  copy / fill ops (png2cpc.line_ops), for src/bridges.asm
   mirror        - also emit horizontally mirrored copies (<frame>_m)
 """
 
@@ -108,7 +110,7 @@ ASSETS = {
     "forest_ov": ("forest_ov", "sprite", None, False),
     "urban_ov_code": ("urban_ov", "slices", None, True),     # bank C7, render_row
     "forest_ov_code": ("forest_ov", "slices", None, False),
-    "bridges": ("bridges", "tile", None, False),
+    "bridges": ("bridges", "lines", None, False),        # src/bridges.asm
     "platform": ("platform", "rows", None, True),         # src/platform.asm
     "player": ("player", "header", None, False),        # width, height (drawn by player_code)
     "shadows": ("shadows", "sprite", None, False),

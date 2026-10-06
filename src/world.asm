@@ -1267,9 +1267,8 @@ render_row:
                 ld a,(ix+D_LEFT)            ; bridge: one 72-byte tile
                 ld hl,gfx_bridges_table
                 call table_entry
-                ld b,COL_LEFT
-                ld c,PLAYFIELD_W
-                call .blit
+                ld de,(.dest)
+                call bridge_tile            ; (src/bridges.asm)
                 jr .hud
 
 .normal:        ld hl,gfx_urban_table

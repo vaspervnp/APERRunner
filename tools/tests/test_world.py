@@ -26,6 +26,10 @@ def _check_screen(cpc, sym, sheets):
         if m[0] == 2:
             lo = m[2] | m[3] << 8
             cars.append((lo // 8, (lo + 15) // 8, m[1]))
+    # a name on the track (pickups.asm: make_label) stays in the world: its rows,
+    # with room to spare, top screen line LABEL_Y when made at label_line
+    label = peek16(cpc, sym["label_line"]) - 112
+    label_rows = range(label // 8 - 3, label // 8 + 2) if peek16(cpc, sym["label_line"]) else range(0)
     for index, (row, bank, ring) in enumerate(visible_rows(cpc, sym)):
         desc = read_desc(cpc, sym, row)
         below = read_desc(cpc, sym, row - 1)
@@ -48,6 +52,8 @@ def _check_screen(cpc, sym, sheets):
                 if desc["items"][lane] or below["items"][lane] > 1:
                     continue
             elif desc["flags"] & F_OVERLAY or (column == 0 and width == 72 and index in RUNNER_ROWS):
+                continue
+            if row in label_rows:                # a name written on the track
                 continue
             elif any(low <= row <= high and column <= col < column + width for low, high, col in cars):
                 continue
@@ -263,3 +269,31 @@ def test_easy_at_most_two_obstacles_a_lane_on_a_screen():
             assert crowded == 0
         else:
             assert crowded > 0, "medium keeps the dense chunks"
+
+
+def test_bridges_are_drawn_from_their_lines():
+    """Bridge rows (src/bridges.asm: line ops) equal their tiles, also rows
+    that cross a plane end of the ring (BR_BUF, ring_put)."""
+    sym = load_symbols()
+    sheets = Sheets()
+    cpc = boot_game()
+    cpc.write_ram(sym["scroll_speed"], bytes([6]))
+    bridges = across = 0
+    for _ in range(8000):
+        sync_game_frame(cpc, sym)
+        rows = visible_rows(cpc, sym)
+        if not any(read_desc(cpc, sym, row)["flags"] & F_BRIDGE for row, _, _ in rows[:26]):
+            continue
+        _pause(cpc, sym)
+        _check_screen(cpc, sym, sheets)
+        for index, (row, _, ring) in enumerate(visible_rows(cpc, sym)):
+            if index not in RUNNER_ROWS and read_desc(cpc, sym, row)["flags"] & F_BRIDGE:
+                bridges += 1
+                across += (ring & 0x7FF) + 72 > 0x800
+        cpc.write_ram(sym["scroll_speed"], bytes([6]))
+        for _ in range(5):                   # (often: the plane end moves on)
+            sync_game_frame(cpc, sym)
+        if bridges >= 100 and across >= 3:
+            break
+    print(f"    {bridges} bridge rows compared, {across} across a plane end")
+    assert bridges >= 100 and across >= 3
