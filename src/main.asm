@@ -146,12 +146,15 @@ main_loop:
                 call current_speed          ; turbo / slow / normal
 .scroll:        call scroll_step
                 call hud_prepare            ; next frame's HUD contents
+                ld a,(scr_coarse)           ; a light frame: chunk weights
+                or a
+                call z,chunk_prewarm
 .frame_done:    BORDER #14                  ; black
                 call measure_load
                 ld hl,(frame_counter)
                 inc hl
                 ld (frame_counter),hl
-                jr main_loop
+                jp main_loop
 
 ; -----------------------------------------------------------------------------
 ; new_run: fresh world, screen and runner (start and after a game over).

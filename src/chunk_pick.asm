@@ -14,66 +14,18 @@ pick_chunk_c5:
                 or a
                 sbc hl,de
                 call c,easy_reset
-                ld a,(env)                  ; weights per environment, worked
-                or a                        ; out again only when the
-                ld hl,pick_cache            ; difficulty changed
-                ld de,chunk_weights
-                jr z,.env
-                ld hl,pick_cache+2
-                ld de,chunk_weights+CHUNK_COUNT
-.env:           ld (.table),de
-                ld a,(difficulty)
-                cp (hl)
-                jr nz,.reweigh
-                inc hl
-                ld c,(hl)                   ; C = their total
-                jr .pick
-.reweigh:       ld (hl),a
+                ld a,(env)                  ; weights per environment: those
+                call env_cache              ; of an earlier difficulty will do
+                ld (.table),de              ; (chunk_prewarm brings them up to
+                ld a,(hl)                   ; date in a light frame)
+                inc a
+                jr nz,.weighed
                 push hl
-                ld hl,chunk_table
-                ld b,CHUNK_COUNT
-                ld c,0                      ; C = total weight
-.weigh:         push hl
-                ld a,(hl)                   ; HL = chunk: rows, difficulty,
-                inc hl                      ; weight, environment
-                ld h,(hl)
-                ld l,a
-                inc hl
-                ld a,(difficulty)
-                cp (hl)
-                jr c,.no                    ; too early for it
-                inc hl
-                inc hl
-                ld a,(hl)                   ; environment: 0 any, 1 urban, 2 forest
-                and CHUNK_ENV
-                dec hl
-                or a
-                jr z,.yes
-                dec a
-                push bc
-                ld b,a
-                ld a,(env)
-                cp b
-                pop bc
-                jr nz,.no
-.yes:           ld a,(hl)                   ; its weight
-                jr .store
-.no:            xor a
-.store:         ld (de),a
-                inc de
-                add a,c
-                ld c,a
+                ld a,(env)                  ; none yet: now
+                call weigh_env
                 pop hl
-                inc hl
-                inc hl
-                djnz .weigh
-                ld a,c
-                or a
-                jr nz,.total
-                inc c                       ; nothing eligible: the first one
-.total:         pop hl
-                inc hl
-                ld (hl),c
+.weighed:       inc hl
+                ld c,(hl)                   ; C = their total
 .pick:          call random_below           ; A = 0 .. total-1
                 ld hl,(.table)
                 ld de,chunk_table
@@ -142,6 +94,88 @@ pick_chunk_c5:
                 ret
 
 .table:         defw 0                      ; chunk_weights of this environment
+
+; A = environment (0 urban, 1 forest): HL = its pick_cache entry
+; (difficulty, total), DE = its chunk_weights
+env_cache:
+                ld hl,pick_cache
+                ld de,chunk_weights
+                or a
+                ret z
+                ld hl,pick_cache+2
+                ld de,chunk_weights+CHUNK_COUNT
+                ret
+
+; A = environment: its weights for the current difficulty
+weigh_env:
+                ld (.env),a
+                call env_cache
+                ld a,(difficulty)
+                ld (hl),a
+                push hl
+                ld hl,chunk_table
+                ld b,CHUNK_COUNT
+                ld c,0                      ; C = total weight
+.weigh:         push hl
+                ld a,(hl)                   ; HL = chunk: rows, difficulty,
+                inc hl                      ; weight, environment
+                ld h,(hl)
+                ld l,a
+                inc hl
+                ld a,(difficulty)
+                cp (hl)
+                jr c,.no                    ; too early for it
+                inc hl
+                inc hl
+                ld a,(hl)                   ; environment: 0 any, 1 urban, 2 forest
+                and CHUNK_ENV
+                dec hl
+                or a
+                jr z,.yes
+                dec a
+                push bc
+                ld b,a
+                ld a,(.env)
+                cp b
+                pop bc
+                jr nz,.no
+.yes:           ld a,(hl)                   ; its weight
+                jr .store
+.no:            xor a
+.store:         ld (de),a
+                inc de
+                add a,c
+                ld c,a
+                pop hl
+                inc hl
+                inc hl
+                djnz .weigh
+                ld a,c
+                or a
+                jr nz,.total
+                inc c                       ; nothing eligible: the first one
+.total:         pop hl
+                inc hl
+                ld (hl),c
+                ret
+.env:           defb 0
+
+; a light frame (no coarse step): the weights of one environment brought up
+; to the difficulty, if behind (src/world.asm chunk_prewarm maps C5)
+chunk_prewarm_c5:
+                xor a
+                call env_cache
+                ld a,(difficulty)
+                cp (hl)
+                ld a,0
+                jr nz,weigh_env
+                inc a
+                call env_cache
+                ld a,(difficulty)
+                cp (hl)
+                ld a,1
+                jr nz,weigh_env
+                ret
 
 ; chunk lane k goes to lane chunk_lanes[k]; the first two keep neighbours
 lane_orders:    defb 0,1,2, 2,1,0, 1,0,2, 0,2,1, 1,2,0, 2,0,1
@@ -282,6 +316,9 @@ easy_cell:
 
 ; a new game: no obstacles below, the starts long ago
 easy_reset:
+                ld a,#FF                    ; (and the weights of the last
+                ld (pick_cache),a           ; game: none yet)
+                ld (pick_cache+2),a
                 ld hl,ez_obj
                 ld b,3
 .obj:           ld (hl),0

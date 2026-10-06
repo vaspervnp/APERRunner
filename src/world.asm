@@ -815,6 +815,13 @@ transition_sides:
                 ld (env),a
                 ret
 
+; a light frame: chunk weights up to date (src/chunk_pick.asm, bank C5)
+chunk_prewarm:
+                MAP_RAM GA_RAM_C5
+                call chunk_prewarm_c5
+                MAP_RAM GA_RAM_C0
+                ret
+
 ; --- forest (src/chunk_pick.asm, bank C5) ----------------------------------------------
 forest_sides:
                 MAP_RAM GA_RAM_C5
