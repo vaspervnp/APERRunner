@@ -279,3 +279,27 @@ def test_countdown_before_the_run():
         print(f"    skill {skill}: {still} frames of countdown")
         assert (still > 100) == (skill == 2)
         assert peek8(cpc, sym["missed_frames"]) == 0
+
+
+def test_night_falls_on_the_route_and_the_menu_is_by_day():
+    """The palette follows a 2048-row day-night cycle (dusk at row 896,
+    night from 1024); back in the menu it is day again. Yellow (#1E, the
+    ballast) shows by day, no pen has it at night."""
+    sym = load_symbols()
+    cpc = boot_game()
+    cpc.write_ram(sym["scroll_speed"], bytes([7]))
+    seen = {}
+    while peek16(cpc, sym["cur_top_row"]) < 1100:
+        sync_game_frame(cpc, sym)
+        row = peek16(cpc, sym["cur_top_row"])
+        seen.setdefault(peek8(cpc, sym["time_now"]), row)
+    print(f"    palette steps first seen at rows {seen}")
+    assert list(seen) == [0, 14, 28, 42], "day, dusk, late, night in order"
+    assert 896 <= seen[14] < 900 and 1024 <= seen[42] < 1030
+    night = cpc.framebuffer()
+    save_screenshot(cpc, "night.png")
+    assert 0x1E not in night, "night: no yellow"
+    press(cpc, sym, cpcmod.KEY_ESC)
+    assert mode(cpc, sym) == MODE_MENU and peek8(cpc, sym["time_now"]) == 0
+    cpc2 = boot_game()
+    assert 0x1E in cpc2.framebuffer(), "day: the yellow ballast"

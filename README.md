@@ -38,6 +38,8 @@ from the ramps and watch out for red signals, from the city avenue all the way t
 - **5 height levels**: the runner "grows" the higher he is, from the ground up to the highest jump above a train roof.
 - **Environments**: city (a 3+3 lane avenue with cars, buses and kiosks) and forest, with **footbridges** and
   **road bridges** overhead.
+- **Day and night**: dusk falls as you run, then night (lit train windows, a moonlit forest) and dawn again,
+  a cycle every 2048 rows.
 - **Loading screen**, **menu**, **story**, **pause**, a **countdown** before every run, a **game over screen** with a
   high score table and 3-letter names, and a **demo** when you stay in the menu.
 - **English and Greek** (switch with `L` in the menu).

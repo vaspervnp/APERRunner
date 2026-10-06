@@ -1175,6 +1175,53 @@ move_trains:
                 ret
 
 ; -----------------------------------------------------------------------------
+; time_of_day: first thing in a frame (the beam at the top). While playing,
+; the picture's distance sets the step of a day-night cycle (time_steps,
+; src/data/palette.asm: 2048 rows, 64 a step); the menus are by day. A new
+; step: pens 0-13 from time_palettes (14 and 15 cycle: glint, lamp).
+; -----------------------------------------------------------------------------
+time_of_day:
+                xor a
+                ld b,a
+                ld a,(game_mode)
+                cp MODE_MENU
+                jr nc,.step                 ; menus: day
+                ld hl,(cur_top_row)         ; (row / 64) & 31
+                ld a,l
+                rlca
+                rlca
+                and 3
+                ld b,a
+                ld a,h
+                add a,a
+                add a,a
+                or b
+                and 31
+                ld hl,time_steps
+                call add_a_hl
+                ld b,(hl)                   ; B = offset of its palette
+.step:          ld hl,time_now
+                ld a,b
+                cp (hl)
+                ret z
+                ld (hl),a
+                ld hl,time_palettes
+                call add_a_hl
+                ld e,0
+.pen:           ld bc,GA_PORT*256
+                out (c),e
+                ld a,(hl)
+                or GA_COLOUR
+                out (c),a
+                inc hl
+                inc e
+                ld a,e
+                cp TIME_PENS
+                jr nz,.pen
+                ret
+time_now:       defb 0                      ; offset of the palette shown
+
+; -----------------------------------------------------------------------------
 ; stations: once a game frame. When the runner reaches a station row its
 ; name is written on the track (and the bell rings); Piraeus gives 1000
 ; points and the route starts over.

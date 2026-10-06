@@ -100,6 +100,7 @@ start:
 
 main_loop:
                 call wait_game_frame
+                call time_of_day            ; day, dusk, night: the palette
                 BORDER #12                  ; bright green: HUD, runner, sprites
                 call hud_update             ; top to bottom, ahead of the beam
                 ld a,(sound_due)            ; then this VSYNC's sound tick

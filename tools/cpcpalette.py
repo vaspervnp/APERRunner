@@ -63,6 +63,20 @@ GAME_PALETTE = [
 ]
 
 
+# time of day (src/world.asm time_of_day): firmware colours of pens 0-13 at
+# dusk and at night; pens 14-15 (glint, lamp) are cycled by the game
+TIME_PENS = 14
+TIME_PALETTES = [
+    ("day", [GAME_PALETTE[pen][0] for pen in range(TIME_PENS)]),
+    #          0  1   2   3  4   5   6   7  8  9  10 11  12 13
+    ("dusk",  [0, 1, 13, 26, 3, 15, 12, 24, 9, 9, 11, 2, 16, 6]),   # darker leaves
+    ("late",  [0, 1, 13, 14, 3, 15, 12, 24, 0, 9, 11, 2, 16, 6]),   # dark woods, moonlit highlights
+    ("night", [0, 1, 13, 14, 0, 15, 1, 24, 0, 9, 24, 2, 16, 6]),    # blue ballast, lit windows
+]
+# 2048-row cycle in steps of 64 rows: day, dusk, night, dawn
+TIME_STEPS = [0] * 14 + [1, 2] + [3] * 14 + [2, 1]
+
+
 def rgb_tuple(value):
     return ((value >> 16) & 0xFF, (value >> 8) & 0xFF, value & 0xFF)
 
@@ -108,7 +122,16 @@ def write_asm(path):
         f"HW_BRIGHT_WHITE equ #{CPC_COLOURS[26][2]:02X}",
         f"HW_BRIGHT_RED   equ #{CPC_COLOURS[6][2]:02X}",
         f"HW_BRIGHT_GREEN equ #{CPC_COLOURS[18][2]:02X}",
+        "",
+        "; time of day: pens 0-13 per step (day, dusk, late, night), the step",
+        "; of each 64 rows of a 2048-row cycle",
+        f"TIME_PENS       equ {TIME_PENS}",
+        "time_palettes:",
     ]
+    for name, firmware in TIME_PALETTES:
+        lines.append("                defb " + ",".join(f"#{CPC_COLOURS[f][2]:02X}" for f in firmware) + f"    ; {name}")
+    lines.append("time_steps:")
+    lines.append("                defb " + ",".join(str(t * TIME_PENS) for t in TIME_STEPS))
     _write(path, "\n".join(lines) + "\n")
 
 
