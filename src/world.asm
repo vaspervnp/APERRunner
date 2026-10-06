@@ -731,6 +731,7 @@ spawn_car:
                 add a,a
                 add a,b
                 add a,c
+                ld (.lane),a
                 ld e,a
                 ld d,0
                 ld hl,car_busy
@@ -773,6 +774,9 @@ spawn_car:
                 add c
                 inc a
                 ld (hl),a                   ; busy for rows + gap
+                ld de,car_recent-car_busy
+                add hl,de
+                ld (hl),CAR_QUIET_ROWS
                 ld a,e
                 MAP_RAM GA_RAM_C5           ; (add_scenery reads its width)
                 ld hl,gfx_urban_ov_table
@@ -781,12 +785,351 @@ spawn_car:
                 ld b,c
                 ld c,a
                 ld a,b
+                call start_mover            ; a car: maybe on the move
                 call add_scenery
                 MAP_RAM GA_RAM_C0
                 ret
 .column:        defb 0
+.lane:          defb 0
 
 car_columns:    defb 0,5,9,68,63,59
+
+; =============================================================================
+; Moving cars: up to MOVER_COUNT cars drive along the avenue, on the right with the
+; runner (up the world, slower than the road), on the left towards him (down,
+; drawn front down). A car starts as a parked overlay (drawn with its rows);
+; once both rows are on the screen it moves a line in each frame without a
+; coarse step (the light ones; ~1.5 ms a car): the line it left gets its
+; road back (the side tile, bank C4) and the car is drawn again, opaque from
+; the data bytes of its sprite (bank C5). It stops before a row that is not
+; plain road (forest, bridge, kiosk) or not drawn yet; no parked car joins
+; its lane while it lives, and one only comes down a lane quiet for
+; CAR_QUIET_ROWS rows. Picture lines are world lines as in src/trains.asm.
+; =============================================================================
+MOVER_COUNT          equ 2
+MV_ON           equ 0                   ; 0 free, 1 waiting for its rows, 2 moving
+MV_COL          equ 1                   ; screen byte column
+MV_LO           equ 2                   ; (2) world line of its bottom line
+MV_SPR          equ 4                   ; (2) its sprite (bank C5)
+MV_DIR          equ 6                   ; 1 up (with the runner), -1 down
+MV_LANE         equ 7                   ; car_busy index
+MV_SIZE         equ 8
+CAR_LINES       equ 16
+CAR_W           equ 4
+CAR_QUIET_ROWS      equ 12
+
+; spawn_car, bank C5 mapped: HL = sprite, C = column, A = rows (2: a car)
+start_mover:
+                cp 2
+                ret nz
+                push af
+                push bc
+                push de
+                push hl
+                ld a,(spawn_car.lane)
+                ld e,a
+                cp 3                        ; the left side comes down: only a
+                jr nc,.slot                 ; lane quiet below
+                ld hl,car_recent
+                call add_a_hl
+                ld a,(hl)
+                cp CAR_QUIET_ROWS
+                jr c,.done                  ; (12: this car's own mark)
+.slot:          ld hl,movers
+                ld a,(hl)
+                or a
+                jr z,.free
+                ld hl,movers+MV_SIZE
+                ld a,(hl)
+                or a
+                jr nz,.done
+.free:          ld (hl),1                   ; MV_ON
+                inc hl
+                ld (hl),c                   ; MV_COL
+                inc hl
+                push hl
+                ld hl,(gen_row)
+                add hl,hl
+                add hl,hl
+                add hl,hl
+                ex de,hl                    ; DE = its bottom line
+                pop hl
+                ld a,l                      ; (E: the lane, kept in A)
+                ld (hl),e
+                inc hl
+                ld (hl),d
+                inc hl
+                pop de                      ; the sprite
+                push de
+                ld (hl),e
+                inc hl
+                ld (hl),d
+                inc hl
+                ld a,(spawn_car.lane)
+                cp 3
+                ld (hl),1                   ; MV_DIR: right side up
+                jr nc,.dir
+                ld (hl),-1                  ; left side down
+.dir:           inc hl
+                ld (hl),a                   ; MV_LANE
+.done:          pop hl
+                pop de
+                pop bc
+                pop af
+                ret
+
+; once a game frame, before the sprites are drawn
+move_cars:
+                call coarse_ahead           ; light frames: the movers take turns
+                ld a,#FF                    ; (a car drawn at most once a frame)
+                jr c,.turn
+                ld a,(car_turn)
+                xor 1
+                ld (car_turn),a
+.turn:          ld (car_go),a
+                xor a
+                ld (car_slot),a
+                ld iy,movers
+                call .one
+                ld a,1
+                ld (car_slot),a
+                ld iy,movers+MV_SIZE
+.one:           ld a,(iy+MV_ON)
+                or a
+                ret z
+                ld a,(iy+MV_LANE)           ; its lane: no parked car joins
+                ld hl,car_busy
+                call add_a_hl
+                ld (hl),3
+                ld l,(iy+MV_LO)             ; its top row, from the picture's
+                ld h,(iy+MV_LO+1)           ; bottom: below it, gone
+                ld de,CAR_LINES-1
+                add hl,de
+                call hl_rows
+                ld de,PICTURE_ROWS
+                add hl,de
+                ld de,(cur_top_row)
+                or a
+                sbc hl,de                   ; HL = top row + 34 - picture top
+                jr c,.gone
+                ld a,h
+                or l
+                jr nz,.shown
+.gone:          ld (iy+MV_ON),0
+                ret
+.shown:         ld a,(iy+MV_ON)
+                dec a
+                jr nz,.moving
+                ld a,h                      ; waiting: its top row drawn?
+                or a
+                ret nz
+                ld a,l
+                cp PICTURE_ROWS+1
+                ret nc
+                ld (iy+MV_ON),2
+                ret
+.moving:        ld a,(car_slot)             ; its turn: two lines at once
+                ld hl,car_go
+                cp (hl)
+                ret nz
+                call .step
+                ret nz                      ; it waits
+                call .step
+                jp draw_car
+
+; one line on: Z if it moved (the vacated line restored), NZ if it waits
+.step:          ld l,(iy+MV_LO)             ; HL = the line it moves onto: up
+                ld h,(iy+MV_LO+1)           ; lo + 16, down lo - 1
+                ld de,CAR_LINES
+                ld a,(iy+MV_DIR)
+                or a
+                jp p,.onto
+                ld de,-1
+.onto:          add hl,de
+                push hl
+                call road_row
+                pop hl
+                ret nz                      ; not plain road (yet)
+                ld de,-CAR_LINES            ; the line it leaves: up lo, down
+                ld a,(iy+MV_DIR)            ; lo + 15
+                or a
+                jp p,.leaves
+                ld de,CAR_LINES
+.leaves:        add hl,de
+                push hl
+                ld l,(iy+MV_LO)
+                ld h,(iy+MV_LO+1)
+                ld e,a                      ; DE = MV_DIR, signed
+                rla
+                sbc a,a
+                ld d,a
+                add hl,de
+                ld (iy+MV_LO),l
+                ld (iy+MV_LO+1),h
+                ld hl,#FFFF                 ; no row known
+                ld (car_row),hl
+                pop hl
+                call road_line
+                xor a
+                ret
+
+; HL /= 8: world line -> row
+hl_rows:        srl h
+                rr l
+                srl h
+                rr l
+                srl h
+                rr l
+                ret
+
+; HL = world line: Z if its row is drawn and plain road on the car's side
+road_row:
+                call hl_rows
+                ld de,(cur_top_row)         ; drawn: row <= picture top
+                ex de,hl
+                or a
+                sbc hl,de
+                ex de,hl
+                jr c,.no
+                call desc_addr
+                ld a,(hl)
+                and F_FOREST|F_BRIDGE
+                ret nz
+                inc hl                      ; its side's tile
+                ld a,(iy+MV_LANE)
+                cp 3
+                jr c,.side
+                inc hl
+.side:          ld a,(hl)
+                cp IDX_URBAN_ROAD_KIOSK_0
+                jr nc,.no
+                xor a
+                ret
+.no:            or 1
+                ret
+
+; HL = world line: DE = its address at the car's column, Z; NZ if not shown
+; (off the picture, under a bridge). B = its line in the row (tile line).
+car_line:
+                ld a,l
+                and 7
+                xor 7
+                ld b,a
+                call hl_rows
+                ld de,(car_row)
+                or a
+                sbc hl,de
+                add hl,de
+                jr z,.known
+                ld (car_row),hl
+                ex de,hl
+                ld hl,(cur_top_row)
+                or a
+                sbc hl,de                   ; picture row
+                ld a,h
+                or a
+                jr nz,.hide
+                ld a,l
+                cp PICTURE_ROWS
+                jr nc,.hide
+                push bc
+                push af
+                ex de,hl
+                call desc_addr
+                ld (car_desc),hl
+                bit 7,(hl)                  ; F_BRIDGE: under the deck
+                jr nz,.hide_pop
+                ld a,CAR_W
+                ld (spr_width),a
+                ld a,(iy+MV_COL)
+                ld c,a
+                pop af
+                call row_base
+                ld (car_base),hl
+                ld a,(spr_wrap)
+                ld (car_wrap),a
+                pop bc
+                jr .addr
+.hide_pop:      pop af
+                pop bc
+.hide:          ld hl,0                     ; (a hidden row)
+                ld (car_base),hl
+.known:         ld hl,(car_base)
+                ld a,h
+                or l
+                jr z,.no
+.addr:          ld hl,(car_base)
+                ld a,b
+                add a,a
+                add a,a
+                add a,a
+                add a,h
+                ld d,a
+                ld e,l
+                xor a
+                ret
+.no:            or 1
+                ret
+
+; DE = screen, HL = bytes, step C apart: CAR_W bytes (across a plane end too)
+car_bytes:
+                ld b,CAR_W
+.byte:          ld a,(hl)
+                ld (de),a
+                ld a,c
+                call add_a_hl
+                ld a,(car_wrap)
+                or a
+                jr nz,.wrap
+                inc de
+                djnz .byte
+                ret
+.wrap:          ex de,hl
+                call next_ring_byte
+                ex de,hl
+                djnz .byte
+                ret
+
+; HL = world line: its road back (the car's side tile)
+road_line:
+                call car_line
+                ret nz
+                ld hl,(car_desc)
+                inc hl
+                ld a,(iy+MV_LANE)
+                ld c,COL_LEFT
+                cp 3
+                jr c,.left
+                inc hl
+                ld c,COL_RIGHT
+.left:          ld a,(iy+MV_COL)
+                sub c
+                ld c,a                      ; C = byte in the tile
+                ld a,(hl)
+                push de
+                MAP_RAM GA_RAM_C4
+                ld hl,gfx_urban_table
+                call table_entry
+                ld a,b                      ; + line * 15
+                add a,a
+                add a,a
+                add a,a
+                add a,a
+                sub b
+                add a,c
+                call add_a_hl
+                pop de
+                ld c,1
+                call car_bytes
+                MAP_RAM GA_RAM_C0
+                ret
+
+; the car at its lines: opaque, the data bytes of its sprite
+draw_car:
+                MAP_RAM GA_RAM_C5           ; (src/traffic_c5.asm)
+                call draw_car_c5
+                MAP_RAM GA_RAM_C0
+                ret
 
 ; --- transition rows (2): forest tile set ------------------------------------------
 transition_sides:
@@ -1310,10 +1653,23 @@ train_anchor:   defw 0                  ; its first row (where its wagons are)
 train_livery:   defb 0
 train_left:     defb 0                  ; rows of it its chunk still has to come
 train_movable:  defb 0                  ; the chunk's trains may move
+movers:         defs MOVER_COUNT*MV_SIZE     ; moving cars
+car_row:        defw 0                  ; car_line: the row of car_base
+car_base:       defw 0                  ; its plane 0 address (0: not shown)
+car_desc:       defw 0
+car_wrap:       defb 0
+car_left:       defb 0
+car_at:         defw 0
+car_src:        defw 0
+car_step:       defw 0
+car_turn:       defb 0
+car_go:         defb 0
+car_slot:       defb 0
 route_left:     defw 0                  ; rows to the next station
 route_station:  defb 0                  ; stations passed on this lap (0-5)
 busy_counters:
 car_busy:       defs 6
 tree_busy:      defs 2
+car_recent:     defs 6                  ; rows since a car started in the lane
 BUSY_COUNT      equ $-busy_counters
 GEN_STATE_SIZE  equ $-gen_state

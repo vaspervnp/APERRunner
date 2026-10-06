@@ -91,7 +91,8 @@ Every run starts with a countdown: **3, 2, 1, GO!** On **HARD** the game first w
 
 ![The countdown on HARD](screenshots/07_hard_countdown.png)
 
-The line runs through the **city**, beside a busy avenue, and out into the **forest**. Footbridges and road bridges
+The line runs through the **city**, beside a busy avenue (some cars pull out and drive off:
+up on the right, down on the left), and out into the **forest**. Footbridges and road bridges
 pass overhead. The longer you run, the more crowded the tracks get. Somewhere after Megara the sun sets: dusk,
 then night, with lit train windows and a dark forest, and dawn again further down the line.
 

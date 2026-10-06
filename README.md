@@ -36,7 +36,8 @@ from the ramps and watch out for red signals, from the city avenue all the way t
 - **Moving trains**: on the right track they come towards you, on the left one they run ahead of you, slower; the
   middle track's trains stand still (EASY: none move, MEDIUM: only the left track, HARD: both).
 - **5 height levels**: the runner "grows" the higher he is, from the ground up to the highest jump above a train roof.
-- **Environments**: city (a 3+3 lane avenue with cars, buses and kiosks) and forest, with **footbridges** and
+- **Environments**: city (a 3+3 lane avenue with cars, buses and kiosks; some cars
+  drive off, up on the right side and down on the left) and forest, with **footbridges** and
   **road bridges** overhead.
 - **Day and night**: dusk falls as you run, then night (lit train windows, a moonlit forest) and dawn again,
   a cycle every 2048 rows.

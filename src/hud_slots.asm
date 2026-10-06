@@ -443,3 +443,61 @@ clear_buffer:
                 djnz .byte
                 ret
 
+
+; label_item's name -> label_buf (8 lines of label_w bytes); src/pickups.asm
+; build_label maps this bank
+build_label_c7:
+                ld a,(label_item)
+                sub ITEM_MAGNET
+                add a,a
+                ld hl,txt_pu_magnet         ; txt_pu_* in item order
+                call add_a_hl
+                ld a,(hl)
+                inc hl
+                ld h,(hl)
+                ld l,a
+                push hl
+                ld b,0                      ; B = glyphs
+.count:         ld a,(hl)
+                cp TXT_END
+                jr z,.counted
+                inc b
+                inc hl
+                jr .count
+.counted:       pop hl
+                ld a,b
+                add a,a
+                add a,b
+                ld (label_w),a              ; bytes = 3 * glyphs
+                sub FONT_W
+                ld (.skip),a                ; to the glyph's next line
+                ld de,label_buf
+.glyph:         ld a,(hl)
+                cp TXT_END
+                jr z,.built
+                push hl
+                push de
+                ld hl,gfx_font_table
+                call table_entry            ; HL = 8 lines of 3 bytes
+                pop de
+                push de
+                ld a,8
+.line:          ldi
+                ldi
+                ldi
+                ex de,hl
+                ld bc,(.skip)               ; (high byte: .skip+1 = 0)
+                add hl,bc
+                ex de,hl
+                dec a
+                jr nz,.line
+                pop de
+                inc de
+                inc de
+                inc de
+                pop hl
+                inc hl
+                jr .glyph
+.built:         ret
+.skip:          defw 0
+

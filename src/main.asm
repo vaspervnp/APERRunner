@@ -137,6 +137,9 @@ main_loop:
                 call build_clip_table
                 call player_draw
                 call draw_flyers
+                ld a,(game_state)           ; the avenue's traffic: after the
+                or a                        ; sprites (the runner ahead of the
+                call z,move_cars            ; beam), only the road sides
                 ; then the scroll for the next game frame (off-screen rows only)
                 BORDER #0C                  ; bright red: scroll work
                 ld a,(game_state)           ; the world stops while crashed
@@ -297,6 +300,7 @@ bank5_start:
                 include "data/gfx_shadows.asm"
                 include "data/chunks.asm"
                 include "chunk_pick.asm"
+                include "traffic_c5.asm"            ; a moving car drawn
 bank5_end:
                 assert bank5_end <= #8000
                 save "build/aperb5.bin",bank5_start,bank5_end-bank5_start
@@ -324,6 +328,7 @@ bank7_start:
                 include "sound.asm"
                 include "data/gfx_hud_icons.asm"    ; (hud_prepare maps C7)
                 include "hud_slots.asm"
+                include "collide_c7.asm"
                 include "data/gfx_urban_ov_code.asm"    ; (render_row: overlays)
                 include "data/gfx_forest_ov_code.asm"
                 include "scores_save.asm"

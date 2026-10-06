@@ -20,6 +20,12 @@ def _check_screen(cpc, sym, sheets):
     sides only in rows without overlays, the HUD always.
     Returns the number of row parts compared."""
     checked = 0
+    cars = []                                # moving cars (move_cars): their rows and column
+    for i in range(2):
+        m = cpc.read_ram(sym["movers"] + 8 * i, 8)
+        if m[0] == 2:
+            lo = m[2] | m[3] << 8
+            cars.append((lo // 8, (lo + 15) // 8, m[1]))
     for index, (row, bank, ring) in enumerate(visible_rows(cpc, sym)):
         desc = read_desc(cpc, sym, row)
         below = read_desc(cpc, sym, row - 1)
@@ -42,6 +48,8 @@ def _check_screen(cpc, sym, sheets):
                 if desc["items"][lane] or below["items"][lane] > 1:
                     continue
             elif desc["flags"] & F_OVERLAY or (column == 0 and width == 72 and index in RUNNER_ROWS):
+                continue
+            elif any(low <= row <= high and column <= col < column + width for low, high, col in cars):
                 continue
             assert screen_row(cpc, bank, ring, column, width) == pens, \
                 f"world row {row}: bytes {column}..{column + width - 1} differ from the tiles"
