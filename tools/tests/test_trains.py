@@ -106,8 +106,8 @@ def _expected_lane(sheets, sym, desc, row, train):
         elif w >= train["hi"] - 8:
             tile, line = high, 7 - (w - (train["hi"] - 8))
         else:
-            part = (row - train["anchor"]) & 7
-            tile = wagon + (4 if part == 7 else 1 if part & 3 == 1 else 2)
+            part = (row - train["anchor"]) % sym["wagon_period"]
+            tile = wagon + (4 if part == sym["wagon_period"] - 1 else 1 if part & 3 == 1 else 2)
             line = y
         lines.append(sheets.track[sheets.track_names[tile]][line])
     return lines

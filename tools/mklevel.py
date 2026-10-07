@@ -44,7 +44,7 @@ wagons of WAGON_ROWS rows, joined by 1-row couplers (collision COL_GAP: a
 train at ground level, a gap on the roofs in hard mode). No coins on the
 couplers. A T/R run must be
 exactly LOCO_ROWS + k * (1 + WAGON_ROWS) rows with k >= MIN_WAGONS
-(38 rows for 2 wagons, 51 for 3, ...).
+(50 rows for 2 wagons, 69 for 3, ...).
 
 In the game every chunk gets a random lane order (any of the six, or only
 as written / mirrored when it has trains side by side: roof hops need
@@ -82,7 +82,7 @@ ITEMS = {".": 0, "c": 1}
 ITEM_ROWS = {0: 0, 1: 1}                       # rows an item overlay covers (default 2)
 ENVS = {"any": 0, "urban": 1, "forest": 2}
 
-WAGON_ROWS = 12
+WAGON_ROWS = 18
 LOCO_ROWS = 12
 MIN_WAGONS = 2
 MIN_COIN_RUN = 3
@@ -95,6 +95,27 @@ RAMP_KINDS = ("coins", "blocked")
 
 def train_length(wagons):
     return LOCO_ROWS + wagons * (1 + WAGON_ROWS)
+
+
+def tile_collision(name):
+    """The collision class of a track tile (each tile has one)."""
+    if name.startswith(("rail", "signal_1")):
+        return COL_NONE
+    if name.startswith("stop"):
+        return COL_STOP
+    if name == "signal_0":
+        return COL_SIGNAL
+    if name.endswith("coupler"):
+        return COL_GAP
+    if name.endswith("_nose"):
+        return COL_NOSE
+    if name.startswith(("wagon", "loco")):
+        return COL_TRAIN
+    kind, k = name.rsplit("_", 1)                # ramp_up_k / ramp_down_k
+    return (COL_RAMP_UP if kind == "ramp_up" else COL_RAMP_DOWN) | (int(k) << 4)
+
+
+TILE_COLLISION = [tile_collision(name) for name in assets.TRACK_TILES]
 
 
 def livery_tile(tile, shift):
@@ -233,6 +254,8 @@ def compile_chunk(path):
         for lane in range(3):
             if row[lane * 3 + 2] == ITEMS["c"] and row[lane * 3 + 1] == COL_GAP:
                 raise LevelError(f"{path}: line {grid[r][0]}: a coin between two wagons (lane {lane + 1})")
+        for lane in range(3):                     # (the game derives it from the tile)
+            assert row[lane * 3 + 1] == TILE_COLLISION[row[lane * 3]], (path, r, lane)
         coin_lanes = sum(1 for lane in range(3) if row[lane * 3 + 2] == ITEMS["c"])
         if coin_lanes > 1:
             raise LevelError(f"{path}: line {grid[r][0]}: coins in {coin_lanes} lanes - a row has coins in one lane only")
@@ -317,7 +340,8 @@ def asm_source(chunks):
              "CHUNK_RAMP equ #40                ; a ramp up: power-ups on the roofs too",
              "CHUNK_SIDE_BY_SIDE equ #80        ; trains side by side: lane order kept or mirrored",
              "; chunk: rows, min difficulty, weight, env (0 any, 1 urban, 2 forest) | ramp | side by side,",
-             ";        then per row bottom to top: 3 x (track tile, collision, item)",
+             ";        then per row bottom to top: 3 cells, track tile + #80 with a coin",
+             ";        (the collision class comes from the tile: tile_collision)",
              "chunk_table:"]
     lines += [f"                defw chunk_{c['name']}" for c in chunks]
     lines += ["; track tile -> the same tile with the livery moved on by 0, 1, 2 (64 each)",
@@ -327,12 +351,19 @@ def asm_source(chunks):
         table = [livery_tile(t, shift) for t in range(64)]
         for i in range(0, 64, 16):
             lines.append("                defb " + ",".join(str(v) for v in table[i:i + 16]))
+    lines += ["; track tile -> its collision class (same page: livery_tiles + TILE_COLL_OFS)",
+              "TILE_COLL_OFS equ 192",
+              "tile_collision:"]
+    table = TILE_COLLISION + [0] * (64 - len(TILE_COLLISION))
+    for i in range(0, 64, 16):
+        lines.append("                defb " + ",".join(str(v) for v in table[i:i + 16]))
     for c in chunks:
         lines.append(f"chunk_{c['name']}:")
         env = c["env"] | (0x80 if c["side_by_side"] else 0) | (0x40 if c["ramp"] else 0)
         lines.append(f"                defb {len(c['rows'])},{c['diff']},{c['weight']},{env}")
         for row in c["rows"]:
-            lines.append("                defb " + ",".join(str(v) for v in row))
+            lines.append("                defb " + ",".join(str(row[lane * 3] | (0x80 if row[lane * 3 + 2] else 0))
+                                                         for lane in range(3)))
     return "\n".join(lines) + "\n"
 
 

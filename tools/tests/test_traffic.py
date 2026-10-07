@@ -7,7 +7,7 @@ import os
 import sys
 
 from harness import ROOT, boot_game, load_symbols, sync_game_frame
-from world_model import F_BRIDGE, F_OVERLAY, Sheets, read_desc, screen_row, visible_rows
+from world_model import F_BRIDGE, F_OVERLAY, F_PLATFORM, Sheets, read_desc, screen_row, visible_rows
 
 sys.path.insert(0, os.path.join(ROOT, "tools"))
 import png2cpc  # noqa: E402
@@ -80,8 +80,8 @@ def test_moving_car_is_drawn_where_it_is_and_leaves_no_trail():
             offset = (m["col"] - (57 if right else 0)) * 2
             for index, (row, bank, ring) in enumerate(visible_rows(cpc, sym)):
                 desc = read_desc(cpc, sym, row)
-                if index >= RUNNER_ROWS or desc["flags"] & (F_BRIDGE | 0x01):
-                    continue
+                if index >= RUNNER_ROWS or desc["flags"] & (F_BRIDGE | F_PLATFORM | 0x01):
+                    continue                     # (a platform covers bytes 8-14)
                 got = screen_row(cpc, bank, ring, m["col"], 4)
                 tile = sheets.sides["urban"][desc["right" if right else "left"]]
                 for y in range(8):

@@ -83,36 +83,42 @@ def test_ramp_without_train_is_rejected():
         raise AssertionError("accepted")
 
 
+LOCO, WAGON = mklevel.LOCO_ROWS, mklevel.WAGON_ROWS
+
+
 def test_train_with_cab_first_layout():
-    chunk = _compile("\n".join(["T1.  ...  ..."] * 38) + "\n")
+    chunk = _compile("\n".join(["T1.  ...  ..."] * mklevel.train_length(2)) + "\n")
     tiles = {v: k for k, v in mklevel.TILE.items()}
     column = [tiles[row[0]] for row in chunk["rows"]]
-    assert column[0] == "loco1_nose" and column[11] == "wagon1_end_top"
-    assert column[12] == "wagon1_coupler" and column[13] == "wagon1_end_bottom" and column[24] == "wagon1_end_top"
-    assert column[25] == "wagon1_coupler" and column[37] == "wagon1_end_top"
+    assert column[0] == "loco1_nose" and column[LOCO - 1] == "wagon1_end_top"
+    assert column[LOCO] == "wagon1_coupler" and column[LOCO + 1] == "wagon1_end_bottom"
+    assert column[LOCO + WAGON] == "wagon1_end_top"
+    assert column[LOCO + WAGON + 1] == "wagon1_coupler" and column[-1] == "wagon1_end_top"
     assert chunk["rows"][0][1] == mklevel.COL_NOSE and chunk["rows"][1][1] == mklevel.COL_TRAIN
 
 
 def test_train_with_cab_last_layout():
-    chunk = _compile("\n".join(["R2.  ...  ..."] * 51) + "\n")
+    chunk = _compile("\n".join(["R2.  ...  ..."] * mklevel.train_length(3)) + "\n")
     tiles = {v: k for k, v in mklevel.TILE.items()}
     column = [tiles[row[0]] for row in chunk["rows"]]
-    assert column[0] == "wagon2_end_bottom" and column[12] == "wagon2_coupler"
-    assert column[38] == "wagon2_coupler" and column[39] == "wagon2_end_bottom" and column[50] == "loco2_nose_top"
-    couplers = {12, 25, 38}                      # a gap between wagons (hard mode)
+    couplers = {WAGON, 2 * WAGON + 1, 3 * WAGON + 2}     # a gap between wagons (hard mode)
+    assert column[0] == "wagon2_end_bottom" and all(column[r] == "wagon2_coupler" for r in couplers)
+    assert column[3 * WAGON + 3] == "wagon2_end_bottom" and column[-1] == "loco2_nose_top"
+    assert len(column) == 3 * (WAGON + 1) + LOCO
     assert all(row[1] == (mklevel.COL_GAP if r in couplers else mklevel.COL_TRAIN)
                for r, row in enumerate(chunk["rows"]))
 
 
 def _train_with_coins(rows):
-    """51-row train in lane 1 with coins on the given rows (bottom first)."""
-    return "\n".join("R2c  ...  ..." if r in rows else "R2.  ...  ..." for r in reversed(range(51))) + "\n"
+    """3-wagon train in lane 1 with coins on the given rows (bottom first)."""
+    length = mklevel.train_length(3)
+    return "\n".join("R2c  ...  ..." if r in rows else "R2.  ...  ..." for r in reversed(range(length))) + "\n"
 
 
 def test_no_coins_between_wagons():
-    _compile(_train_with_coins({14, 16, 18}))
+    _compile(_train_with_coins({WAGON - 6, WAGON - 4, WAGON - 2}))
     try:
-        _compile(_train_with_coins({23, 25, 27}))               # row 25: a coupler
+        _compile(_train_with_coins({WAGON - 2, WAGON, WAGON + 2}))     # row WAGON: a coupler
     except mklevel.LevelError as e:
         assert "between two wagons" in str(e)
     else:
@@ -161,7 +167,8 @@ def test_coins_side_by_side_are_rejected():
 
 def test_more_coins_on_screen():
     # one and a half times the earlier density (~6 coins on the 34 rows of
-    # the screen, weighted by chunk probability): ~9 now
+    # the screen, weighted by chunk probability): ~9, then 7.5 with the
+    # longer wagons (11.18: the trains' new rows have none)
     chunks = mklevel.load_all()
     coin = mklevel.ITEMS["c"]
     coins = sum(c["weight"] * sum(1 for row in c["rows"] for lane in range(3) if row[lane * 3 + 2] == coin)
@@ -169,7 +176,7 @@ def test_more_coins_on_screen():
     rows = sum(c["weight"] * len(c["rows"]) for c in chunks)
     on_screen = 34 * coins / rows
     print(f"    {on_screen:.1f} coins on screen on average")
-    assert 8.5 <= on_screen <= 10.5, on_screen
+    assert 7 <= on_screen <= 10.5, on_screen
 
 
 def test_coins_come_in_runs_of_three_to_ten_with_gaps():
@@ -198,15 +205,17 @@ def test_bad_coin_runs_are_rejected():
 
 
 def _ramp_chunk(kind, roof_coins, ground_coins, stops):
-    """Lane 2: ramp + 38-row train; lane 1 coins on the ground, lane 3 stops."""
+    """Lane 2: ramp + 2-wagon train; lane 1 coins on the ground, lane 3 stops."""
     rows = []                                   # bottom first
-    for r in range(3 + 38):
+    roof = (4, 6, 8, 10) + tuple(WAGON + 6 + 2 * k for k in range(4))   # off the couplers
+    for r in range(3 + mklevel.train_length(2)):
         obj = "^.." if r < 3 else "R1."
-        if r in (4, 6, 8, 10, 17, 19, 21, 23)[:roof_coins]:   # on the wagon roofs
+        if r in roof[:roof_coins]:              # on the wagon roofs
             obj = "R1c"
-        left = "..c" if r in (30, 32, 34, 36)[:ground_coins] else "..."
-        right = "S.." if (r - 2) % 10 in (0, 1) and stops and r >= 2 else "..."
-        if stops and (r - 7) % 10 in (0, 1) and r >= 7:
+        left = "..c" if r in (42, 44, 46, 48)[:ground_coins] else "..."
+        whole = lambda first: r - (r - first) % 10 + 1 < 3 + mklevel.train_length(2)   # both its rows
+        right = "S.." if (r - 2) % 10 in (0, 1) and stops and r >= 2 and whole(2) else "..."
+        if stops and (r - 7) % 10 in (0, 1) and r >= 7 and whole(7):
             left = "S.."
         rows.append(f"{left}  {obj}  {right}")
     return f"# ramp: {kind}\n" + "\n".join(reversed(rows)) + "\n"

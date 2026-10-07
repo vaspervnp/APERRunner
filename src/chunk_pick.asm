@@ -197,7 +197,7 @@ chunk_row_c5:
                 ld hl,chunk_left
                 dec (hl)
                 ret
-; A = lane the cell at HL goes to; HL += 3
+; A = lane the cell at HL goes to; HL += 1
 .cell:          ld (row_lane),a
                 ld e,a
                 ld d,0
@@ -210,20 +210,25 @@ chunk_row_c5:
                 or a                        ; on a screen
                 call z,easy_cell
                 ret c
-                ld a,(livery)               ; tile, in the chunk's livery
-                add a,(hl)
+                ld a,(hl)                   ; tile (+ #80: a coin)
+                and #7F
+                ld c,a
+                ld a,(livery)               ; in the chunk's livery
+                add a,c
                 ld e,a
                 ld d,livery_tiles>>8
                 ld a,(de)
                 ld (iy+D_LANES),a
-                inc hl
-                ld a,(hl)                   ; collision
+                ld a,c                      ; its collision class
+                add TILE_COLL_OFS
+                ld e,a
+                ld a,(de)
                 ld (iy+D_COLL),a
-                inc hl
                 ld a,(hl)                   ; item
-                ld (iy+D_ITEM),a
                 inc hl
-                or a
+                rlca
+                and 1
+                ld (iy+D_ITEM),a
                 ret z
                 push hl
                 call spawn_item
@@ -234,14 +239,13 @@ chunk_row_c5:
 ; Easy: a buffer stop or a signal that would be the third obstacle of its lane
 ; within EASY_WINDOW rows (a screen) becomes rail, both its rows. Trains stay
 ; (ramps, roofs), but count. HL = cell, IY = its descriptor cell, (row_lane) =
-; lane. C: rail written (HL += 3), NC: an ordinary cell (HL kept).
+; lane. C: rail written (HL += 1), NC: an ordinary cell (HL kept).
 ; -----------------------------------------------------------------------------
 EASY_WINDOW     equ PICTURE_ROWS
 
 easy_cell:
                 push hl
-                inc hl
-                ld a,(hl)                   ; collision class
+                call cell_coll              ; collision class
                 and 15
                 ld c,a
                 ld a,(row_lane)
@@ -309,9 +313,19 @@ easy_cell:
                 ld (iy+D_COLL),COL_NONE
                 ld (iy+D_ITEM),0
                 inc hl
-                inc hl
-                inc hl
                 scf
+                ret
+
+; HL = chunk cell: A = its collision class (from its tile). Keeps BC, DE, HL.
+cell_coll:
+                push de
+                ld a,(hl)
+                and #7F
+                add TILE_COLL_OFS
+                ld e,a
+                ld d,livery_tiles>>8
+                ld a,(de)
+                pop de
                 ret
 
 ; a new game: no obstacles below, the starts long ago
@@ -345,10 +359,11 @@ ez_starts:      defs 3*4                ; per lane: rows of the last two obstacl
 ; without ramps becomes part of the moving train, if none is moving (and the
 ; difficulty allows: not on easy, only the left lane on medium); the
 ; descriptor gets rail (the train is drawn over it). HL = cell, IY = its
-; descriptor cell, (row_lane) = lane. C: done (HL += 3), NC: an ordinary cell.
+; descriptor cell, (row_lane) = lane. C: done (HL += 1), NC: an ordinary cell.
 ; -----------------------------------------------------------------------------
 train_cell:
                 ld a,(hl)
+                and #7F
                 cp TILE_WAGONS
                 ccf
                 ret nc                      ; not a train
@@ -386,11 +401,12 @@ train_cell:
                 ld a,b
                 ld (train_lane),a
                 push hl                     ; its rows: train cells up this lane
-                ld de,9                     ; (inside the chunk)
+                ld de,3                     ; (inside the chunk)
                 ld a,(chunk_left)
                 ld b,a
                 ld c,0
 .count:         ld a,(hl)
+                and #7F
                 cp TILE_WAGONS
                 jr c,.counted
                 cp TILE_RAMPS
@@ -419,8 +435,11 @@ train_cell:
                 ld (train_hi),hl
                 pop hl
                 push hl
-                ld a,(livery)               ; its livery (the chunk's)
-                add a,(hl)
+                ld a,(hl)                   ; its livery (the chunk's)
+                and #7F
+                ld e,a
+                ld a,(livery)
+                add a,e
                 ld e,a
                 ld d,livery_tiles>>8
                 ld a,(de)
@@ -450,15 +469,13 @@ train_cell:
                 ld (iy+D_COLL),COL_NONE
                 ld (iy+D_ITEM),0
                 inc hl
-                inc hl
-                inc hl
                 scf
                 ret
 .standing:      or a
                 ret
 
 ; A = the tile for the new row (gen_row) in the moving train's lane: its body
-; (wagons of 7 rows and a coupler, as src/trains.asm) when the row lies
+; (wagons of WAGON_PERIOD-1 rows and a coupler, as src/trains.asm) when the row lies
 ; between its two ends, else rail (the ends are drawn line by line)
 body_or_rail:
                 push hl
@@ -485,9 +502,9 @@ body_or_rail:
 .body:          ld a,(gen_row)              ; the body tile of this row
                 ld hl,train_anchor
                 sub (hl)
-                and 7
+                and WAGON_PERIOD-1
                 ld b,4
-                cp 7
+                cp WAGON_PERIOD-1
                 jr z,.part
                 and 3
                 cp 1
@@ -651,28 +668,23 @@ place_powerup:
                 ld e,(hl)
                 pop hl
                 push hl
-                add hl,de                   ; next row: lane * 3 + collision
-                add hl,de
-                add hl,de
-                inc hl
-                inc hl
+                add hl,de                   ; next row: its cell in that lane
                 ld a,(hl)                   ; no item next to it (2 rows)
-                dec hl
-                or a
-                jr nz,.next
+                rlca
+                jr c,.next
                 ld a,(pu_roof)              ; on a roof: not over a coupler
                 or a
                 jr z,.rows_ahead
-                ld a,(hl)
+                call cell_coll
                 and 15
                 cp COL_TRAIN
                 jr nz,.next
 .rows_ahead:    ld a,(.check)               ; and no obstacle in the rows ahead
                 ld c,a
-.ahead:         ld a,(hl)
+.ahead:         call cell_coll
                 call obstacle
                 jr nz,.next
-                ld a,9                      ; the row above in the chunk
+                ld a,3                      ; the row above in the chunk
                 call add_a_hl
                 dec c
                 jr nz,.ahead

@@ -11,7 +11,7 @@
 ; World line W = row * 8 + 7 - y (y = the line in the row, 0 at the top):
 ; it grows up the screen. Each frame only the train's two ends are drawn
 ; again, moved (8 + m lines each); its body is drawn by row from the world
-; line (short wagons of 7 rows + a coupler), so it stays in place while the
+; line (wagons of WAGON_PERIOD-1 rows + a coupler), so it stays in place while the
 ; ends move. render_row draws it into every new row (train_render), so the
 ; rows still to come show it where it is by then.
 ;
@@ -23,6 +23,7 @@
 TRAIN_FAST      equ 2                   ; oncoming (right lane), lines a frame
 TRAIN_SLOW      equ 1                   ; ahead (left lane), lines a frame
 TRAIN_W         equ LANE_BYTES          ; bytes of a lane line
+WAGON_PERIOD    equ 16                  ; a moving train's wagon and coupler, rows
 TRAIN_LAZY      equ 5                   ; from this speed: not in two heavy frames
 
 ; -----------------------------------------------------------------------------
@@ -413,14 +414,14 @@ seg_row:
                 ld (tr_skip),a
                 ret
 
-; tr_row: A = the train's body tile there (wagons of 7 rows and a coupler)
+; tr_row: A = the train's body tile there (wagons of WAGON_PERIOD-1 rows and a coupler)
 body_tile:
                 ld a,(tr_row)
                 ld hl,train_anchor
                 sub (hl)
-                and 7
+                and WAGON_PERIOD-1
                 ld b,4                      ; coupler
-                cp 7
+                cp WAGON_PERIOD-1
                 jr z,.part
                 and 3
                 cp 1
