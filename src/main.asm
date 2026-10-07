@@ -149,9 +149,7 @@ main_loop:
                 call current_speed          ; turbo / slow / normal
 .scroll:        call scroll_step
                 call hud_prepare            ; next frame's HUD contents
-                ld a,(scr_coarse)           ; a light frame: chunk weights
-                or a
-                call z,chunk_prewarm
+                call chunk_prewarm          ; light frames: chunk weights; coins spin
 .frame_done:    BORDER #14                  ; black
                 call measure_load
                 ld hl,(frame_counter)
@@ -304,6 +302,8 @@ bank5_start:
                 include "data/chunks.asm"
                 include "chunk_pick.asm"
                 include "traffic_c5.asm"            ; a moving car drawn
+                include "data/gfx_coin_bg.asm"
+                include "coins_c5.asm"              ; spinning coins
 bank5_end:
                 assert bank5_end <= #8000
                 save "build/aperb5.bin",bank5_start,bank5_end-bank5_start

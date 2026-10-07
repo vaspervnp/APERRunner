@@ -13,14 +13,35 @@ COMPARE_LINES = range(40, 200)   # below the top edge, above the runner (7 lines
 SPEEDS = range(1, 8)                 # up to 7: hard + turbo
 
 
+COIN = (255, 255, 0)     # stands for every coin colour
+
+
 def _steady(p):
-    """Pens 14 (coin glint) and 15 (signal lamp) cycle their colours:
-    map each pair to one value so only movement is compared."""
+    """Pens 14 (coin glint) and 15 (signal lamp) cycle their colours, and
+    coins turn (coin_spin): map the coin colours to one value, a wildcard
+    in the comparison, and the lamp colours to one other."""
     if p[0] > 200 and p[1] > 200 and p[2] > 80:          # pastel yellow / bright white
-        return (255, 255, 255)
+        return COIN
+    if p[0] > 100 and abs(p[0] - p[1]) < 30 and p[2] < 50:  # bright yellow, yellow
+        return COIN
     if p[0] < 50 and p[1] > 200 and p[2] < 50:            # lamp green -> lamp red
         return (255, 0, 0)
+    if p[0] > 200 and 80 < p[1] < 180 and p[2] < 50:     # lamp amber -> lamp red
+        return (255, 0, 0)
     return p
+
+
+COIN_SPAN = 32           # framebuffer pixels: a coin is 4 bytes wide
+
+
+def same_row(a, b):
+    """Equal lines, but where a coin is (a coin colour within a coin's
+    width, in either line) anything goes: it may have turned."""
+    if a == b:
+        return True
+    coins = [x for x in range(len(a)) if COIN in (a[x], b[x])]
+    return all(any(abs(x - c) < COIN_SPAN for c in coins)
+               for x in range(len(a)) if a[x] != b[x])
 
 
 def _rows(img):
@@ -31,7 +52,7 @@ def _rows(img):
 def _shift_between(before, after):
     """Lines the playfield moved down from `before` to `after` (None if no match)."""
     for shift in range(0, 9):
-        if all(after[y + shift] == before[y] for y in COMPARE_LINES):
+        if all(same_row(after[y + shift], before[y]) for y in COMPARE_LINES):
             return shift
     return None
 

@@ -332,10 +332,8 @@ generate_row:
 
 ; --- next row of the current chunk (src/chunk_pick.asm, bank C5) ------------------
 chunk_row:
-                MAP_RAM GA_RAM_C5
-                call chunk_row_c5
-                MAP_RAM GA_RAM_C0
-                ret
+                ld hl,chunk_row_c5
+                jp in_c5
 row_lane:       defb 0                      ; lane of the cell being placed
 
 ; --- empty track between chunks --------------------------------------------------
@@ -507,15 +505,9 @@ spawn_item:
                 add COL_LANE1
                 ld b,a                      ; B = lane column
                 ld a,c
-                cp ITEM_COIN
-                jr nz,.powerup
-                ld a,b
-                add (LANE_BYTES-COIN_W)>>1
-                ld c,a
-                ld hl,gfx_items_coin0
-                ld a,1
-                jp add_overlay
-.powerup:       add IDX_ITEMS_PU_MAGNET-2   ; item 2.. -> power-up frames
+                cp ITEM_COIN                ; a coin: render_row draws it
+                ret z                       ; (coins_row, src/coins_c5.asm)
+                add IDX_ITEMS_PU_MAGNET-2   ; item 2.. -> power-up frames
                 ld hl,gfx_items_table
                 push bc
                 call table_entry
@@ -579,10 +571,8 @@ roadbridge_rows:
 
 ; --- weighted chunk choice among those allowed at this difficulty/env -------------
 pick_chunk:                                 ; (src/chunk_pick.asm, bank C5)
-                MAP_RAM GA_RAM_C5
-                call pick_chunk_c5
-                MAP_RAM GA_RAM_C0
-                ret
+                ld hl,pick_chunk_c5
+                jp in_c5
 
 ; --- busy counters: rows until a car lane / tree spot / side feature is free ------
 tick_busy_counters:
@@ -1143,10 +1133,8 @@ road_line:
 
 ; the car at its lines: opaque, the data bytes of its sprite
 draw_car:
-                MAP_RAM GA_RAM_C5           ; (src/traffic_c5.asm)
-                call draw_car_c5
-                MAP_RAM GA_RAM_C0
-                ret
+                ld hl,draw_car_c5           ; (src/traffic_c5.asm)
+                jp in_c5
 
 ; --- transition rows (2): forest tile set ------------------------------------------
 transition_sides:
@@ -1175,19 +1163,24 @@ transition_sides:
                 ld (env),a
                 ret
 
-; a light frame: chunk weights up to date (src/chunk_pick.asm, bank C5)
+; every frame: the coins spin (src/coins_c5.asm); a light frame: chunk
+; weights up to date (src/chunk_pick.asm, bank C5)
 chunk_prewarm:
-                MAP_RAM GA_RAM_C5
-                call chunk_prewarm_c5
-                MAP_RAM GA_RAM_C0
-                ret
+                ld hl,chunk_prewarm_c5
+                jp in_c5
 
 ; --- forest (src/chunk_pick.asm, bank C5) ----------------------------------------------
 forest_sides:
+                ld hl,forest_sides_c5
+                jp in_c5
+
+; HL = a routine in bank C5: called there, then back to the main RAM
+in_c5:
                 MAP_RAM GA_RAM_C5
-                call forest_sides_c5
+                call .go
                 MAP_RAM GA_RAM_C0
                 ret
+.go:            jp (hl)
 
 ; -----------------------------------------------------------------------------
 ; add_scenery: as add_overlay, for scenery (cars, trees), unless the
@@ -1313,6 +1306,7 @@ render_row:
                 call .blit
 
                 MAP_RAM GA_RAM_C5
+                call coins_row              ; (src/coins_c5.asm)
                 call draw_overlays
                 MAP_RAM GA_RAM_C4           ; a moving train over it all
                 call train_render

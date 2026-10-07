@@ -17,4 +17,4 @@ Columns: 8
 255 128 128	pen 12 fw 16 Pink - skin
 255   0   0	pen 13 fw  6 Bright Red - player clothes, signage
 255 255 128	pen 14 fw 25 Pastel Yellow - RESERVED: coin glint (cycles 25/26)
-254   0   0	pen 15 fw  6 Bright Red - RESERVED: signal lamp (cycles 6/18)
+254   0   0	pen 15 fw  6 Bright Red - RESERVED: signal lamp (cycles 18/15/6)

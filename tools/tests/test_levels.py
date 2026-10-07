@@ -139,12 +139,16 @@ def test_short_or_odd_trains_are_rejected():
             raise AssertionError(f"a {length}-row train was accepted")
 
 
-def test_coins_are_in_one_lane_per_row():
+def test_coins_are_in_two_lanes_per_row_at_most():
     coin = mklevel.ITEMS["c"]
+    pairs = 0
     for chunk in mklevel.load_all():
         for r, row in enumerate(chunk["rows"]):
             lanes = [lane for lane in range(3) if row[lane * 3 + 2] == coin]
-            assert len(lanes) <= 1, f"{chunk['name']}: row {r} has coins in lanes {lanes}"
+            assert len(lanes) <= 2, f"{chunk['name']}: row {r} has coins in lanes {lanes}"
+            pairs += len(lanes) == 2
+    print(f"    {pairs} rows with coins side by side")
+    assert pairs > 0
 
 
 def _coins(n, lane=0, gap=1):
@@ -154,21 +158,23 @@ def _coins(n, lane=0, gap=1):
     return ((coin + "\n") + (cell[lane] + "\n") * gap) * (n - 1) + coin + "\n"
 
 
-def test_coins_side_by_side_are_rejected():
+def test_coins_in_all_three_lanes_are_rejected():
     _compile(_coins(3, 0) + "...  ...  ...\n" + _coins(3, 1))   # zig-zag across rows is fine
-    for line in ("..c  ..c  ...", "...  ..c  ..c", "..c  ...  ..c", "..c  ..c  ..c"):
-        try:
-            _compile((line + "\n...  ...  ...\n") * 3)
-        except mklevel.LevelError as e:
-            assert "one lane only" in str(e)
-        else:
-            raise AssertionError(f"accepted {line!r}")
+    for line in ("..c  ..c  ...", "...  ..c  ..c", "..c  ...  ..c"):  # two lanes side by side too
+        _compile((line + "\n...  ...  ...\n") * 3)
+    try:
+        _compile(("..c  ..c  ..c\n...  ...  ...\n") * 3)
+    except mklevel.LevelError as e:
+        assert "2 lanes at most" in str(e)
+    else:
+        raise AssertionError("accepted coins in all three lanes")
 
 
 def test_more_coins_on_screen():
     # one and a half times the earlier density (~6 coins on the 34 rows of
     # the screen, weighted by chunk probability): ~9, then 7.5 with the
-    # longer wagons (11.18: the trains' new rows have none)
+    # longer wagons (11.18), ~10 again with coins on their roofs and side
+    # by side in two lanes (11.19)
     chunks = mklevel.load_all()
     coin = mklevel.ITEMS["c"]
     coins = sum(c["weight"] * sum(1 for row in c["rows"] for lane in range(3) if row[lane * 3 + 2] == coin)
@@ -176,7 +182,7 @@ def test_more_coins_on_screen():
     rows = sum(c["weight"] * len(c["rows"]) for c in chunks)
     on_screen = 34 * coins / rows
     print(f"    {on_screen:.1f} coins on screen on average")
-    assert 7 <= on_screen <= 10.5, on_screen
+    assert 8.5 <= on_screen <= 10.5, on_screen
 
 
 def test_coins_come_in_runs_of_three_to_ten_with_gaps():

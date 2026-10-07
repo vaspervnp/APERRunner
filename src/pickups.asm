@@ -30,7 +30,7 @@ TURBO_MAX       equ 7                   ; (a coarse step every frame at 8)
 COIN_POINTS     equ #10                 ; BCD
 
 MAGNET_LINE     equ 176                 ; screen line where coins take off
-FLYER_COUNT          equ 8
+FLYER_COUNT          equ 2                   ; coins in the air at once (frame time)
 FLY_SIZE        equ 4
 FLY_ACTIVE      equ 0
 FLY_X           equ 1                   ; byte column
@@ -359,7 +359,8 @@ erase_item:
 
 ; -----------------------------------------------------------------------------
 ; magnet: while it runs, the coins near the runner's lane that reach
-; MAGNET_LINE take off as flying sprites.
+; MAGNET_LINE take off as flying sprites, one a frame (coins side by side:
+; the row just below the line gets a look too, for the one that waited).
 ; -----------------------------------------------------------------------------
 magnet:
                 ld a,(no_pickups)
@@ -386,6 +387,8 @@ magnet:
                 or a
                 sbc hl,de
                 ld (.world_row),hl
+                ld a,2                      ; that row, then the one below it
+                ld (.rows),a                ; (a coin that had to wait)
                 xor a
 .lane:          ld (.lane_no),a
                 ld b,a                      ; |lane - player_lane| <= 1
@@ -433,12 +436,22 @@ magnet:
                 ld hl,(.world_row)
                 ld a,(.lane_no)
                 ld c,1
-                call erase_item
+                jp erase_item               ; one coin a frame
 .next_lane:     ld a,(.lane_no)
                 inc a
                 cp 3
                 jr nz,.lane
-                ret
+                ld hl,.rows
+                dec (hl)
+                ret z
+                ld hl,.picture_row          ; the row below the line
+                inc (hl)
+                ld hl,(.world_row)
+                dec hl
+                ld (.world_row),hl
+                xor a
+                jr .lane
+.rows:          defb 0
 .picture_row:   defb 0
 .world_row:     defw 0
 .lane_no:       defb 0

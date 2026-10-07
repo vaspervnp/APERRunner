@@ -163,6 +163,10 @@ weigh_env:
 ; a light frame (no coarse step): the weights of one environment brought up
 ; to the difficulty, if behind (src/world.asm chunk_prewarm maps C5)
 chunk_prewarm_c5:
+                call coin_spin              ; (decides itself: src/coins_c5.asm)
+                ld a,(scr_coarse)           ; the weights in light frames only
+                or a
+                ret nz
                 xor a
                 call env_cache
                 ld a,(difficulty)
@@ -620,6 +624,7 @@ ahead_stop:
 ; the other five share the rest. Then 50-150 rows to the next one.
 ; Preserves HL.
 ; -----------------------------------------------------------------------------
+PU_TRIES        equ 1                       ; lanes tried a row (frame time: the next row tries again)
 place_powerup:
                 ld de,(pu_gap)
                 ld a,d
@@ -641,7 +646,7 @@ place_powerup:
                 push hl
                 ld c,3
                 call random_below
-                ld b,3                      ; B = lanes to try from lane A
+                ld b,PU_TRIES               ; B = lanes to try from lane A
 .try:           ld (row_lane),a
                 ld e,a
                 ld d,0

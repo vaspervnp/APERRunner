@@ -283,39 +283,52 @@ game_state_update:
 
 ; -----------------------------------------------------------------------------
 ; effects: signal lamps (pen 15) and coin glint (pen 14) colour cycling.
+; The lamps: green, amber (still open), red (closed), green ...
 ; -----------------------------------------------------------------------------
+SIGNAL_AMBER    equ 18                      ; amber frames, between green and red
+
 effects:
                 ld hl,signal_timer
                 dec (hl)
                 jr nz,.glint
-                ld a,(signal_red)
-                xor 1
-                ld (signal_red),a
+                ld a,(signal_state)         ; 0 green, 1 amber, 2 red
+                inc a
+                cp 3
+                jr c,.state
+                xor a
+.state:         ld (signal_state),a
                 ld b,a
-                ld a,(difficulty)           ; red 30+6d, green 70-8d frames
+                ld a,(difficulty)           ; red 30+6d, green 52-8d frames
                 ld c,a
-                add a,a
-                add a,c
-                add a,a                     ; 6d
-                bit 0,b
-                jr z,.green_time
-                add 30
-                jr .set_time
-.green_time:    ld a,c
+                ld a,b
+                dec a
+                jr z,.amber
+                dec a
+                jr z,.red
+                ld a,c                      ; green
                 add a,a
                 add a,a
                 add a,a                     ; 8d
                 neg
-                add 70
-.set_time:      ld (hl),a
-                ld a,b
-                or a
-                call nz,signal_bell
-                ld a,(signal_red)
-                or a
-                ld a,HW_BRIGHT_RED
-                jr nz,.lamp
+                add 70-SIGNAL_AMBER
+                ld (hl),a
+                xor a
+                ld (signal_red),a
                 ld a,HW_BRIGHT_GREEN
+                jr .lamp
+.amber:         ld (hl),SIGNAL_AMBER
+                ld a,HW_ORANGE
+                jr .lamp
+.red:           ld a,c
+                add a,a
+                add a,c
+                add a,a                     ; 6d
+                add 30
+                ld (hl),a
+                ld a,1
+                ld (signal_red),a
+                call signal_bell
+                ld a,HW_BRIGHT_RED
 .lamp:          ld bc,GA_PORT*256+PEN_LAMP
                 out (c),c
                 or GA_COLOUR
@@ -345,7 +358,8 @@ support:        defb 0
 probe_lane:     defb 0
 was_airborne:   defb 0
 prev_z:         defb 0
-signal_red:     defb 0
+signal_red:     defb 0                  ; 1: red, closed
+signal_state:   defb 1                  ; 0 green, 1 amber, 2 red
 signal_timer:   defb 1
 no_crash:       defb 0                  ; debug: obstacles never crash the runner
 probe_row:      defw 0                  ; world rows last probed (for tests)

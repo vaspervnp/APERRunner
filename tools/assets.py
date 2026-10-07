@@ -23,6 +23,8 @@ An asset converts frames of a sheet into src/data/gfx_<asset>.asm:
                   with a table by kind and PLATFORM_SEQ (src/platform.asm)
   kind "lines"  - tiles as pointers to their lines, each distinct line as
                   copy / fill ops (png2cpc.line_ops), for src/bridges.asm
+  kind "coinbg" - the coin's frames put over each track tile a coin lies on
+                  (from the chunks), for the spinning coins (src/coins_c5.asm)
   mirror        - also emit horizontally mirrored copies (<frame>_m)
 """
 
@@ -135,6 +137,7 @@ ASSETS = {
     "hud_bg": ("hud", "tile", HUD_BACKGROUNDS, False),
     "hud_icons": ("hud", "panel", HUD_ICONS + ["bar_full", "bar_empty"] + HUD_DIGITS, False),
     "coin_code": ("items", "compiled", [f"coin{i}" for i in range(4)], False),
+    "coin_bg": ("items", "coinbg", [f"coin{i}" for i in range(4)], False),     # src/coins_c5.asm
     "player_code": ("player", "compiled", None, False),
     "font": ("font", "tile0", None, False),
     "logo": ("logo", "tile", None, False),

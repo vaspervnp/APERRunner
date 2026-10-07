@@ -59,7 +59,7 @@ GAME_PALETTE = [
     (16, None, "skin"),
     (6, None, "player clothes, signage"),
     (25, None, "RESERVED: coin glint (cycles 25/26)"),
-    (6, LAMP_EDITOR_RGB, "RESERVED: signal lamp (cycles 6/18)"),
+    (6, LAMP_EDITOR_RGB, "RESERVED: signal lamp (cycles 18/15/6)"),
 ]
 
 
@@ -122,6 +122,7 @@ def write_asm(path):
         f"HW_BRIGHT_WHITE equ #{CPC_COLOURS[26][2]:02X}",
         f"HW_BRIGHT_RED   equ #{CPC_COLOURS[6][2]:02X}",
         f"HW_BRIGHT_GREEN equ #{CPC_COLOURS[18][2]:02X}",
+        f"HW_ORANGE       equ #{CPC_COLOURS[15][2]:02X}",
         "",
         "; time of day: pens 0-13 per step (day, dusk, late, night), the step",
         "; of each 64 rows of a 2048-row cycle",

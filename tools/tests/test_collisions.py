@@ -190,16 +190,17 @@ def test_ground_jump_cannot_land_on_a_train():
     assert any(s["crashes"] == 1 for s in states)
 
 
-def test_red_signal_crashes_green_passes():
-    for red, crashes in ((1, 1), (0, 0)):
+def test_red_signal_crashes_green_and_amber_pass():
+    for state, red, crashes in ((2, 1, 1), (0, 0, 0), (1, 0, 0)):
         sc = Scenario()
+        sc.cpc.write_ram(sc.sym["signal_state"], bytes([state]))
         sc.cpc.write_ram(sc.sym["signal_red"], bytes([red]))
         sc.cpc.write_ram(sc.sym["signal_timer"], bytes([250]))
         sc.plant_lane(0, 1, [COL_NONE, COL_SIGNAL])
         sc.go()
         sc.until_front(sc.base_row + 1)
         states = sc.run(6)
-        assert states[-1]["crashes"] == crashes, (red, states[-1])
+        assert states[-1]["crashes"] == crashes, (state, states[-1])
 
 
 def test_lane_change_into_a_train_crashes():
@@ -260,11 +261,13 @@ def test_game_over_shows_the_score_screen():
 def test_signal_lamps_cycle():
     sym = load_symbols()
     cpc = boot_game()
-    seen = set()
-    for _ in range(80):
+    seen = []                                    # (state, red) as they change
+    for _ in range(160):
         sync_game_frame(cpc, sym)
-        seen.add(peek8(cpc, sym["signal_red"]))
-    assert seen == {0, 1}
+        now = (peek8(cpc, sym["signal_state"]), peek8(cpc, sym["signal_red"]))
+        if not seen or seen[-1] != now:
+            seen.append(now)
+    assert seen[:4] == [(2, 1), (0, 0), (1, 0), (2, 1)], seen  # red, green, amber (open), red
 
 
 

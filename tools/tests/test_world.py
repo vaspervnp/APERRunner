@@ -208,8 +208,10 @@ def test_power_ups_one_every_50_to_150_rows_turbo_most():
 
 
 def _obstacle_share(skill, rows_wanted=1600):
-    """(share of rows with an obstacle in the first and the last 300 rows,
-    empty rows left after each chunk 800 rows in)."""
+    """(share of rows with an obstacle in the first 300 rows and in rows
+    800-1600, empty rows left after each chunk 800 rows in). The second
+    window is long: 300 rows are a few chunks, and a dense or an easy one
+    swings a short window by 20%."""
     sym = load_symbols()
     cpc = boot_game()
     cpc.write_ram(sym["skill"], bytes([skill]))
@@ -226,8 +228,8 @@ def _obstacle_share(skill, rows_wanted=1600):
             gap = peek8(cpc, sym["spacer_len"])
     rows = sorted(seen)
     first = [seen[r] for r in rows[:300]]
-    last = [seen[r] for r in rows[-300:]]
-    return sum(first) / 300, sum(last) / 300, gap
+    last = [seen[r] for r in rows[-800:]]
+    return sum(first) / 300, sum(last) / 800, gap
 
 
 def test_obstacles_get_denser_and_faster_on_hard():

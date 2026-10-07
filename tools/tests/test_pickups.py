@@ -9,7 +9,7 @@ import test_world as tw
 COIN, MAGNET, TURBO, SLOW, SPRING, HELMET, TICKET = range(1, 8)
 DURATIONS = {MAGNET: 250, TURBO: 200, SLOW: 200, SPRING: 250, TICKET: 375}
 TIMER = {MAGNET: "pu_magnet", TURBO: "pu_turbo", SLOW: "pu_slow", SPRING: "pu_spring", TICKET: "pu_ticket"}
-FLYERS, FLY_SIZE = 8, 4
+FLYERS, FLY_SIZE = 2, 4                # src/pickups.asm FLYER_COUNT, FLY_SIZE
 
 
 def bcd(cpc, addr, size):

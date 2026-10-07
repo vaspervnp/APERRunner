@@ -24,7 +24,8 @@ is the first one the player meets). Each lane cell has 3 characters:
   item    '.' none  'c' coin. Power-ups are not part of chunks: the game
           places one every 100-200 rows (src/world.asm place_powerup).
 
-A row has coins in one lane at most (never side by side in 2 or 3 lanes).
+A row has coins in two lanes at most (side by side in 2, never in all 3:
+a lane always stays without a coin).
 Coins come in runs of MIN_COIN_RUN to MAX_COIN_RUN coins in one lane, one
 coin every COIN_STEP rows (an empty row between two coins); two coins are
 never on consecutive rows of a lane.
@@ -91,6 +92,7 @@ COIN_STEP = 2
 RAMP_ROOF_SHARE = 0.6
 BLOCK_ROWS = 12
 RAMP_KINDS = ("coins", "blocked")
+MAX_COIN_LANES = 2                           # coins side by side in a row, at most
 
 
 def train_length(wagons):
@@ -257,8 +259,9 @@ def compile_chunk(path):
         for lane in range(3):                     # (the game derives it from the tile)
             assert row[lane * 3 + 1] == TILE_COLLISION[row[lane * 3]], (path, r, lane)
         coin_lanes = sum(1 for lane in range(3) if row[lane * 3 + 2] == ITEMS["c"])
-        if coin_lanes > 1:
-            raise LevelError(f"{path}: line {grid[r][0]}: coins in {coin_lanes} lanes - a row has coins in one lane only")
+        if coin_lanes > MAX_COIN_LANES:
+            raise LevelError(f"{path}: line {grid[r][0]}: coins in {coin_lanes} lanes - "
+                             f"a row has coins in {MAX_COIN_LANES} lanes at most")
         rows.append(row)
     for lane in range(3):
         for start, length in coin_runs([cell[2] == "c" for cell in columns[lane]], path, grid, lane):

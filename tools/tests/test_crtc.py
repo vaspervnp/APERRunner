@@ -13,7 +13,7 @@ COMPARE = range(40, 200)                 # above the runner even 7 lines down
 
 def _shift(before, after):
     for shift in range(9):
-        if all(after[y + shift] == before[y] for y in COMPARE):
+        if all(ts.same_row(after[y + shift], before[y]) for y in COMPARE):
             return shift
     return None
 

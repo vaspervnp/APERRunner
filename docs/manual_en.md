@@ -175,7 +175,7 @@ TURBO and SLOW cancel each other.
 | Train ahead | On the left track (MEDIUM and HARD): it runs your way, slower, and you catch up with its back end |
 | Ramp | Takes you up onto the roof; the end of the train takes you back down |
 | Buffer stop | Jump it or change lane |
-| Signal | Green: go on. Red: change lane, fast |
+| Signal | Green: go on. Amber: still open, it turns red next. Red: change lane, fast |
 
 The signal bell rings when a signal ahead turns red.
 
